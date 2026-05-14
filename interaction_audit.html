@@ -12,9 +12,6 @@
         .bg-tech { background-color: #050505; border: 1px solid #111827; }
         .status-ok { color: #10b981; background: rgba(16, 185, 129, 0.1); }
         .status-error { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
-        .status-warning { color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
-        
-        /* Scrollbar personalizada para que no rompa el estilo dark */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #111827; border-radius: 10px; }
@@ -34,7 +31,6 @@
     </header>
 
     <main class="max-w-7xl mx-auto">
-        
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             <div class="bg-tech p-6 rounded-2xl">
                 <p class="text-[10px] font-black text-gray-500 uppercase mb-2">Total Elementos</p>
@@ -61,27 +57,33 @@
                         <th class="p-6 text-[10px] font-black uppercase text-gray-500 text-center">Interacción</th>
                     </tr>
                 </thead>
-                <tbody id="lista-elementos">
-                    </tbody>
+                <tbody id="lista-elementos"></tbody>
             </table>
         </div>
     </main>
 
     <script>
-        const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
-        const supabase = netlifyConfig = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // CAMBIO CLAVE: Cambiamos el nombre de la constante a 'dbClient' para evitar el SyntaxError
+        const _URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+        const _KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+        
+        // Usamos el objeto global 'supabase' de la librería para crear el cliente
+        const dbClient = supabase.createClient(_URL, _KEY);
 
         async function cargarReporte() {
-            // Traemos el último reporte generado
-            const { data, error } = await supabase
+            const { data, error } = await dbClient
                 .from('auditoria_links')
                 .select('*')
                 .order('created_at', { ascending: false })
                 .limit(1);
 
-            if (error || !data.length) {
-                console.error("Error al cargar:", error);
+            if (error) {
+                console.error("Error de Supabase:", error.message);
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                console.warn("Esperando datos...");
                 return;
             }
 
@@ -91,39 +93,28 @@
             let saludables = 0;
 
             tabla.innerHTML = '';
-
             reporte.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-gray-900/50 hover:bg-white/5 transition-colors";
-
-                const statusColor = item.status === 200 ? 'status-ok' : (item.status === 'N/A' ? 'text-gray-500' : 'status-error');
+                
+                const statusNum = parseInt(item.status);
+                const statusColor = statusNum === 200 ? 'status-ok' : 'status-error';
                 const interactColor = item.obstruido ? 'status-error' : 'status-ok';
                 const interactText = item.obstruido ? 'OBSTRUIDO' : 'LIBRE';
 
                 if(item.obstruido) obstruidos++;
-                if(item.status === 200 && !item.obstruido) saludables++;
+                if(statusNum === 200 && !item.obstruido) saludables++;
 
                 tr.innerHTML = `
-                    <td class="p-6">
-                        <span class="text-sm font-bold block">${item.texto}</span>
-                    </td>
-                    <td class="p-6 text-center">
-                        <span class="text-[10px] font-black px-3 py-1 rounded-full bg-gray-900 text-gray-400 uppercase">${item.tipo}</span>
-                    </td>
-                    <td class="p-6">
-                        <span class="text-xs font-mono text-gray-500 truncate block max-w-xs">${item.href}</span>
-                    </td>
-                    <td class="p-6 text-center">
-                        <span class="text-[10px] font-black px-3 py-1 rounded-full ${statusColor}">${item.status}</span>
-                    </td>
-                    <td class="p-6 text-center">
-                        <span class="text-[10px] font-black px-3 py-1 rounded-full ${interactColor}">${interactText}</span>
-                    </td>
+                    <td class="p-6"><span class="text-sm font-bold block">${item.texto}</span></td>
+                    <td class="p-6 text-center"><span class="text-[10px] font-black px-3 py-1 rounded-full bg-gray-900 text-gray-400 uppercase">${item.tipo}</span></td>
+                    <td class="p-6"><span class="text-xs font-mono text-gray-500 truncate block max-w-xs">${item.href || item.url || '-'}</span></td>
+                    <td class="p-6 text-center"><span class="text-[10px] font-black px-3 py-1 rounded-full ${statusColor}">${item.status}</span></td>
+                    <td class="p-6 text-center"><span class="text-[10px] font-black px-3 py-1 rounded-full ${interactColor}">${interactText}</span></td>
                 `;
                 tabla.appendChild(tr);
             });
 
-            // Update Stats
             document.getElementById('stat-total').innerText = reporte.length;
             document.getElementById('stat-obstruidos').innerText = obstruidos;
             document.getElementById('stat-ok').innerText = saludables;
