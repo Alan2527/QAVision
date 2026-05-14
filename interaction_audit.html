@@ -12,9 +12,6 @@
         .bg-tech { background-color: #050505; border: 1px solid #111827; }
         .status-ok { color: #10b981; background: rgba(16, 185, 129, 0.1); }
         .status-error { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: #111827; border-radius: 10px; }
     </style>
 </head>
 <body class="p-8">
@@ -22,38 +19,34 @@
     <header class="max-w-7xl mx-auto flex justify-between items-center mb-12">
         <div class="flex items-center space-x-3">
             <div class="w-10 h-10 bg-[#10b981] rounded-xl flex items-center justify-center text-black font-black italic text-xl">Q</div>
-            <div>
-                <h1 class="text-2xl font-black tracking-tighter italic text-[#10b981]">QAVision</h1>
-                <p class="text-[9px] font-black uppercase tracking-[0.3em] text-gray-500">Interaction & Connectivity Report</p>
-            </div>
+            <h1 class="text-2xl font-black tracking-tighter italic text-[#10b981]">QAVision</h1>
         </div>
         <a href="index.html" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition">← Volver al Panel</a>
     </header>
 
     <main class="max-w-7xl mx-auto">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 text-center">
             <div class="bg-tech p-6 rounded-2xl">
                 <p class="text-[10px] font-black text-gray-500 uppercase mb-2">Total Elementos</p>
                 <h2 id="stat-total" class="text-4xl font-black tracking-tighter italic">-</h2>
             </div>
             <div class="bg-tech p-6 rounded-2xl border-red-900/30">
-                <p class="text-[10px] font-black text-red-500 uppercase mb-2">Elementos Obstruidos</p>
+                <p class="text-[10px] font-black text-red-500 uppercase mb-2">Obstruidos</p>
                 <h2 id="stat-obstruidos" class="text-4xl font-black tracking-tighter italic text-red-500">-</h2>
             </div>
             <div class="bg-tech p-6 rounded-2xl border-emerald-900/30">
-                <p class="text-[10px] font-black text-[#10b981] uppercase mb-2">Enlaces Saludables</p>
+                <p class="text-[10px] font-black text-[#10b981] uppercase mb-2">Saludables</p>
                 <h2 id="stat-ok" class="text-4xl font-black tracking-tighter italic text-[#10b981]">-</h2>
             </div>
         </div>
 
-        <div class="bg-tech rounded-[2rem] overflow-hidden shadow-2xl">
-            <table class="w-full text-left border-collapse">
+        <div class="bg-tech rounded-[2rem] overflow-hidden">
+            <table class="w-full text-left">
                 <thead class="bg-[#0a0a0a] border-b border-gray-900">
                     <tr>
-                        <th class="p-6 text-[10px] font-black uppercase text-gray-500">Elemento / Texto</th>
-                        <th class="p-6 text-[10px] font-black uppercase text-gray-500 text-center">Tipo</th>
-                        <th class="p-6 text-[10px] font-black uppercase text-gray-500">Destino (Href)</th>
-                        <th class="p-6 text-[10px] font-black uppercase text-gray-500 text-center">Estado HTTP</th>
+                        <th class="p-6 text-[10px] font-black uppercase text-gray-500">Texto</th>
+                        <th class="p-6 text-[10px] font-black uppercase text-gray-500 text-center">Tag</th>
+                        <th class="p-6 text-[10px] font-black uppercase text-gray-500">URL / Destino</th>
                         <th class="p-6 text-[10px] font-black uppercase text-gray-500 text-center">Interacción</th>
                     </tr>
                 </thead>
@@ -63,63 +56,48 @@
     </main>
 
     <script>
-        // CAMBIO CLAVE: Cambiamos el nombre de la constante a 'dbClient' para evitar el SyntaxError
-        const _URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
-        const _KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+        const SB_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+        const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
         
-        // Usamos el objeto global 'supabase' de la librería para crear el cliente
-        const dbClient = supabase.createClient(_URL, _KEY);
+        // CAMBIO CRÍTICO: Usamos el objeto global 'supabase' para crear el cliente 'qaClient'
+        const qaClient = supabase.createClient(SB_URL, SB_KEY);
 
         async function cargarReporte() {
-            const { data, error } = await dbClient
+            const { data, error } = await qaClient
                 .from('auditoria_links')
                 .select('*')
                 .order('created_at', { ascending: false })
                 .limit(1);
 
-            if (error) {
-                console.error("Error de Supabase:", error.message);
-                return;
-            }
-
-            if (!data || data.length === 0) {
-                console.warn("Esperando datos...");
-                return;
-            }
+            if (error || !data.length) return console.error("Error o sin datos:", error);
 
             const reporte = data[0].reporte;
             const tabla = document.getElementById('lista-elementos');
-            let obstruidos = 0;
-            let saludables = 0;
+            let obs = 0;
 
             tabla.innerHTML = '';
             reporte.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-gray-900/50 hover:bg-white/5 transition-colors";
-                
-                const statusNum = parseInt(item.status);
-                const statusColor = statusNum === 200 ? 'status-ok' : 'status-error';
-                const interactColor = item.obstruido ? 'status-error' : 'status-ok';
-                const interactText = item.obstruido ? 'OBSTRUIDO' : 'LIBRE';
-
-                if(item.obstruido) obstruidos++;
-                if(statusNum === 200 && !item.obstruido) saludables++;
+                if(item.obstruido) obs++;
 
                 tr.innerHTML = `
-                    <td class="p-6"><span class="text-sm font-bold block">${item.texto}</span></td>
-                    <td class="p-6 text-center"><span class="text-[10px] font-black px-3 py-1 rounded-full bg-gray-900 text-gray-400 uppercase">${item.tipo}</span></td>
+                    <td class="p-6"><span class="text-sm font-bold block">${item.texto || 'Sin texto'}</span></td>
+                    <td class="p-6 text-center"><span class="text-[9px] font-black px-2 py-1 rounded bg-gray-900 text-gray-400 uppercase">${item.tipo || 'tag'}</span></td>
                     <td class="p-6"><span class="text-xs font-mono text-gray-500 truncate block max-w-xs">${item.href || item.url || '-'}</span></td>
-                    <td class="p-6 text-center"><span class="text-[10px] font-black px-3 py-1 rounded-full ${statusColor}">${item.status}</span></td>
-                    <td class="p-6 text-center"><span class="text-[10px] font-black px-3 py-1 rounded-full ${interactColor}">${interactText}</span></td>
+                    <td class="p-6 text-center">
+                        <span class="text-[10px] font-black px-3 py-1 rounded-full ${item.obstruido ? 'status-error' : 'status-ok'}">
+                            ${item.obstruido ? 'OBSTRUIDO' : 'LIBRE'}
+                        </span>
+                    </td>
                 `;
                 tabla.appendChild(tr);
             });
 
             document.getElementById('stat-total').innerText = reporte.length;
-            document.getElementById('stat-obstruidos').innerText = obstruidos;
-            document.getElementById('stat-ok').innerText = saludables;
+            document.getElementById('stat-obstruidos').innerText = obs;
+            document.getElementById('stat-ok').innerText = reporte.length - obs;
         }
-
         cargarReporte();
     </script>
 </body>
