@@ -7,19 +7,52 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #000000; color: #ffffff; margin: 0; overflow-x: hidden; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #000000; 
+            color: #ffffff; 
+            margin: 0; 
+            overflow-x: hidden; 
+        }
+        
+        /* Animación de entrada */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .reveal { animation: fadeInUp 0.8s ease-out forwards; }
+        .delay-1 { animation-delay: 0.2s; opacity: 0; }
+        .delay-2 { animation-delay: 0.4s; opacity: 0; }
+        .delay-3 { animation-delay: 0.6s; opacity: 0; }
+
         .border-tech { border: 1px solid #111827; }
         .bg-tech { background-color: #050505; }
-        .btn-emerald { background-color: #10b981; color: #000000; transition: all 0.3s ease; }
-        .btn-emerald:hover:not(:disabled) { background-color: #34d399; transform: translateY(-2px); box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
-        .input-dark { background-color: #000000; border: 1px solid #1f2937; transition: all 0.3s ease; }
+        
+        .btn-emerald { 
+            background-color: #10b981; 
+            color: #000000; 
+            transition: all 0.3s ease; 
+        }
+        .btn-emerald:hover:not(:disabled) { 
+            background-color: #34d399; 
+            transform: translateY(-2px); 
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); 
+        }
+
+        .input-dark { 
+            background-color: #000000; 
+            border: 1px solid #1f2937; 
+            transition: all 0.3s ease; 
+        }
         .input-dark:focus { border-color: #10b981; outline: none; }
-        .divider { border-top: 1px solid #111827; margin: 80px 0; }
+        
+        .divider { border-top: 1px solid #111827; margin: 100px 0; }
     </style>
 </head>
 <body>
 
-    <nav class="max-w-7xl mx-auto px-8 py-10 flex justify-between items-center">
+    <nav class="max-w-7xl mx-auto px-8 py-10 flex justify-between items-center reveal">
         <div class="flex items-center space-x-2">
             <div class="w-8 h-8 bg-[#10b981] rounded-lg flex items-center justify-center text-black font-black italic">Q</div>
             <h1 class="text-2xl font-black tracking-tighter italic text-[#10b981]">QAVision</h1>
@@ -30,10 +63,19 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-8 pt-10 pb-32">
+    <header class="max-w-5xl mx-auto px-8 pt-12 pb-20 text-center reveal delay-1">
+        <h2 class="text-7xl font-black leading-[0.9] tracking-tighter mb-8">
+            Suite de Auditoría <br> <span class="text-[#10b981]">Automatizada.</span>
+        </h2>
+        <p class="max-w-2xl mx-auto text-gray-500 text-lg leading-relaxed font-medium">
+            Herramientas quirúrgicas para QA Analysts. Detectá regresiones visuales y fallos de interacción en segundos con precisión atómica.
+        </p>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-8 pb-32">
         
-        <!-- SECCIÓN 1: VRT QUIRÚRGICO (STAGING VS PROD) -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <!-- SECCIÓN 1: VRT QUIRÚRGICO -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center reveal delay-2">
             <div class="bg-tech border-tech p-10 rounded-[2.5rem] shadow-2xl">
                 <h3 class="text-xs font-black text-[#10b981] uppercase tracking-[0.3em] mb-8 italic">Módulo 01: VRT Engine</h3>
                 <div class="space-y-6 text-left">
@@ -49,49 +91,37 @@
                 <button id="btn-vrt" onclick="ejecutarVRT()" class="btn-emerald w-full py-5 mt-8 rounded-xl font-black text-[10px] uppercase tracking-widest">Lanzar Auditoría de Regresión</button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 gap-8 text-left">
+            <div class="grid grid-cols-1 gap-8 text-left">
                 <div class="space-y-2">
                     <span class="text-2xl font-black text-gray-800 tracking-tighter italic">01</span>
                     <h4 class="text-[10px] font-black text-[#10b981] uppercase tracking-widest">Definir Entornos</h4>
-                    <p class="text-gray-500 text-[11px] leading-relaxed">Cargá las URLs de Staging y Producción para sincronizar los ambientes.</p>
+                    <p class="text-gray-500 text-sm leading-relaxed">Sincronizá Staging y Producción para una comparación técnica sin ruidos.[cite: 1]</p>
                 </div>
                 <div class="space-y-2">
                     <span class="text-2xl font-black text-gray-800 tracking-tighter italic">02</span>
-                    <h4 class="text-[10px] font-black text-[#10b981] uppercase tracking-widest">Ejecutar VRT</h4>
-                    <p class="text-gray-500 text-[11px] leading-relaxed">QAVision renderiza y compara cada componente técnico de la UI.</p>
-                </div>
-                <div class="space-y-2">
-                    <span class="text-2xl font-black text-gray-800 tracking-tighter italic">03</span>
-                    <h4 class="text-[10px] font-black text-[#10b981] uppercase tracking-widest">Analizar Reporte</h4>
-                    <p class="text-gray-500 text-[11px] leading-relaxed">Identificá al instante discrepancias de color, fuente y posición.</p>
+                    <h4 class="text-[10px] font-black text-[#10b981] uppercase tracking-widest">Análisis Atómico</h4>
+                    <p class="text-gray-500 text-sm leading-relaxed">El motor extrae los estilos computados del DOM para detectar cambios reales.[cite: 1]</p>
                 </div>
             </div>
         </div>
 
-        <div class="divider"></div>
+        <div class="divider reveal delay-3"></div>
 
         <!-- SECCIÓN 2: AUDITORÍA DE ENLACES E INTERACCIÓN -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center flex-row-reverse">
-            <!-- Texto descriptivo a la izquierda (según referencia image_767c1c.png) -->
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 gap-8 text-left order-2 lg:order-1">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center reveal delay-3">
+            <div class="grid grid-cols-1 gap-8 text-left order-2 lg:order-1">
                 <div class="space-y-2">
                     <span class="text-2xl font-black text-gray-800 tracking-tighter italic">01</span>
-                    <h4 class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Crawler Activo</h4>
-                    <p class="text-gray-500 text-[11px] leading-relaxed">Escaneo recursivo de todos los tags clickeables en el sitio.</p>
+                    <h4 class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Crawler Funcional</h4>
+                    <p class="text-gray-500 text-sm leading-relaxed">Escaneo recursivo para validar que cada botón y enlace sea operativo.</p>
                 </div>
                 <div class="space-y-2">
                     <span class="text-2xl font-black text-gray-800 tracking-tighter italic">02</span>
-                    <h4 class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Status Check</h4>
-                    <p class="text-gray-500 text-[11px] leading-relaxed">Validación HTTP para detectar enlaces rotos (404/500).</p>
-                </div>
-                <div class="space-y-2">
-                    <span class="text-2xl font-black text-gray-800 tracking-tighter italic">03</span>
-                    <h4 class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Interactividad</h4>
-                    <p class="text-gray-500 text-[11px] leading-relaxed">Detección de botones bloqueados o elementos no clickeables.</p>
+                    <h4 class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Broken Links</h4>
+                    <p class="text-gray-500 text-sm leading-relaxed">Detección instantánea de errores 404, 500 y redirecciones rotas.</p>
                 </div>
             </div>
 
-            <!-- Formulario a la derecha -->
             <div class="bg-tech border-tech p-10 rounded-[2.5rem] shadow-2xl order-1 lg:order-2">
                 <h3 class="text-xs font-black text-emerald-500 uppercase tracking-[0.3em] mb-8 italic">Módulo 02: Interaction Audit</h3>
                 <div class="space-y-6 text-left">
@@ -100,13 +130,13 @@
                         <input type="text" id="url_links" placeholder="https://www.tusitio.com" class="w-full input-dark p-4 rounded-xl text-sm text-emerald-400 font-mono">
                     </div>
                 </div>
-                <button id="btn-links" onclick="alert('Iniciando Crawler funcional...')" class="btn-emerald w-full py-5 mt-8 rounded-xl font-black text-[10px] uppercase tracking-widest">Analizar Interacción y Enlaces</button>
+                <button id="btn-links" onclick="alert('Módulo de interacción en desarrollo...')" class="btn-emerald w-full py-5 mt-8 rounded-xl font-black text-[10px] uppercase tracking-widest">Analizar Interacción y Enlaces</button>
             </div>
         </div>
 
     </main>
 
-    <footer class="py-16 text-center border-t border-gray-900 bg-black">
+    <footer class="py-16 text-center border-t border-gray-900 bg-black reveal delay-3">
         <p class="text-[9px] font-black text-gray-700 uppercase tracking-[0.4em]">QAVision &copy; 2026 // Senior UI Testing Architecture</p>
     </footer>
 
@@ -115,10 +145,11 @@
             const btn = document.getElementById('btn-vrt');
             const urlA = document.getElementById('url_a').value;
             const urlB = document.getElementById('url_b').value;
-            btn.innerText = 'PROCESANDO CAPTURAS...';
+            btn.innerText = 'PROCESANDO...';
             btn.disabled = true;
 
             try {
+                // Conexión real a tu API en Hugging Face[cite: 1]
                 const response = await fetch('https://qavision-qavision-engine.hf.space/api/comparar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -126,7 +157,7 @@
                 });
                 if (response.ok) window.location.href = 'dashboard.html';
             } catch (e) {
-                alert('Error al conectar con Hugging Face');
+                alert('Error al conectar con el motor');
                 btn.innerText = 'Lanzar Auditoría de Regresión';
                 btn.disabled = false;
             }
