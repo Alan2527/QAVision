@@ -145,41 +145,67 @@
 
     <!-- Script de Conexión con el Backend (Con URL Real de HF) -->
     <script>
-        async function ejecutarAuditoria() {
-            const url_a = document.getElementById('url_a').value;
-            const url_b = document.getElementById('url_b').value;
-            const btn = document.getElementById('btn-ejecutar');
-            
-            // Feedback visual mientras carga
-            const textoOriginal = btn.innerText;
-            btn.innerText = 'Ejecutando Motor VRT (Aguardá unos segundos)...';
+        async function runComparison() {
+            const urlA = document.getElementById('url_a').value;
+            const urlB = document.getElementById('url_b').value;
+            const btn = document.getElementById('btn-compare');
+            const btnText = document.getElementById('btn-text');
+            const loader = document.getElementById('loader');
+            const resultContainer = document.getElementById('result-container');
+
+            if (!urlA || !urlB) {
+                alert("Debes ingresar ambas URLs para realizar la auditoría.");
+                return;
+            }
+
+            // Estado de UI: Cargando
             btn.disabled = true;
-            btn.classList.add('cursor-wait');
+            btnText.innerText = "Analizando propiedades del DOM...";
+            loader.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
 
             try {
-                // URL real armada en base a tu espacio: QAVision/qavision-engine
-                const API_URL = 'https://qavision-qavision-engine.hf.space/api/comparar'; 
-                
-                const response = await fetch(API_URL, {
+                // Llamada al motor en Hugging Face
+                const response = await fetch('https://qavision-qavision-engine.hf.space/api/comparar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url_a: url_a, url_b: url_b })
+                    body: JSON.stringify({ url_a: urlA, url_b: urlB })
                 });
 
-                if (response.ok) {
-                    // Redirige al dashboard al terminar con éxito
-                    window.location.href = '/dashboard.html';
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    const statusText = document.getElementById('result-status');
+                    const detailText = document.getElementById('result-detail');
+                    
+                    // Limpiamos clases de borde previas
+                    resultContainer.className = "mt-8 p-6 bg-[#1e293b] rounded-xl border";
+
+                    if (data.diferencias > 0) {
+                        // Fallo: Discrepancia detectada
+                        resultContainer.classList.add('border-red-500/50');
+                        statusText.innerText = "❌ Discrepancia de Atributos";
+                        statusText.className = "text-xl font-bold text-red-400";
+                        detailText.innerText = `Se detectaron ${data.diferencias} componentes con cambios técnicos en CSS o estructura HTML.`;
+                    } else {
+                        // Éxito: Sincronización total
+                        resultContainer.classList.add('border-green-500/50');
+                        statusText.innerText = "✅ Componentes Sincronizados";
+                        statusText.className = "text-xl font-bold text-[#10b981]";
+                        detailText.innerText = "Todas las propiedades analizadas coinciden perfectamente entre entornos.";
+                    }
+
+                    resultContainer.classList.remove('hidden');
                 } else {
-                    throw new Error('Error en el procesamiento del servidor.');
+                    alert("Error en el motor: " + (data.mensaje || "Error desconocido"));
                 }
             } catch (error) {
-                alert('Fallo al conectar con el motor VRT. Revisá la consola o que tu API en Hugging Face esté activa.');
-                console.error('Error de API:', error);
-                
-                // Restaurar botón en caso de error
-                btn.innerText = textoOriginal;
+                console.error("Error de conexión:", error);
+                alert("No se pudo conectar con el motor de QAVision. Verificá que el Space en Hugging Face esté 'Running'.");
+            } finally {
                 btn.disabled = false;
-                btn.classList.remove('cursor-wait');
+                btnText.innerText = "Ejecutar Auditoría Técnica";
+                loader.classList.add('hidden');
             }
         }
     </script>
