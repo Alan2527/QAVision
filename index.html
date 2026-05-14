@@ -96,12 +96,12 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 text-left">
                 <div class="space-y-3">
                     <label class="text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] ml-2">Ambiente de Referencia (Staging)</label>
-                    <input type="text" id="url_a" value="https://staging.xfit.com" 
+                    <input type="text" id="url_a" value="https://polite-croissant-2576ee.netlify.app" 
                            class="w-full input-dark p-5 rounded-2xl text-sm text-[#10b981] font-mono">
                 </div>
                 <div class="space-y-3">
                     <label class="text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] ml-2">Ambiente a Validar (Prod)</label>
-                    <input type="text" id="url_b" value="https://www.xfit.com" 
+                    <input type="text" id="url_b" value="https://lustrous-tapioca-75c610.netlify.app" 
                            class="w-full input-dark p-5 rounded-2xl text-sm text-[#10b981] font-mono">
                 </div>
             </div>
@@ -143,7 +143,7 @@
         </p>
     </footer>
 
-    <!-- Script de Conexión con el Backend -->
+    <!-- Script de Conexión con el Backend (Con URL Real de HF) -->
     <script>
         async function ejecutarAuditoria() {
             const url_a = document.getElementById('url_a').value;
@@ -157,8 +157,8 @@
             btn.classList.add('cursor-wait');
 
             try {
-                // IMPORTANTE: Reemplazá esta URL por la de tu API en Hugging Face
-                const API_URL = 'https://TU-ESPACIO-DE-HUGGINGFACE.hf.space/api/comparar'; 
+                // URL real armada en base a tu espacio: QAVision/qavision-engine
+                const API_URL = 'https://qavision-qavision-engine.hf.space/api/comparar'; 
                 
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -173,7 +173,7 @@
                     throw new Error('Error en el procesamiento del servidor.');
                 }
             } catch (error) {
-                alert('Fallo al conectar con el motor VRT. Revisá la consola o que tu API esté activa.');
+                alert('Fallo al conectar con el motor VRT. Revisá la consola o que tu API en Hugging Face esté activa.');
                 console.error('Error de API:', error);
                 
                 // Restaurar botón en caso de error
