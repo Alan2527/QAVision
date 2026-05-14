@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QAVision - Visual Regression Engine</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <style>
+        /* Negro Absoluto y Contraste Extremo */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .border-tech { border: 1px solid #111827; }
+        .bg-tech { background-color: #050505; }
+        
+        .btn-emerald {
+            background-color: #10b981;
+            color: #000000;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-emerald:hover {
+            background-color: #34d399;
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+        .btn-emerald:disabled {
+            background-color: #064e3b;
+            color: #9ca3af;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .input-dark {
+            background-color: #000000;
+            border: 1px solid #1f2937;
+            transition: all 0.3s ease;
+        }
+        .input-dark:focus {
+            border-color: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.1);
+            outline: none;
+        }
+
+        /* Animación sutil de pulso para el estado Live */
+        @keyframes pulse-emerald {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .status-pulse {
+            animation: pulse-emerald 2s infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <nav class="max-w-7xl mx-auto px-8 py-10 flex justify-between items-center">
+        <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 bg-[#10b981] rounded-lg flex items-center justify-center">
+                <span class="text-black font-black text-xl italic">Q</span>
+            </div>
+            <h1 class="text-2xl font-black tracking-tighter italic text-[#10b981]">QAVision</h1>
+        </div>
+        <div class="flex items-center space-x-8">
+            <a href="#" class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 hover:text-white transition">Login</a>
+            <a href="#" class="bg-white text-black px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-[#10b981] transition">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <main class="max-w-5xl mx-auto px-8 pt-12 pb-32 text-center">
+        <!-- Badge Live -->
+        <div class="inline-flex items-center space-x-3 px-4 py-2 rounded-full border border-[#10b981]/20 bg-[#10b981]/5 mb-12">
+            <span class="w-2 h-2 rounded-full bg-[#10b981] status-pulse"></span>
+            <span class="text-[#10b981] text-[9px] font-black uppercase tracking-[0.3em]">Next-Gen Visual Auditor Active</span>
+        </div>
+
+        <h2 class="text-7xl font-black leading-[0.9] tracking-tighter mb-8">
+            Auditá tu Interfaz con <br>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#10b981] via-emerald-400 to-emerald-200">Precisión Atómica.</span>
+        </h2>
+        
+        <p class="max-w-2xl mx-auto text-gray-500 text-lg mb-16 leading-relaxed font-medium">
+            No más comparaciones de píxeles fallidas. QAVision analiza los estilos computados del DOM para detectar cambios reales en CSS, fuentes y posiciones.
+        </p>
+
+        <!-- Formulario Principal -->
+        <div class="max-w-3xl mx-auto bg-tech border-tech p-12 rounded-[3rem] shadow-[0_40px_100px_rgba(0,0,0,0.8)]">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10 text-left">
+                <div class="space-y-3">
+                    <label class="text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] ml-2">Ambiente de Referencia (Staging)</label>
+                    <input type="text" id="url_a" value="https://staging.xfit.com" 
+                           class="w-full input-dark p-5 rounded-2xl text-sm text-[#10b981] font-mono">
+                </div>
+                <div class="space-y-3">
+                    <label class="text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] ml-2">Ambiente a Validar (Prod)</label>
+                    <input type="text" id="url_b" value="https://www.xfit.com" 
+                           class="w-full input-dark p-5 rounded-2xl text-sm text-[#10b981] font-mono">
+                </div>
+            </div>
+            <button id="btn-ejecutar" onclick="ejecutarAuditoria()" 
+                    class="btn-emerald w-full py-6 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-2xl">
+                Lanzar Auditoría de Regresión
+            </button>
+        </div>
+    </main>
+
+    <!-- Sección de Pasos (ENFOQUE DE USUARIO) -->
+    <section class="max-w-6xl mx-auto px-8 py-24 border-t border-gray-900">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-20">
+            <!-- Paso 1 -->
+            <div class="space-y-6">
+                <div class="text-4xl font-black text-gray-800 tracking-tighter">01</div>
+                <h4 class="text-xs font-black uppercase tracking-widest text-[#10b981]">Definir Entornos</h4>
+                <p class="text-gray-500 text-sm leading-relaxed">Cargá las URLs de tu ambiente de prueba (Staging) y el productivo. Sin instalación de librerías, scripts ni configuraciones complejas.</p>
+            </div>
+            <!-- Paso 2 -->
+            <div class="space-y-6">
+                <div class="text-4xl font-black text-gray-800 tracking-tighter">02</div>
+                <h4 class="text-xs font-black uppercase tracking-widest text-[#10b981]">Ejecutar Motor VRT</h4>
+                <p class="text-gray-500 text-sm leading-relaxed">Dispará la auditoría con un clic. QAVision se encarga de renderizar y comparar todos los componentes de tu UI de forma automatizada.</p>
+            </div>
+            <!-- Paso 3 -->
+            <div class="space-y-6">
+                <div class="text-4xl font-black text-gray-800 tracking-tighter">03</div>
+                <h4 class="text-xs font-black uppercase tracking-widest text-[#10b981]">Analizar Reporte</h4>
+                <p class="text-gray-500 text-sm leading-relaxed">Accedé a un dashboard interactivo. Identificá al instante qué propiedad CSS exacta (color, tamaño, posición) rompió el diseño.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-20 text-center border-t border-gray-900">
+        <p class="text-[9px] font-black text-gray-700 uppercase tracking-[0.5em]">
+            QAVision &bull; Professional Testing Suite &bull; 2026
+        </p>
+    </footer>
+
+    <!-- Script de Conexión con el Backend -->
+    <script>
+        async function ejecutarAuditoria() {
+            const url_a = document.getElementById('url_a').value;
+            const url_b = document.getElementById('url_b').value;
+            const btn = document.getElementById('btn-ejecutar');
+            
+            // Feedback visual mientras carga
+            const textoOriginal = btn.innerText;
+            btn.innerText = 'Ejecutando Motor VRT (Aguardá unos segundos)...';
+            btn.disabled = true;
+            btn.classList.add('cursor-wait');
+
+            try {
+                // IMPORTANTE: Reemplazá esta URL por la de tu API en Hugging Face
+                const API_URL = 'https://TU-ESPACIO-DE-HUGGINGFACE.hf.space/api/comparar'; 
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url_a: url_a, url_b: url_b })
+                });
+
+                if (response.ok) {
+                    // Redirige al dashboard al terminar con éxito
+                    window.location.href = '/dashboard.html';
+                } else {
+                    throw new Error('Error en el procesamiento del servidor.');
+                }
+            } catch (error) {
+                alert('Fallo al conectar con el motor VRT. Revisá la consola o que tu API esté activa.');
+                console.error('Error de API:', error);
+                
+                // Restaurar botón en caso de error
+                btn.innerText = textoOriginal;
+                btn.disabled = false;
+                btn.classList.remove('cursor-wait');
+            }
+        }
+    </script>
+</body>
+</html>

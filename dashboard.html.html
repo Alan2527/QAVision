@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>QAVision - Auditoría de Componentes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-[#0f172a] text-white min-h-screen flex">
+    <!-- Sidebar -->
+    <aside class="w-72 bg-[#1e293b] p-6 border-r border-gray-700 h-screen sticky top-0">
+        <h1 class="text-2xl font-bold text-[#10b981] mb-8">QAVision</h1>
+        <p class="text-xs font-bold text-gray-500 uppercase mb-4">Historial de Auditoría</p>
+        <div id="historial" class="space-y-3 overflow-y-auto max-h-[70vh]"></div>
+    </aside>
+
+    <!-- Main -->
+    <main class="flex-1 p-10">
+        <header class="flex justify-between items-end mb-10">
+            <div>
+                <h2 class="text-4xl font-bold">Reporte de Componentes</h2>
+                <p id="sub-header" class="text-gray-400 mt-2">Cargando última prueba...</p>
+            </div>
+            <span id="badge" class="px-4 py-2 rounded-full text-xs font-black uppercase tracking-tighter"></span>
+        </header>
+
+        <!-- Diferencia Visual Principal: AJUSTADA PARA EL FOOTER -->
+        <div class="bg-[#1e293b] rounded-3xl p-8 border border-gray-700 shadow-2xl mb-10">
+            <h3 class="text-gray-500 text-xs font-bold uppercase mb-6">Mapa de Atributos CSS (Diferencias marcadas)</h3>
+            
+            <!-- Eliminamos overflow-hidden y flex-justify-center para que no colapse -->
+            <!-- Agregamos pb-12 para que las etiquetas del footer tengan espacio abajo -->
+            <div class="bg-[#0f172a] rounded-2xl border border-gray-800 p-4 pb-12">
+                <img id="img-diff" src="" class="w-full h-auto block" style="image-rendering: -webkit-optimize-contrast;">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-10">
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-gray-700">
+                <p class="text-xs font-bold text-gray-500 uppercase mb-4">Ambiente A (Expected)</p>
+                <img id="img-a" src="" class="rounded-xl w-full">
+            </div>
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-gray-700">
+                <p class="text-xs font-bold text-gray-500 uppercase mb-4">Ambiente B (Actual)</p>
+                <img id="img-b" src="" class="rounded-xl w-full">
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const sb = supabase.createClient("https://xdufdcwvaxvcdcjgdvvt.supabase.co", "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf");
+
+        async function init() {
+            const { data } = await sb.from('pruebas_qa').select('*').order('creado_el', { ascending: false });
+            if (data && data.length > 0) {
+                const last = data[0];
+                document.getElementById('img-diff').src = last.img_diff_url || last.img_a_url;
+                document.getElementById('img-a').src = last.img_a_url;
+                document.getElementById('img-b').src = last.img_b_url;
+                document.getElementById('sub-header').innerText = `Comparativa ejecutada el ${new Date(last.creado_el).toLocaleString()}`;
+                
+                const badge = document.getElementById('badge');
+                if (last.diferencias > 0) {
+                    badge.innerText = `${last.diferencias} Errores de Propiedad`;
+                    badge.className = "px-4 py-2 rounded-full text-xs font-black uppercase bg-red-500/20 text-red-500 border border-red-500/50";
+                } else {
+                    badge.innerText = "UI Match";
+                    badge.className = "px-4 py-2 rounded-full text-xs font-black uppercase bg-green-500/20 text-green-500 border border-green-500/50";
+                }
+
+                document.getElementById('historial').innerHTML = data.slice(0, 10).map(i => `
+                    <div class="p-3 bg-[#334155] rounded-xl border-l-4 ${i.diferencias > 0 ? 'border-red-500' : 'border-green-500'} mb-2">
+                        <p class="text-[10px] font-bold text-gray-400">${new Date(i.creado_el).toLocaleTimeString()}</p>
+                        <p class="text-xs truncate">${i.url_a}</p>
+                    </div>
+                `).join('');
+            }
+        }
+        init();
+    </script>
+</body>
+</html>
