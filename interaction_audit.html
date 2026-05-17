@@ -12,6 +12,29 @@
         .bg-tech { background-color: #050505; border: 1px solid #111827; }
         .status-ok { color: #10b981; background: rgba(16, 185, 129, 0.1); }
         .status-error { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+        /* Tooltip motivo obstrucción */
+        .motivo-tooltip {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 6px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            border: 1px solid #374151;
+            color: #f9fafb;
+            font-size: 10px;
+            font-family: monospace;
+            padding: 6px 10px;
+            border-radius: 8px;
+            white-space: nowrap;
+            z-index: 50;
+            max-width: 320px;
+            white-space: normal;
+            text-align: left;
+        }
+        .motivo-wrap { position: relative; display: inline-block; }
+        .motivo-wrap:hover .motivo-tooltip { display: block; }
     </style>
 </head>
 <body class="p-8">
@@ -44,7 +67,7 @@
             <table class="w-full text-left">
                 <thead class="bg-[#0a0a0a] border-b border-gray-900">
                     <tr>
-                        <th class="p-6 text-[10px] font-black uppercase text-gray-500">Texto</th>
+                        <th class="p-6 text-[10px] font-black uppercase text-gray-500">Texto / Etiqueta</th>
                         <th class="p-6 text-[10px] font-black uppercase text-gray-500 text-center">Tag</th>
                         <th class="p-6 text-[10px] font-black uppercase text-gray-500">URL / Destino</th>
                         <th class="p-6 text-[10px] font-black uppercase text-gray-500 text-center">Interacción</th>
@@ -58,8 +81,6 @@
     <script>
         const SB_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
         const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
-        
-        // CAMBIO CRÍTICO: Usamos el objeto global 'supabase' para crear el cliente 'qaClient'
         const qaClient = supabase.createClient(SB_URL, SB_KEY);
 
         async function cargarReporte() {
@@ -79,17 +100,45 @@
             reporte.forEach(item => {
                 const tr = document.createElement('tr');
                 tr.className = "border-b border-gray-900/50 hover:bg-white/5 transition-colors";
-                if(item.obstruido) obs++;
+                if (item.obstruido) obs++;
+
+                // Texto enriquecido: si es una etiqueta técnica, mostrarla en gris
+                const esSinEtiqueta = !item.texto || item.texto.startsWith('[');
+                const textoHTML = esSinEtiqueta
+                    ? `<span class="text-xs font-mono text-gray-600 italic">${item.texto || '[sin etiqueta]'}</span>`
+                    : `<span class="text-sm font-bold">${item.texto}</span>`;
+
+                // Badge de interacción con tooltip de motivo si está obstruido
+                let interaccionHTML;
+                if (item.obstruido) {
+                    const motivo = item.motivo_obstruccion || 'Motivo no disponible';
+                    interaccionHTML = `
+                        <div class="motivo-wrap">
+                            <span class="text-[10px] font-black px-3 py-1 rounded-full status-error cursor-help">
+                                OBSTRUIDO ⓘ
+                            </span>
+                            <div class="motivo-tooltip">
+                                <span class="text-red-400 font-black block mb-1">Motivo:</span>
+                                ${motivo}
+                            </div>
+                        </div>`;
+                } else {
+                    interaccionHTML = `<span class="text-[10px] font-black px-3 py-1 rounded-full status-ok">LIBRE</span>`;
+                }
 
                 tr.innerHTML = `
-                    <td class="p-6"><span class="text-sm font-bold block">${item.texto || 'Sin texto'}</span></td>
-                    <td class="p-6 text-center"><span class="text-[9px] font-black px-2 py-1 rounded bg-gray-900 text-gray-400 uppercase">${item.tipo || 'tag'}</span></td>
-                    <td class="p-6"><span class="text-xs font-mono text-gray-500 truncate block max-w-xs">${item.href || item.url || '-'}</span></td>
+                    <td class="p-6">${textoHTML}</td>
                     <td class="p-6 text-center">
-                        <span class="text-[10px] font-black px-3 py-1 rounded-full ${item.obstruido ? 'status-error' : 'status-ok'}">
-                            ${item.obstruido ? 'OBSTRUIDO' : 'LIBRE'}
+                        <span class="text-[9px] font-black px-2 py-1 rounded bg-gray-900 text-gray-400 uppercase">
+                            ${item.tipo || 'tag'}
                         </span>
                     </td>
+                    <td class="p-6">
+                        <span class="text-xs font-mono text-gray-500 truncate block max-w-xs">
+                            ${item.href || item.url || '-'}
+                        </span>
+                    </td>
+                    <td class="p-6 text-center">${interaccionHTML}</td>
                 `;
                 tabla.appendChild(tr);
             });
