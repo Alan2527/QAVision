@@ -3,164 +3,298 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QAVision - Interaction Dashboard</title>
+    <title>QAVision - Advanced Audit Suite</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #000000; color: #ffffff; margin: 0; }
-        .bg-tech { background-color: #050505; border: 1px solid #111827; }
-        .status-ok { color: #10b981; background: rgba(16, 185, 129, 0.1); }
-        .status-error { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
-
-        /* Tooltip motivo obstrucción */
-        .motivo-tooltip {
-            display: none;
-            position: absolute;
-            bottom: calc(100% + 6px);
-            left: 50%;
-            transform: translateX(-50%);
-            background: #1f2937;
-            border: 1px solid #374151;
-            color: #f9fafb;
-            font-size: 10px;
-            font-family: monospace;
-            padding: 6px 10px;
-            border-radius: 8px;
-            white-space: nowrap;
-            z-index: 50;
-            max-width: 320px;
-            white-space: normal;
-            text-align: left;
+        body { font-family: 'Inter', sans-serif; background-color: #000000; color: #ffffff; margin: 0; overflow-x: hidden; }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .motivo-wrap { position: relative; display: inline-block; }
-        .motivo-wrap:hover .motivo-tooltip { display: block; }
+        .reveal-init { animation: fadeInUp 1s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        .delay-1 { animation-delay: 0.2s; opacity: 0; }
+
+        .reveal-on-scroll {
+            opacity: 0;
+            transform: translateY(100px) scale(0.95);
+            transition: all 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+            filter: blur(5px);
+        }
+
+        .reveal-on-scroll.active {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+        }
+
+        .border-tech { border: 1px solid #111827; }
+        .bg-tech { background-color: #050505; }
+        .btn-action { transition: all 0.3s ease; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; }
+        .btn-action:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 0 25px currentColor; }
+        .input-dark { background-color: #000000; border: 1px solid #1f2937; transition: all 0.3s ease; }
+        .input-dark:focus { border-color: currentColor; outline: none; }
+        .divider { border-top: 1px solid #111827; margin: 120px 0; }
+
+        /* Selector de cantidad de elementos */
+        .selector-elementos { display: flex; gap: 8px; margin-top: 12px; }
+        .selector-elementos button {
+            flex: 1; padding: 8px 0; border-radius: 10px; font-size: 11px;
+            font-weight: 900; letter-spacing: 0.1em; border: 1px solid #1f2937;
+            background: #000; color: #6b7280; cursor: pointer; transition: all 0.2s;
+        }
+        .selector-elementos button.active {
+            border-color: #10b981; color: #10b981; background: #10b98115;
+        }
+        /* Checkboxes de tipos de elementos */
+        .tipos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+        .tipo-check { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 7px 10px;
+            border-radius: 8px; border: 1px solid #1f2937; background: #000; transition: all 0.2s; }
+        .tipo-check:hover { border-color: #374151; }
+        .tipo-check input[type="checkbox"] { accent-color: #10b981; width: 13px; height: 13px; cursor: pointer; }
+        .tipo-check span { font-size: 10px; font-weight: 900; letter-spacing: 0.08em; color: #6b7280;
+            text-transform: uppercase; }
+        .tipo-check.checked { border-color: #10b98155; background: #10b98108; }
+        .tipo-check.checked span { color: #10b981; }
     </style>
 </head>
-<body class="p-8">
+<body>
 
-    <header class="max-w-7xl mx-auto flex justify-between items-center mb-12">
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-[#10b981] rounded-xl flex items-center justify-center text-black font-black italic text-xl">Q</div>
+    <nav class="max-w-7xl mx-auto px-8 py-10 flex justify-between items-center reveal-init">
+        <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 bg-[#10b981] rounded-lg flex items-center justify-center text-black font-black italic text-xl">Q</div>
             <h1 class="text-2xl font-black tracking-tighter italic text-[#10b981]">QAVision</h1>
         </div>
-        <a href="index.html" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition">← Volver al Panel</a>
+        <div class="space-x-8 text-[10px] font-black uppercase text-gray-500">
+            <a href="#" class="hover:text-white transition">Login</a>
+            <a href="#" class="bg-white text-black px-6 py-2.5 rounded-xl hover:bg-[#10b981] transition">Get Started</a>
+        </div>
+    </nav>
+
+    <header class="max-w-5xl mx-auto px-8 pt-12 pb-24 text-center reveal-init delay-1">
+        <h2 class="text-7xl font-black leading-[0.9] tracking-tighter mb-8 italic">
+            Blindaje de Interfaz <br> <span class="text-[#10b981]">Sin Puntos Ciegos.</span>
+        </h2>
+        <p class="max-w-3xl mx-auto text-gray-400 text-lg leading-relaxed font-medium">
+            Erradicamos la incertidumbre en tus despliegues. QAVision fusiona análisis de regresión visual y auditoría funcional para garantizar que cada píxel y cada interacción se comporten exactamente como fueron diseñados.
+        </p>
     </header>
 
-    <main class="max-w-7xl mx-auto">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 text-center">
-            <div class="bg-tech p-6 rounded-2xl">
-                <p class="text-[10px] font-black text-gray-500 uppercase mb-2">Total Elementos</p>
-                <h2 id="stat-total" class="text-4xl font-black tracking-tighter italic">-</h2>
+    <main class="max-w-6xl mx-auto px-8 pb-32">
+        
+        <section class="reveal-on-scroll grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div class="bg-tech border-tech p-10 rounded-[2.5rem] shadow-2xl">
+                <h3 class="text-[10px] font-black text-[#10b981] uppercase tracking-[0.3em] mb-8 italic">01 // Visual Regression Engine</h3>
+                <div class="space-y-6">
+                    <!-- FIX: Validación — campos con placeholder claro -->
+                    <input type="text" id="url_a" placeholder="https://staging.tusitio.com" value="https://polite-croissant-2576ee.netlify.app" class="w-full input-dark p-4 rounded-xl text-sm text-[#10b981] font-mono shadow-inner">
+                    <input type="text" id="url_b" placeholder="https://www.tusitio.com" value="https://lustrous-tapioca-75c610.netlify.app" class="w-full input-dark p-4 rounded-xl text-sm text-[#10b981] font-mono shadow-inner">
+                </div>
+                <button onclick="ejecutarVRT()" id="btn-vrt" class="btn-action bg-[#10b981] text-black w-full py-5 mt-8 rounded-xl text-[10px]">Lanzar Auditoría Visual</button>
             </div>
-            <div class="bg-tech p-6 rounded-2xl border-red-900/30">
-                <p class="text-[10px] font-black text-red-500 uppercase mb-2">Obstruidos</p>
-                <h2 id="stat-obstruidos" class="text-4xl font-black tracking-tighter italic text-red-500">-</h2>
+            <div class="space-y-4 text-left">
+                <h4 class="text-xs font-black text-[#10b981] uppercase tracking-widest">Análisis de Regresión de Precisión</h4>
+                <p class="text-gray-500 text-sm leading-relaxed">
+                    Sincronizamos tus ambientes de Staging y Producción para detectar discrepancias visuales imperceptibles al ojo humano.
+                    Nuestro motor analiza directamente los estilos computados del DOM, garantizando que cada cambio en el CSS sea reportado antes de que afecte a tus usuarios.
+                </p>
             </div>
-            <div class="bg-tech p-6 rounded-2xl border-emerald-900/30">
-                <p class="text-[10px] font-black text-[#10b981] uppercase mb-2">Saludables</p>
-                <h2 id="stat-ok" class="text-4xl font-black tracking-tighter italic text-[#10b981]">-</h2>
-            </div>
-        </div>
+        </section>
 
-        <div class="bg-tech rounded-[2rem] overflow-hidden">
-            <table class="w-full text-left">
-                <thead class="bg-[#0a0a0a] border-b border-gray-900">
-                    <tr>
-                        <th class="p-6 text-[10px] font-black uppercase text-gray-500">Texto / Etiqueta</th>
-                        <th class="p-6 text-[10px] font-black uppercase text-gray-500 text-center">Tag</th>
-                        <th class="p-6 text-[10px] font-black uppercase text-gray-500">URL / Destino</th>
-                        <th class="p-6 text-[10px] font-black uppercase text-gray-500 text-center">Interacción</th>
-                    </tr>
-                </thead>
-                <tbody id="lista-elementos"></tbody>
-            </table>
-        </div>
+        <div class="divider"></div>
+
+        <section class="reveal-on-scroll grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div class="space-y-4 text-left order-2 lg:order-1">
+                <h4 class="text-xs font-black text-emerald-400 uppercase tracking-widest">Crawler de Interacción Funcional</h4>
+                <p class="text-gray-500 text-sm leading-relaxed">
+                    Aseguramos que tu sitio no sea solo una cara bonita.
+                    Este módulo realiza un escaneo recursivo buscando enlaces rotos (404/500) y botones bloqueados que frustran la conversión.
+                    Validamos la navegabilidad real de cada componente clickeable eliminando popups y anuncios automáticamente.
+                </p>
+            </div>
+            <div class="bg-tech border-tech p-10 rounded-[2.5rem] shadow-2xl order-1 lg:order-2">
+                <h3 class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-8 italic">02 // Interaction Audit</h3>
+                <input type="text" id="url_links" placeholder="https://www.tusitio.com" class="w-full input-dark p-4 rounded-xl text-sm text-emerald-400 font-mono">
+                
+                <!-- Selector de cantidad de elementos -->
+                <div class="mt-4">
+                    <p class="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">Elementos a auditar</p>
+                    <div class="selector-elementos" id="selector-elementos">
+                        <button onclick="seleccionarElementos(50, this)" class="active">50</button>
+                        <button onclick="seleccionarElementos(100, this)">100</button>
+                        <button onclick="seleccionarElementos(150, this)">150</button>
+                        <button onclick="seleccionarElementos(200, this)">200</button>
+                    </div>
+                </div>
+
+                <!-- Selector de tipos de elementos -->
+                <div class="mt-4">
+                    <p class="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">Tipos a auditar</p>
+                    <div class="tipos-grid" id="tipos-grid">
+                        <label class="tipo-check checked" id="check-a">
+                            <input type="checkbox" value="a" checked onchange="toggleTipo(this)">
+                            <span>Enlaces &lt;a&gt;</span>
+                        </label>
+                        <label class="tipo-check checked" id="check-button">
+                            <input type="checkbox" value="button" checked onchange="toggleTipo(this)">
+                            <span>Botones</span>
+                        </label>
+                        <label class="tipo-check checked" id="check-role_button">
+                            <input type="checkbox" value="role_button" checked onchange="toggleTipo(this)">
+                            <span>role=button</span>
+                        </label>
+                        <label class="tipo-check checked" id="check-role_link">
+                            <input type="checkbox" value="role_link" checked onchange="toggleTipo(this)">
+                            <span>role=link</span>
+                        </label>
+                        <label class="tipo-check checked" id="check-input_submit">
+                            <input type="checkbox" value="input_submit" checked onchange="toggleTipo(this)">
+                            <span>Submit</span>
+                        </label>
+                        <label class="tipo-check checked" id="check-onclick">
+                            <input type="checkbox" value="onclick" checked onchange="toggleTipo(this)">
+                            <span>onclick</span>
+                        </label>
+                    </div>
+                </div>
+
+                <button onclick="ejecutarLinks()" id="btn-links" class="btn-action bg-emerald-500 text-black w-full py-5 mt-8 rounded-xl text-[10px]">Escanear Enlaces e Interacción</button>
+            </div>
+        </section>
+
+        <div class="divider"></div>
+
+        <section class="reveal-on-scroll grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div class="bg-tech border-tech p-10 rounded-[2.5rem] shadow-2xl border-emerald-900/30">
+                <h3 class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-8 italic">03 // Core Web Vitals & SEO</h3>
+                <input type="text" id="url_perf" placeholder="https://www.tusitio.com" class="w-full input-dark p-4 rounded-xl text-sm text-emerald-400 font-mono">
+                <button onclick="alert('Diagnóstico técnico en desarrollo...')" class="btn-action bg-emerald-500 text-black w-full py-5 mt-8 rounded-xl text-[10px]">Analizar Rendimiento y SEO</button>
+            </div>
+            <div class="space-y-4 text-left">
+                <h4 class="text-xs font-black text-emerald-400 uppercase tracking-widest">Diagnóstico Técnico de Performance</h4>
+                <p class="text-gray-500 text-sm leading-relaxed">
+                    La velocidad es calidad.
+                    Auditamos tiempos de carga, estabilidad visual (CLS) y optimización de recursos bajo estándares de Core Web Vitals.
+                    Además, verificamos la accesibilidad y el SEO básico para que tu producto sea legible y competitivo.
+                </p>
+            </div>
+        </section>
+
     </main>
 
+    <footer class="py-16 text-center border-t border-gray-900">
+        <p class="text-[9px] font-black text-gray-700 uppercase tracking-[0.5em]">QAVision &copy; 2026 // Senior UI Testing Architecture</p>
+    </footer>
+
     <script>
-        const SB_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
-        const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
-        const qaClient = supabase.createClient(SB_URL, SB_KEY);
-
-        async function cargarReporte() {
-            const { data, error } = await qaClient
-                .from('auditoria_links')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(1);
-
-            if (error || !data.length) return console.error("Error o sin datos:", error);
-
-            const reporte = data[0].reporte;
-            const tabla = document.getElementById('lista-elementos');
-            let obs = 0;
-
-            tabla.innerHTML = '';
-            reporte.forEach(item => {
-                const tr = document.createElement('tr');
-                tr.className = "border-b border-gray-900/50 hover:bg-white/5 transition-colors";
-                if (item.obstruido) obs++;
-
-                // Texto enriquecido: si es una etiqueta técnica, mostrarla en gris
-                const esSinEtiqueta = !item.texto || item.texto.startsWith('[');
-                const textoHTML = esSinEtiqueta
-                    ? `<span class="text-xs font-mono text-gray-600 italic">${item.texto || '[sin etiqueta]'}</span>`
-                    : `<span class="text-sm font-bold">${item.texto}</span>`;
-
-                // Badge de interacción con tooltip de motivo si está obstruido
-                let interaccionHTML;
-                if (item.nota) {
-                    // Elemento no evaluable (ej: botón de carrusel no alcanzable)
-                    interaccionHTML = `
-                        <div class="motivo-wrap">
-                            <span class="text-[10px] font-black px-3 py-1 rounded-full cursor-help"
-                                style="color:#f59e0b;background:rgba(245,158,11,0.1)">
-                                N/A ⓘ
-                            </span>
-                            <div class="motivo-tooltip">
-                                <span class="font-black block mb-1" style="color:#f59e0b">Nota:</span>
-                                ${item.nota}
-                            </div>
-                        </div>`;
-                } else if (item.obstruido) {
-                    const motivo = item.motivo_obstruccion || 'Motivo no disponible';
-                    interaccionHTML = `
-                        <div class="motivo-wrap">
-                            <span class="text-[10px] font-black px-3 py-1 rounded-full status-error cursor-help">
-                                OBSTRUIDO ⓘ
-                            </span>
-                            <div class="motivo-tooltip">
-                                <span class="text-red-400 font-black block mb-1">Motivo:</span>
-                                ${motivo}
-                            </div>
-                        </div>`;
-                } else {
-                    interaccionHTML = `<span class="text-[10px] font-black px-3 py-1 rounded-full status-ok">LIBRE</span>`;
-                }
-
-                tr.innerHTML = `
-                    <td class="p-6">${textoHTML}</td>
-                    <td class="p-6 text-center">
-                        <span class="text-[9px] font-black px-2 py-1 rounded bg-gray-900 text-gray-400 uppercase">
-                            ${item.tipo || 'tag'}
-                        </span>
-                    </td>
-                    <td class="p-6">
-                        <span class="text-xs font-mono text-gray-500 truncate block max-w-xs">
-                            ${item.href || item.url || '-'}
-                        </span>
-                    </td>
-                    <td class="p-6 text-center">${interaccionHTML}</td>
-                `;
-                tabla.appendChild(tr);
+        const observerOptions = { threshold: 0.15 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('active');
             });
+        }, observerOptions);
+        document.querySelectorAll('.reveal-on-scroll').forEach(el => observer.observe(el));
 
-            document.getElementById('stat-total').innerText = reporte.length;
-            document.getElementById('stat-obstruidos').innerText = obs;
-            document.getElementById('stat-ok').innerText = reporte.length - obs;
+        const API_BASE = 'https://qavision-qavision-engine.hf.space/api';
+
+        // Estado del selector de elementos
+        let maxElementos = 50;
+        let tiposSeleccionados = ["a", "button", "role_button", "role_link", "input_submit", "onclick"];
+
+        function seleccionarElementos(cantidad, btn) {
+            maxElementos = cantidad;
+            document.querySelectorAll('#selector-elementos button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
-        cargarReporte();
+
+        function toggleTipo(checkbox) {
+            const valor = checkbox.value;
+            const label = checkbox.closest('.tipo-check');
+            if (checkbox.checked) {
+                if (!tiposSeleccionados.includes(valor)) tiposSeleccionados.push(valor);
+                label.classList.add('checked');
+            } else {
+                tiposSeleccionados = tiposSeleccionados.filter(t => t !== valor);
+                label.classList.remove('checked');
+            }
+            // Asegurar que al menos un tipo esté seleccionado
+            if (tiposSeleccionados.length === 0) {
+                checkbox.checked = true;
+                tiposSeleccionados.push(valor);
+                label.classList.add('checked');
+            }
+        }
+
+        // --- FUNCIÓN MÓDULO 1: VRT ---
+        async function ejecutarVRT() {
+            const btn = document.getElementById('btn-vrt');
+            const urlA = document.getElementById('url_a').value.trim();
+            const urlB = document.getElementById('url_b').value.trim();
+
+            // FIX: Validación de URLs antes de disparar
+            if (!urlA || !urlB) {
+                alert('Por favor, ingresá ambas URLs antes de lanzar la auditoría.');
+                return;
+            }
+
+            btn.innerText = 'AUDITANDO AMBIENTES...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/comparar`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url_a: urlA, url_b: urlB })
+                });
+
+                if (!response.ok) throw new Error('Error en el servidor');
+
+                // FIX: Esperamos el JSON completo antes de redirigir — garantiza que el insert en Supabase terminó
+                await response.json();
+                window.location.href = 'visual_regression.html';
+
+            } catch (e) {
+                // FIX: Feedback de error que antes faltaba en VRT
+                alert('Fallo en la comunicación con el motor VRT. Revisá la consola para más detalles.');
+                btn.innerText = 'Lanzar Auditoría Visual';
+                btn.disabled = false;
+            }
+        }
+
+        // --- FUNCIÓN MÓDULO 2: INTERACCIÓN ---
+        async function ejecutarLinks() {
+            const btn = document.getElementById('btn-links');
+            const url = document.getElementById('url_links').value.trim();
+            
+            if (!url) {
+                alert('Por favor, ingresá una URL válida.');
+                return;
+            }
+
+            btn.innerText = 'CRAWLEANDO INTERFAZ...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/auditar-links`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    // NUEVO: max_elementos configurable desde el selector
+                    body: JSON.stringify({ url: url, max_elementos: maxElementos, tipos: tiposSeleccionados })
+                });
+
+                if (!response.ok) throw new Error('Error en el servidor');
+
+                // FIX: Esperamos el JSON completo antes de redirigir
+                await response.json();
+                window.location.href = 'interaction_audit.html';
+
+            } catch (e) {
+                alert('Fallo al conectar con el motor de interacción.');
+                btn.innerText = 'Escanear Enlaces e Interacción';
+                btn.disabled = false;
+            }
+        }
     </script>
 </body>
 </html>
