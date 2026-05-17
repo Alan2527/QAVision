@@ -47,6 +47,16 @@
         .selector-elementos button.active {
             border-color: #10b981; color: #10b981; background: #10b98115;
         }
+        /* Checkboxes de tipos de elementos */
+        .tipos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+        .tipo-check { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 7px 10px;
+            border-radius: 8px; border: 1px solid #1f2937; background: #000; transition: all 0.2s; }
+        .tipo-check:hover { border-color: #374151; }
+        .tipo-check input[type="checkbox"] { accent-color: #10b981; width: 13px; height: 13px; cursor: pointer; }
+        .tipo-check span { font-size: 10px; font-weight: 900; letter-spacing: 0.08em; color: #6b7280;
+            text-transform: uppercase; }
+        .tipo-check.checked { border-color: #10b98155; background: #10b98108; }
+        .tipo-check.checked span { color: #10b981; }
     </style>
 </head>
 <body>
@@ -107,7 +117,7 @@
                 <h3 class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-8 italic">02 // Interaction Audit</h3>
                 <input type="text" id="url_links" placeholder="https://www.tusitio.com" class="w-full input-dark p-4 rounded-xl text-sm text-emerald-400 font-mono">
                 
-                <!-- NUEVO: Selector de cantidad de elementos -->
+                <!-- Selector de cantidad de elementos -->
                 <div class="mt-4">
                     <p class="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">Elementos a auditar</p>
                     <div class="selector-elementos" id="selector-elementos">
@@ -115,6 +125,37 @@
                         <button onclick="seleccionarElementos(100, this)">100</button>
                         <button onclick="seleccionarElementos(150, this)">150</button>
                         <button onclick="seleccionarElementos(200, this)">200</button>
+                    </div>
+                </div>
+
+                <!-- Selector de tipos de elementos -->
+                <div class="mt-4">
+                    <p class="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-2">Tipos a auditar</p>
+                    <div class="tipos-grid" id="tipos-grid">
+                        <label class="tipo-check checked" id="check-a">
+                            <input type="checkbox" value="a" checked onchange="toggleTipo(this)">
+                            <span>Enlaces &lt;a&gt;</span>
+                        </label>
+                        <label class="tipo-check checked" id="check-button">
+                            <input type="checkbox" value="button" checked onchange="toggleTipo(this)">
+                            <span>Botones</span>
+                        </label>
+                        <label class="tipo-check checked" id="check-role_button">
+                            <input type="checkbox" value="role_button" checked onchange="toggleTipo(this)">
+                            <span>role=button</span>
+                        </label>
+                        <label class="tipo-check checked" id="check-role_link">
+                            <input type="checkbox" value="role_link" checked onchange="toggleTipo(this)">
+                            <span>role=link</span>
+                        </label>
+                        <label class="tipo-check checked" id="check-input_submit">
+                            <input type="checkbox" value="input_submit" checked onchange="toggleTipo(this)">
+                            <span>Submit</span>
+                        </label>
+                        <label class="tipo-check checked" id="check-onclick">
+                            <input type="checkbox" value="onclick" checked onchange="toggleTipo(this)">
+                            <span>onclick</span>
+                        </label>
                     </div>
                 </div>
 
@@ -159,11 +200,30 @@
 
         // Estado del selector de elementos
         let maxElementos = 50;
+        let tiposSeleccionados = ["a", "button", "role_button", "role_link", "input_submit", "onclick"];
 
         function seleccionarElementos(cantidad, btn) {
             maxElementos = cantidad;
             document.querySelectorAll('#selector-elementos button').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+        }
+
+        function toggleTipo(checkbox) {
+            const valor = checkbox.value;
+            const label = checkbox.closest('.tipo-check');
+            if (checkbox.checked) {
+                if (!tiposSeleccionados.includes(valor)) tiposSeleccionados.push(valor);
+                label.classList.add('checked');
+            } else {
+                tiposSeleccionados = tiposSeleccionados.filter(t => t !== valor);
+                label.classList.remove('checked');
+            }
+            // Asegurar que al menos un tipo esté seleccionado
+            if (tiposSeleccionados.length === 0) {
+                checkbox.checked = true;
+                tiposSeleccionados.push(valor);
+                label.classList.add('checked');
+            }
         }
 
         // --- FUNCIÓN MÓDULO 1: VRT ---
@@ -220,7 +280,7 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     // NUEVO: max_elementos configurable desde el selector
-                    body: JSON.stringify({ url: url, max_elementos: maxElementos })
+                    body: JSON.stringify({ url: url, max_elementos: maxElementos, tipos: tiposSeleccionados })
                 });
 
                 if (!response.ok) throw new Error('Error en el servidor');
