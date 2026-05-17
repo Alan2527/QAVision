@@ -110,7 +110,20 @@
 
                 // Badge de interacción con tooltip de motivo si está obstruido
                 let interaccionHTML;
-                if (item.obstruido) {
+                if (item.nota) {
+                    // Elemento no evaluable (ej: botón de carrusel no alcanzable)
+                    interaccionHTML = `
+                        <div class="motivo-wrap">
+                            <span class="text-[10px] font-black px-3 py-1 rounded-full cursor-help"
+                                style="color:#f59e0b;background:rgba(245,158,11,0.1)">
+                                N/A ⓘ
+                            </span>
+                            <div class="motivo-tooltip">
+                                <span class="font-black block mb-1" style="color:#f59e0b">Nota:</span>
+                                ${item.nota}
+                            </div>
+                        </div>`;
+                } else if (item.obstruido) {
                     const motivo = item.motivo_obstruccion || 'Motivo no disponible';
                     interaccionHTML = `
                         <div class="motivo-wrap">
