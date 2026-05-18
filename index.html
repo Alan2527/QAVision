@@ -167,17 +167,29 @@
 
         <section class="reveal-on-scroll grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div class="bg-tech border-tech p-10 rounded-[2.5rem] shadow-2xl border-emerald-900/30">
-                <h3 class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-8 italic">03 // Core Web Vitals & SEO</h3>
+                <h3 class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-8 italic">03 // Core Web Vitals</h3>
                 <input type="text" id="url_perf" placeholder="https://www.tusitio.com" class="w-full input-dark p-4 rounded-xl text-sm text-emerald-400 font-mono">
-                <button onclick="alert('Diagnóstico técnico en desarrollo...')" class="btn-action bg-emerald-500 text-black w-full py-5 mt-8 rounded-xl text-[10px]">Analizar Rendimiento y SEO</button>
+                <button onclick="ejecutarPerformance()" id="btn-perf" class="btn-action bg-emerald-500 text-black w-full py-5 mt-8 rounded-xl text-[10px]">Analizar Rendimiento</button>
             </div>
             <div class="space-y-4 text-left">
-                <h4 class="text-xs font-black text-emerald-400 uppercase tracking-widest">Diagnóstico Técnico de Performance</h4>
+                <h4 class="text-xs font-black text-emerald-400 uppercase tracking-widest">Diagnóstico de Performance</h4>
                 <p class="text-gray-500 text-sm leading-relaxed">
-                    La velocidad es calidad.
-                    Auditamos tiempos de carga, estabilidad visual (CLS) y optimización de recursos bajo estándares de Core Web Vitals.
-                    Además, verificamos la accesibilidad y el SEO básico para que tu producto sea legible y competitivo.
+                    Medimos LCP, FCP, CLS, TTI, tiempo total de carga y peso de la página contra los umbrales oficiales de Google Core Web Vitals. Cada métrica recibe un semáforo verde, amarillo o rojo con el score general del sitio.
                 </p>
+            </div>
+        <div class="divider"></div>
+
+        <section class="reveal-on-scroll grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div class="space-y-4 text-left order-2 lg:order-1">
+                <h4 class="text-xs font-black text-emerald-400 uppercase tracking-widest">SEO & Accesibilidad</h4>
+                <p class="text-gray-500 text-sm leading-relaxed">
+                    Auditamos title, meta description, H1, canonical, robots, Open Graph, imágenes sin alt, inputs sin label y botones sin aria-label. Cada check devuelve OK, advertencia o error con una explicación accionable.
+                </p>
+            </div>
+            <div class="bg-tech border-tech p-10 rounded-[2.5rem] shadow-2xl order-1 lg:order-2">
+                <h3 class="text-[10px] font-black text-emerald-400 uppercase tracking-[0.3em] mb-8 italic">04 // SEO & Accesibilidad</h3>
+                <input type="text" id="url_seo" placeholder="https://www.tusitio.com" class="w-full input-dark p-4 rounded-xl text-sm text-emerald-400 font-mono">
+                <button onclick="ejecutarSEO()" id="btn-seo" class="btn-action bg-emerald-500 text-black w-full py-5 mt-8 rounded-xl text-[10px]">Auditar SEO</button>
             </div>
         </section>
 
@@ -292,6 +304,52 @@
             } catch (e) {
                 alert('Fallo al conectar con el motor de interacción.');
                 btn.innerText = 'Escanear Enlaces e Interacción';
+                btn.disabled = false;
+            }
+        }
+
+        // --- FUNCIÓN MÓDULO 3: PERFORMANCE ---
+        async function ejecutarPerformance() {
+            const btn = document.getElementById('btn-perf');
+            const url = document.getElementById('url_perf').value.trim();
+            if (!url) { alert('Por favor, ingresá una URL válida.'); return; }
+            btn.innerText = 'ANALIZANDO...';
+            btn.disabled = true;
+            try {
+                const response = await fetch(`${API_BASE}/performance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                if (!response.ok) throw new Error('Error en el servidor');
+                await response.json();
+                window.location.href = 'performance.html';
+            } catch (e) {
+                alert('Fallo al conectar con el motor de performance.');
+                btn.innerText = 'Analizar Rendimiento';
+                btn.disabled = false;
+            }
+        }
+
+        // --- FUNCIÓN MÓDULO 4: SEO ---
+        async function ejecutarSEO() {
+            const btn = document.getElementById('btn-seo');
+            const url = document.getElementById('url_seo').value.trim();
+            if (!url) { alert('Por favor, ingresá una URL válida.'); return; }
+            btn.innerText = 'AUDITANDO SEO...';
+            btn.disabled = true;
+            try {
+                const response = await fetch(`${API_BASE}/seo`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                if (!response.ok) throw new Error('Error en el servidor');
+                await response.json();
+                window.location.href = 'seo.html';
+            } catch (e) {
+                alert('Fallo al conectar con el motor SEO.');
+                btn.innerText = 'Auditar SEO';
                 btn.disabled = false;
             }
         }
