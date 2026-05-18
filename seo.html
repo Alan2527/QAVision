@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QAVision - SEO & Accesibilidad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; margin: 0; }
+        .bg-tech { background-color: #050505; border: 1px solid #111827; }
+        .ok    { color: #10b981; }
+        .warn  { color: #f59e0b; }
+        .error { color: #ef4444; }
+        .check-row { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid #111827; }
+        .check-row:last-child { border-bottom: none; }
+        .badge { font-size: 9px; font-weight: 900; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 99px; text-transform: uppercase; white-space: nowrap; }
+        .badge-ok    { color: #10b981; background: rgba(16,185,129,0.1); }
+        .badge-warn  { color: #f59e0b; background: rgba(245,158,11,0.1); }
+        .badge-error { color: #ef4444; background: rgba(239,68,68,0.1); }
+        .section-title { font-size: 9px; font-weight: 900; letter-spacing: 0.3em; text-transform: uppercase; color: #4b5563; margin-bottom: 4px; margin-top: 32px; }
+    </style>
+</head>
+<body class="p-8">
+
+    <header class="max-w-4xl mx-auto flex justify-between items-center mb-12">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-[#10b981] rounded-xl flex items-center justify-center text-black font-black italic text-xl">Q</div>
+            <h1 class="text-2xl font-black tracking-tighter italic text-[#10b981]">QAVision</h1>
+        </div>
+        <a href="index.html" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition">← Volver al Panel</a>
+    </header>
+
+    <main class="max-w-4xl mx-auto">
+
+        <div id="url-auditada" class="mb-8 text-center text-gray-600 text-xs font-mono"></div>
+
+        <!-- Resumen -->
+        <div class="grid grid-cols-3 gap-4 mb-10 text-center">
+            <div class="bg-tech p-5 rounded-2xl">
+                <p class="text-[9px] font-black text-gray-500 uppercase mb-1">Checks OK</p>
+                <h2 id="stat-ok" class="text-4xl font-black tracking-tighter ok">-</h2>
+            </div>
+            <div class="bg-tech p-5 rounded-2xl">
+                <p class="text-[9px] font-black text-gray-500 uppercase mb-1">Advertencias</p>
+                <h2 id="stat-warn" class="text-4xl font-black tracking-tighter warn">-</h2>
+            </div>
+            <div class="bg-tech p-5 rounded-2xl">
+                <p class="text-[9px] font-black text-gray-500 uppercase mb-1">Errores</p>
+                <h2 id="stat-error" class="text-4xl font-black tracking-tighter error">-</h2>
+            </div>
+        </div>
+
+        <!-- Checklist -->
+        <div class="bg-tech rounded-[2rem] p-8" id="checklist"></div>
+
+    </main>
+
+    <script>
+        const SB_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+        const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+        const qaClient = supabase.createClient(SB_URL, SB_KEY);
+
+        function badge(tipo) {
+            const map = { ok: 'badge-ok', warn: 'badge-warn', error: 'badge-error' };
+            const txt = { ok: '✓ OK', warn: '⚠ Advertencia', error: '✗ Error' };
+            return `<span class="badge ${map[tipo]}">${txt[tipo]}</span>`;
+        }
+
+        function row(titulo, detalle, tipo) {
+            return `<div class="check-row">
+                <div style="padding-top:2px">${badge(tipo)}</div>
+                <div>
+                    <p class="text-sm font-bold">${titulo}</p>
+                    <p class="text-xs text-gray-500 mt-1 font-mono">${detalle}</p>
+                </div>
+            </div>`;
+        }
+
+        function seccion(titulo) {
+            return `<p class="section-title">${titulo}</p>`;
+        }
+
+        async function cargarReporte() {
+            const { data, error } = await qaClient
+                .from('seo_audits')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (error || !data.length) return console.error('Sin datos:', error);
+            const r = data[0];
+
+            document.getElementById('url-auditada').textContent = r.url;
+
+            let html = '';
+            let oks = 0, warns = 0, errors = 0;
+
+            const cuenta = (t) => { if(t==='ok') oks++; else if(t==='warn') warns++; else errors++; };
+
+            // --- TITLE ---
+            html += seccion('Title & Meta Description');
+            if (!r.title) {
+                const t = 'error'; cuenta(t);
+                html += row('Title', 'No encontrado — crítico para SEO', t);
+            } else if (r.title_len < 30 || r.title_len > 60) {
+                const t = 'warn'; cuenta(t);
+                html += row('Title', `"${r.title}" — ${r.title_len} caracteres (recomendado: 30–60)`, t);
+            } else {
+                const t = 'ok'; cuenta(t);
+                html += row('Title', `"${r.title}" — ${r.title_len} caracteres`, t);
+            }
+
+            if (!r.description) {
+                const t = 'error'; cuenta(t);
+                html += row('Meta Description', 'No encontrada — afecta el CTR en buscadores', t);
+            } else if (r.desc_len < 70 || r.desc_len > 160) {
+                const t = 'warn'; cuenta(t);
+                html += row('Meta Description', `${r.desc_len} caracteres (recomendado: 70–160)`, t);
+            } else {
+                const t = 'ok'; cuenta(t);
+                html += row('Meta Description', `${r.desc_len} caracteres`, t);
+            }
+
+            // --- H1 ---
+            html += seccion('Estructura de Encabezados');
+            if (r.h1_count === 0) {
+                const t = 'error'; cuenta(t);
+                html += row('H1', 'No encontrado — necesario para SEO', t);
+            } else if (r.h1_count > 1) {
+                const t = 'warn'; cuenta(t);
+                html += row('H1', `${r.h1_count} H1 encontrados — debería haber solo uno`, t);
+            } else {
+                const t = 'ok'; cuenta(t);
+                html += row('H1', `"${r.h1_text}"`, t);
+            }
+
+            // --- CANONICAL & ROBOTS ---
+            html += seccion('Indexación');
+            if (!r.canonical) {
+                const t = 'warn'; cuenta(t);
+                html += row('Canonical', 'No definido — puede causar contenido duplicado', t);
+            } else {
+                const t = 'ok'; cuenta(t);
+                html += row('Canonical', r.canonical, t);
+            }
+
+            if (!r.robots) {
+                const t = 'warn'; cuenta(t);
+                html += row('Meta Robots', 'No definido — se asume indexación por defecto', t);
+            } else if (r.robots.includes('noindex')) {
+                const t = 'error'; cuenta(t);
+                html += row('Meta Robots', `"${r.robots}" — página bloqueada para indexación`, t);
+            } else {
+                const t = 'ok'; cuenta(t);
+                html += row('Meta Robots', r.robots, t);
+            }
+
+            // --- OPEN GRAPH ---
+            html += seccion('Open Graph (Redes Sociales)');
+            const ogOk = r.og_title && r.og_image;
+            if (!r.og_title) {
+                const t = 'warn'; cuenta(t);
+                html += row('og:title', 'No definido — afecta cómo se ve al compartir en redes', t);
+            } else {
+                const t = 'ok'; cuenta(t);
+                html += row('og:title', r.og_title, t);
+            }
+            if (!r.og_image) {
+                const t = 'warn'; cuenta(t);
+                html += row('og:image', 'No definida — sin imagen al compartir en redes', t);
+            } else {
+                const t = 'ok'; cuenta(t);
+                html += row('og:image', r.og_image, t);
+            }
+            if (!r.og_description) {
+                const t = 'warn'; cuenta(t);
+                html += row('og:description', 'No definida', t);
+            } else {
+                const t = 'ok'; cuenta(t);
+                html += row('og:description', r.og_description.slice(0, 100) + (r.og_description.length > 100 ? '...' : ''), t);
+            }
+
+            // --- ACCESIBILIDAD ---
+            html += seccion('Accesibilidad');
+            if (r.imgs_sin_alt > 0) {
+                const t = r.imgs_sin_alt > 5 ? 'error' : 'warn'; cuenta(t);
+                html += row('Imágenes sin alt', `${r.imgs_sin_alt} de ${r.total_imgs} imágenes no tienen atributo alt`, t);
+            } else {
+                const t = 'ok'; cuenta(t);
+                html += row('Imágenes sin alt', `Todas las ${r.total_imgs} imágenes tienen alt`, t);
+            }
+
+            if (r.inputs_sin_label > 0) {
+                const t = 'error'; cuenta(t);
+                html += row('Inputs sin label', `${r.inputs_sin_label} campos de formulario sin etiqueta accesible`, t);
+            } else {
+                const t = 'ok'; cuenta(t);
+                html += row('Inputs sin label', 'Todos los inputs tienen label o aria-label', t);
+            }
+
+            if (r.botones_sin_etiqueta > 0) {
+                const t = 'warn'; cuenta(t);
+                html += row('Botones sin etiqueta', `${r.botones_sin_etiqueta} botones sin texto ni aria-label`, t);
+            } else {
+                const t = 'ok'; cuenta(t);
+                html += row('Botones sin etiqueta', 'Todos los botones tienen texto o aria-label', t);
+            }
+
+            document.getElementById('checklist').innerHTML = html;
+            document.getElementById('stat-ok').textContent = oks;
+            document.getElementById('stat-warn').textContent = warns;
+            document.getElementById('stat-error').textContent = errors;
+        }
+
+        cargarReporte();
+    </script>
+</body>
+</html>
