@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QAVision - Core Web Vitals</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; margin: 0; }
+        .bg-tech { background-color: #050505; border: 1px solid #111827; }
+        .good  { color: #10b981; }
+        .warn  { color: #f59e0b; }
+        .poor  { color: #ef4444; }
+        .bg-good { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.3); }
+        .bg-warn { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); }
+        .bg-poor { background: rgba(239,68,68,0.08);  border-color: rgba(239,68,68,0.3); }
+
+        .metric-bar-bg { background: #111827; border-radius: 99px; height: 6px; overflow: hidden; }
+        .metric-bar    { height: 6px; border-radius: 99px; transition: width 1s ease; }
+    </style>
+</head>
+<body class="p-8">
+
+    <header class="max-w-5xl mx-auto flex justify-between items-center mb-12">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-[#10b981] rounded-xl flex items-center justify-center text-black font-black italic text-xl">Q</div>
+            <h1 class="text-2xl font-black tracking-tighter italic text-[#10b981]">QAVision</h1>
+        </div>
+        <a href="index.html" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition">← Volver al Panel</a>
+    </header>
+
+    <main class="max-w-5xl mx-auto">
+
+        <!-- URL auditada -->
+        <div id="url-auditada" class="mb-8 text-center text-gray-600 text-xs font-mono"></div>
+
+        <!-- Score general -->
+        <div class="text-center mb-12">
+            <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Score General</p>
+            <div id="score-circle" class="inline-flex items-center justify-center w-32 h-32 rounded-full border-4 border-gray-800">
+                <span id="score-valor" class="text-5xl font-black tracking-tighter">-</span>
+            </div>
+            <p id="score-label" class="mt-3 text-sm font-black uppercase tracking-widest text-gray-500">Cargando...</p>
+        </div>
+
+        <!-- Métricas principales -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+
+            <div id="card-lcp" class="bg-tech p-6 rounded-2xl border">
+                <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">LCP</p>
+                <p class="text-[9px] text-gray-600 mb-3">Largest Contentful Paint</p>
+                <h3 id="val-lcp" class="text-3xl font-black tracking-tighter mb-3">-</h3>
+                <div class="metric-bar-bg"><div id="bar-lcp" class="metric-bar" style="width:0%"></div></div>
+                <p id="label-lcp" class="text-[9px] font-black uppercase mt-2 text-gray-600">-</p>
+            </div>
+
+            <div id="card-fcp" class="bg-tech p-6 rounded-2xl border">
+                <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">FCP</p>
+                <p class="text-[9px] text-gray-600 mb-3">First Contentful Paint</p>
+                <h3 id="val-fcp" class="text-3xl font-black tracking-tighter mb-3">-</h3>
+                <div class="metric-bar-bg"><div id="bar-fcp" class="metric-bar" style="width:0%"></div></div>
+                <p id="label-fcp" class="text-[9px] font-black uppercase mt-2 text-gray-600">-</p>
+            </div>
+
+            <div id="card-cls" class="bg-tech p-6 rounded-2xl border">
+                <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">CLS</p>
+                <p class="text-[9px] text-gray-600 mb-3">Cumulative Layout Shift</p>
+                <h3 id="val-cls" class="text-3xl font-black tracking-tighter mb-3">-</h3>
+                <div class="metric-bar-bg"><div id="bar-cls" class="metric-bar" style="width:0%"></div></div>
+                <p id="label-cls" class="text-[9px] font-black uppercase mt-2 text-gray-600">-</p>
+            </div>
+
+            <div id="card-tti" class="bg-tech p-6 rounded-2xl border">
+                <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">TTI</p>
+                <p class="text-[9px] text-gray-600 mb-3">Time to Interactive</p>
+                <h3 id="val-tti" class="text-3xl font-black tracking-tighter mb-3">-</h3>
+                <div class="metric-bar-bg"><div id="bar-tti" class="metric-bar" style="width:0%"></div></div>
+                <p id="label-tti" class="text-[9px] font-black uppercase mt-2 text-gray-600">-</p>
+            </div>
+
+            <div id="card-carga" class="bg-tech p-6 rounded-2xl border">
+                <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Carga Total</p>
+                <p class="text-[9px] text-gray-600 mb-3">Tiempo hasta load</p>
+                <h3 id="val-carga" class="text-3xl font-black tracking-tighter mb-3">-</h3>
+                <div class="metric-bar-bg"><div id="bar-carga" class="metric-bar" style="width:0%"></div></div>
+                <p id="label-carga" class="text-[9px] font-black uppercase mt-2 text-gray-600">-</p>
+            </div>
+
+            <div id="card-peso" class="bg-tech p-6 rounded-2xl border">
+                <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Peso</p>
+                <p class="text-[9px] text-gray-600 mb-3">Transferencia total</p>
+                <h3 id="val-peso" class="text-3xl font-black tracking-tighter mb-3">-</h3>
+                <div class="metric-bar-bg"><div id="bar-peso" class="metric-bar" style="width:0%"></div></div>
+                <p id="label-peso" class="text-[9px] font-black uppercase mt-2 text-gray-600">-</p>
+            </div>
+        </div>
+
+        <!-- Umbrales de referencia -->
+        <div class="bg-tech rounded-2xl p-6">
+            <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-4">Umbrales de referencia (Google)</p>
+            <div class="grid grid-cols-3 gap-3 text-center text-[10px]">
+                <div>
+                    <p class="font-black text-gray-400 mb-2">Métrica</p>
+                    <p class="text-gray-500">LCP</p>
+                    <p class="text-gray-500">FCP</p>
+                    <p class="text-gray-500">CLS</p>
+                    <p class="text-gray-500">TTI</p>
+                </div>
+                <div>
+                    <p class="font-black good mb-2">✓ Bueno</p>
+                    <p class="good">≤ 2.5s</p>
+                    <p class="good">≤ 1.8s</p>
+                    <p class="good">≤ 0.1</p>
+                    <p class="good">≤ 3.8s</p>
+                </div>
+                <div>
+                    <p class="font-black poor mb-2">✗ Pobre</p>
+                    <p class="poor">> 4.0s</p>
+                    <p class="poor">> 3.0s</p>
+                    <p class="poor">> 0.25</p>
+                    <p class="poor">> 7.3s</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const SB_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+        const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+        const qaClient = supabase.createClient(SB_URL, SB_KEY);
+
+        // Clasificar métrica y devolver { clase, label, pct }
+        const clasificar = {
+            lcp:   v => v <= 2500 ? {c:'good',l:'Bueno',pct:100}   : v <= 4000 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
+            fcp:   v => v <= 1800 ? {c:'good',l:'Bueno',pct:100}   : v <= 3000 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
+            cls:   v => v <= 0.1  ? {c:'good',l:'Bueno',pct:100}   : v <= 0.25 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
+            tti:   v => v <= 3800 ? {c:'good',l:'Bueno',pct:100}   : v <= 7300 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
+            carga: v => v <= 3000 ? {c:'good',l:'Bueno',pct:100}   : v <= 6000 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
+            peso:  v => v <= 1    ? {c:'good',l:'Liviano',pct:100} : v <= 3    ? {c:'warn',l:'Moderado',pct:60}: {c:'poor',l:'Pesado',pct:30},
+        };
+
+        const colorBar = { good: '#10b981', warn: '#f59e0b', poor: '#ef4444' };
+
+        function renderMetrica(id, valor, tipo, sufijo) {
+            if (valor === null || valor === undefined) {
+                document.getElementById(`val-${id}`).textContent = 'N/D';
+                document.getElementById(`label-${id}`).textContent = 'Sin datos';
+                return null;
+            }
+            const { c, l, pct } = clasificar[tipo](valor);
+            const card = document.getElementById(`card-${id}`);
+            card.classList.add(`bg-${c}`);
+            const valEl = document.getElementById(`val-${id}`);
+            valEl.textContent = sufijo === 'ms' ? (valor / 1000).toFixed(2) + 's' : valor + sufijo;
+            valEl.className = `text-3xl font-black tracking-tighter mb-3 ${c}`;
+            document.getElementById(`bar-${id}`).style.cssText = `width:${pct}%;background:${colorBar[c]}`;
+            const labelEl = document.getElementById(`label-${id}`);
+            labelEl.textContent = l;
+            labelEl.className = `text-[9px] font-black uppercase mt-2 ${c}`;
+            return c;
+        }
+
+        async function cargarReporte() {
+            const { data, error } = await qaClient
+                .from('performance_audits')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (error || !data.length) return console.error('Sin datos:', error);
+            const r = data[0];
+
+            document.getElementById('url-auditada').textContent = r.url;
+
+            const resultados = [
+                renderMetrica('lcp',   r.lcp_ms,          'lcp',   'ms'),
+                renderMetrica('fcp',   r.fcp_ms,          'fcp',   'ms'),
+                renderMetrica('cls',   r.cls,             'cls',   ''),
+                renderMetrica('tti',   r.tti_ms,          'tti',   'ms'),
+                renderMetrica('carga', r.tiempo_carga_ms, 'carga', 'ms'),
+                renderMetrica('peso',  r.peso_mb,         'peso',  ' MB'),
+            ].filter(Boolean);
+
+            // Score general: % de métricas en "good"
+            const score = Math.round((resultados.filter(c => c === 'good').length / resultados.length) * 100);
+            const scoreEl = document.getElementById('score-valor');
+            const scoreCircle = document.getElementById('score-circle');
+            const scoreLabel = document.getElementById('score-label');
+            scoreEl.textContent = score;
+            if (score >= 80) {
+                scoreEl.className = 'text-5xl font-black tracking-tighter good';
+                scoreCircle.classList.add('border-emerald-500');
+                scoreLabel.textContent = 'Rendimiento Óptimo';
+                scoreLabel.className = 'mt-3 text-sm font-black uppercase tracking-widest good';
+            } else if (score >= 50) {
+                scoreEl.className = 'text-5xl font-black tracking-tighter warn';
+                scoreCircle.classList.add('border-amber-500');
+                scoreLabel.textContent = 'Necesita Mejoras';
+                scoreLabel.className = 'mt-3 text-sm font-black uppercase tracking-widest warn';
+            } else {
+                scoreEl.className = 'text-5xl font-black tracking-tighter poor';
+                scoreCircle.classList.add('border-red-500');
+                scoreLabel.textContent = 'Rendimiento Pobre';
+                scoreLabel.className = 'mt-3 text-sm font-black uppercase tracking-widest poor';
+            }
+        }
+
+        cargarReporte();
+    </script>
+</body>
+</html>
