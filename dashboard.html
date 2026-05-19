@@ -26,21 +26,10 @@
         .font-title { font-family: 'Syne', sans-serif; }
         .bg-tech { background-color: var(--surface-2); border: 1px solid var(--border); }
         
-        /* Custom scrollbar para la tabla scrolleable */
-        .custom-scroll::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        .custom-scroll::-webkit-scrollbar-track {
-            background: var(--surface);
-        }
-        .custom-scroll::-webkit-scrollbar-thumb {
-            background: #222;
-            border-radius: 3px;
-        }
-        .custom-scroll::-webkit-scrollbar-thumb:hover {
-            background: var(--green);
-        }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: var(--surface); }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #222; border-radius: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -67,47 +56,68 @@
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div class="lg:col-span-2 bg-tech p-6 rounded-2xl flex flex-col justify-between relative overflow-hidden group">
-                <div>
-                    <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Quick Actions</h2>
-                    <p class="text-xs text-[#505050] mb-4">Lanzamiento inmediato de suites automatizadas sobre el último target.</p>
+            <div class="lg:col-span-2 bg-tech p-6 rounded-2xl relative overflow-hidden border border-[#1a1a1a]">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-[#10b981]/5 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="mb-5">
+                    <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Command Center</h2>
+                    <p class="text-xs text-[#505050]">Configurá y dispará una nueva auditoría hacia cualquier target.</p>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
-                        <span class="text-[10px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
-                        <span class="text-xs font-bold mt-1 text-white">Visual VRT</span>
-                    </button>
-                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
-                        <span class="text-[10px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
-                        <span class="text-xs font-bold mt-1 text-white">SEO Audit</span>
-                    </button>
-                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
-                        <span class="text-[10px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
-                        <span class="text-xs font-bold mt-1 text-white">Perf CWV</span>
-                    </button>
-                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
-                        <span class="text-[10px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
-                        <span class="text-xs font-bold mt-1 text-white">Link Scan</span>
-                    </button>
+
+                <div class="flex flex-col md:flex-row gap-4 items-end">
+                    <div class="w-full md:w-1/3">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Módulo QA</label>
+                        <select id="new-test-type" class="w-full bg-[#070707] border border-[#1a1a1a] text-white text-sm rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block p-3 outline-none appearance-none cursor-pointer">
+                            <option value="visual_regression.html">Visual Regression (VRT)</option>
+                            <option value="seo.html">Auditoría SEO</option>
+                            <option value="performance.html">Performance CWV</option>
+                            <option value="interaction_audit.html">Link Scanner</option>
+                        </select>
+                    </div>
+                    
+                    <div class="w-full md:w-2/3">
+                        <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Target URL (Producción)</label>
+                        <div class="flex gap-2">
+                            <input type="url" id="new-test-url" class="w-full bg-[#070707] border border-[#1a1a1a] text-white text-sm rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block p-3 outline-none placeholder-[#333] transition" placeholder="https://ejemplo.com">
+                            <button id="btn-launch-test" class="bg-[#10b981] hover:bg-[#059669] text-black font-black px-6 rounded-lg transition-all whitespace-nowrap shadow-[0_0_15px_rgba(16,185,129,0.2)] flex items-center gap-2">
+                                <span>Lanzar</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
+                <p class="text-[10px] font-mono text-[#505050] mt-3">* El sistema te redirigirá a la interfaz del módulo seleccionado para finalizar la configuración (ej. agregar entorno staging en VRT).</p>
             </div>
 
-            <div class="bg-tech p-6 rounded-2xl relative overflow-hidden flex flex-col justify-between">
-                <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-[#10b981]/5 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="bg-tech p-6 rounded-2xl flex flex-col justify-between border border-[#1a1a1a]">
                 <div>
-                    <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Salud del Proyecto</h2>
-                    <p class="text-xs text-[#505050]">Volumen de cobertura procesada en los últimos 7 días.</p>
+                    <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Quick Actions</h2>
+                    <p class="text-xs text-[#505050] mb-4">Repetir última ejecución.</p>
                 </div>
-                <div class="mt-4 flex items-baseline gap-2">
-                    <span class="font-title text-5xl font-extrabold text-white tracking-tight">148</span>
-                    <span class="text-xs font-mono text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded">Páginas Auditadas</span>
+                <div class="grid grid-cols-2 gap-3">
+                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
+                        <span class="text-xs font-bold text-white mb-1">VRT</span>
+                        <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
+                    </button>
+                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
+                        <span class="text-xs font-bold text-white mb-1">SEO</span>
+                        <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
+                    </button>
+                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
+                        <span class="text-xs font-bold text-white mb-1">PERF</span>
+                        <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
+                    </button>
+                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
+                        <span class="text-xs font-bold text-white mb-1">LINKS</span>
+                        <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
+                    </button>
                 </div>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <div class="lg:col-span-2 bg-tech rounded-2xl flex flex-col overflow-hidden">
+            <div class="lg:col-span-2 bg-tech rounded-2xl flex flex-col overflow-hidden border border-[#1a1a1a]">
                 <div class="p-6 border-b border-[#1a1a1a]">
                     <h3 class="font-title text-lg font-bold text-white tracking-tight">Auditorías Recientes</h3>
                     <p class="text-xs text-[#505050] mt-0.5">Historial consolidado de ejecuciones multiplataforma.</p>
@@ -153,7 +163,7 @@
                 </div>
             </div>
 
-            <div class="bg-tech p-6 rounded-2xl flex flex-col justify-between">
+            <div class="bg-tech p-6 rounded-2xl flex flex-col justify-between border border-[#1a1a1a]">
                 <div>
                     <h3 class="font-title text-lg font-bold text-white tracking-tight">Tendencia de Errores</h3>
                     <p class="text-xs text-[#505050] mt-0.5">Curva descendente de bugs detectados (Últimos 7 días).</p>
@@ -183,12 +193,24 @@
         // 2. LÓGICA DE CIERRE DE SESIÓN
         document.getElementById('btn-logout').addEventListener('click', async () => {
             const { error } = await dashClient.auth.signOut();
-            if (!error) {
-                window.location.replace('login.html');
-            }
+            if (!error) window.location.replace('login.html');
         });
 
-        // 3. INICIALIZACIÓN DEL GRÁFICO ESTÍTICO (Curva Limpia)
+        // 3. LÓGICA DEL LANZADOR DE NUEVOS TESTS
+        document.getElementById('btn-launch-test').addEventListener('click', () => {
+            const moduleFile = document.getElementById('new-test-type').value;
+            const targetUrl = document.getElementById('new-test-url').value;
+            
+            if (targetUrl) {
+                // Guardamos la URL para que la pantalla de destino pueda consumirla y autocompletar el input
+                localStorage.setItem('qavision_last_target', targetUrl);
+            }
+            
+            // Redirigimos a la pantalla del test seleccionado
+            window.location.href = moduleFile;
+        });
+
+        // 4. INICIALIZACIÓN DEL GRÁFICO ESTÉTICO
         function renderTrendChart() {
             const ctx = document.getElementById('trendChart').getContext('2d');
             new Chart(ctx, {
@@ -197,7 +219,7 @@
                     labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
                     datasets: [{
                         label: 'Errores',
-                        data: [32, 28, 19, 24, 12, 7, 3], // Simulación de línea roja descendente satisfactoria
+                        data: [32, 28, 19, 24, 12, 7, 3],
                         borderColor: '#ef4444',
                         borderWidth: 3,
                         pointBackgroundColor: '#070707',
@@ -220,7 +242,6 @@
             });
         }
 
-        // Ejecución automática al cargar
         verificarAccesoSaaS();
         renderTrendChart();
     </script>
