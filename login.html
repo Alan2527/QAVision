@@ -181,7 +181,7 @@
         async function verificarSesion() {
             const { data: { session } } = await authClient.auth.getSession();
             if (session) {
-                window.location.href = 'index.html';
+                window.location.href = '/QAVision/dashboard.html';
             }
         }
         verificarSesion();
