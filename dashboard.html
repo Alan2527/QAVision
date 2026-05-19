@@ -345,6 +345,10 @@
                 return;
               }
 
+              const { data: { session } } = await dashClient.auth.getSession();
+              const userId = session?.user?.id || null;
+              sessionStorage.setItem('qavision_user_id', userId);  
+
               sessionStorage.setItem('qavision_last_prod', urlProd);
               sessionStorage.setItem('qavision_last_stage', urlStage);
               sessionStorage.setItem('qavision_trigger_test', 'true');
