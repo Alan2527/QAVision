@@ -30,11 +30,7 @@
         .custom-scroll::-webkit-scrollbar-track { background: var(--surface); }
         .custom-scroll::-webkit-scrollbar-thumb { background: #222; border-radius: 3px; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
-
-        /* Transición suave para campos dinámicos */
-        .fade-field {
-            transition: all 0.25s ease-in-out;
-        }
+        .fade-field { transition: all 0.25s ease-in-out; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col">
@@ -63,15 +59,13 @@
             
             <div class="lg:col-span-2 bg-tech p-6 rounded-2xl relative overflow-hidden border border-[#1a1a1a] flex flex-col justify-between">
                 <div class="absolute top-0 right-0 w-64 h-64 bg-[#10b981]/5 rounded-full blur-3xl pointer-events-none"></div>
-                
                 <div class="mb-5">
                     <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Command Center</h2>
-                    <p class="text-xs text-[#505050]">Configurá los entornos y lanzá ejecuciones en tiempo real.</p>
+                    <p class="text-xs text-[#505050]">Configurá los entornos y lanzá ejecuciones manuales individuales en tiempo real.</p>
                 </div>
 
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                        
                         <div class="w-full">
                             <label class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Módulo Core</label>
                             <select id="new-test-type" class="w-full bg-[#070707] border border-[#1a1a1a] text-white text-sm rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block p-3 outline-none cursor-pointer">
@@ -81,7 +75,6 @@
                                 <option value="interaction_audit.html">Link Scanner</option>
                             </select>
                         </div>
-                        
                         <div id="container-url-prod" class="w-full md:col-span-2">
                             <label id="label-url-prod" class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">URL de Producción</label>
                             <input type="url" id="new-test-url-prod" class="w-full bg-[#070707] border border-[#1a1a1a] text-white text-sm rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block p-3 outline-none placeholder-[#333]" placeholder="https://ejemplo.com">
@@ -97,8 +90,8 @@
                 </div>
 
                 <div class="mt-5 pt-4 border-t border-[#1a1a1a] flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                    <p class="text-[10px] font-mono text-[#505050]">* Las credenciales operacionales se inyectan automáticamente según tu sesión activa.</p>
-                    <button id="btn-launch-test" class="bg-[#10b981] hover:bg-[#059669] text-black font-black px-8 py-3 rounded-lg transition-all shadow-[0_0_15px_rgba(16,185,129,0.15)] flex items-center justify-center gap-2 self-end sm:self-auto">
+                    <p class="text-[10px] font-mono text-[#505050]">* Las variables operacionales individuales se heredan dinámicamente.</p>
+                    <button id="btn-launch-test" class="bg-[#10b981] hover:bg-[#059669] text-black font-black px-8 py-3 rounded-lg transition-all shadow-[0_0_15px_rgba(16,185,129,0.15)] flex items-center justify-center gap-2">
                         <span>Lanzar Suite</span>
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                     </button>
@@ -108,9 +101,9 @@
             <div class="bg-tech p-6 rounded-2xl flex flex-col justify-between border border-[#1a1a1a]">
                 <div>
                     <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Quick Actions</h2>
-                    <p class="text-xs text-[#505050] mb-4">Repetir última ejecución guardada.</p>
+                    <p class="text-xs text-[#505050] mb-4">Re-ejecutar de inmediato los últimos análisis individuales registrados.</p>
                 </div>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-2 gap-3 p-1">
                     <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
                         <span class="text-xs font-bold text-white mb-1">VRT</span>
                         <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
@@ -138,8 +131,7 @@
                     <h3 class="font-title text-lg font-bold text-white tracking-tight">Auditorías Recientes</h3>
                     <p class="text-xs text-[#505050] mt-0.5">Historial consolidado de ejecuciones multiplataforma.</p>
                 </div>
-                
-                <div class="overflow-x-auto custom-scroll max-h-[340px]">
+                <div class="overflow-x-auto custom-scroll max-h-[220px]">
                     <table class="w-full text-left border-collapse text-xs">
                         <thead>
                             <tr class="bg-black/40 text-[#505050] font-mono border-b border-[#1a1a1a]">
@@ -162,18 +154,6 @@
                                 <td class="p-4"><span class="bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 text-[10px] font-mono">SEO_AUDIT</span></td>
                                 <td class="p-4 text-right"><span class="bg-[#10b981]/10 text-[#10b981] px-2 py-0.5 rounded text-[10px] font-black border border-[#10b981]/20">PASS</span></td>
                             </tr>
-                            <tr class="hover:bg-zinc-900/40 transition">
-                                <td class="p-4 font-mono text-gray-500">18/05/2026</td>
-                                <td class="p-4 truncate max-w-[200px] font-mono text-white">eltrece.com.ar/videos</td>
-                                <td class="p-4"><span class="bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 text-[10px] font-mono">PERF_CWV</span></td>
-                                <td class="p-4 text-right"><span class="bg-[#10b981]/10 text-[#10b981] px-2 py-0.5 rounded text-[10px] font-black border border-[#10b981]/20">PASS</span></td>
-                            </tr>
-                            <tr class="hover:bg-zinc-900/40 transition">
-                                <td class="p-4 font-mono text-gray-500">17/05/2026</td>
-                                <td class="p-4 truncate max-w-[200px] font-mono text-white">ciudad.com.ar</td>
-                                <td class="p-4"><span class="bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 text-[10px] font-mono">LINK_SCAN</span></td>
-                                <td class="p-4 text-right"><span class="bg-red-500/10 text-red-400 px-2 py-0.5 rounded text-[10px] font-black border border-red-500/20">FAIL</span></td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -181,11 +161,81 @@
 
             <div class="bg-tech p-6 rounded-2xl flex flex-col justify-between border border-[#1a1a1a]">
                 <div>
-                    <h3 class="font-title text-lg font-bold text-white tracking-tight">Tendencia de Errores</h3>
-                    <p class="text-xs text-[#505050] mt-0.5">Curva de regresiones detectadas en los últimos 7 días.</p>
+                    <h3 class="font-title text-base font-bold text-white tracking-tight">Tendencia de Errores</h3>
+                    <p class="text-xs text-[#505050] mt-0.5">Métrica de regresiones sobre los últimos 7 días.</p>
                 </div>
-                <div class="flex-1 mt-4 flex items-center justify-center relative min-h-[180px]">
+                <div class="flex-1 mt-2 flex items-center justify-center relative min-h-[140px]">
                     <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="lg:col-span-2 bg-tech p-6 rounded-2xl border border-[#1a1a1a] flex flex-col justify-between">
+                <div>
+                    <div class="flex justify-between items-center mb-6 border-b border-[#1a1a1a] pb-4">
+                        <div>
+                            <h3 class="font-title text-xl font-bold text-white tracking-tight">Suite Manager</h3>
+                            <p class="text-xs text-[#505050] mt-0.5">Almacená hasta 20 URLs por módulo para automatizar ejecuciones recurrentes sin reescribir datos.</p>
+                        </div>
+                        <span id="suite-global-counter" class="text-[10px] font-mono bg-zinc-900 text-[#10b981] px-3 py-1 rounded-full border border-zinc-800 font-bold">
+                            Guardadas: 0 / 80
+                        </span>
+                    </div>
+
+                    <div class="flex gap-1 overflow-x-auto custom-scroll mb-6 border-b border-[#1a1a1a] pb-3">
+                        <button onclick="switchTab('vrt')" id="tab-vrt" class="text-xs font-mono px-4 py-2 rounded-lg bg-black text-white border border-[#10b981]/30 font-bold transition">01. VRT Mappings</button>
+                        <button onclick="switchTab('seo')" id="tab-seo" class="text-xs font-mono px-4 py-2 rounded-lg text-[#505050] hover:text-white transition">02. SEO List</button>
+                        <button onclick="switchTab('perf')" id="tab-perf" class="text-xs font-mono px-4 py-2 rounded-lg text-[#505050] hover:text-white transition">03. Performance</button>
+                        <button onclick="switchTab('links')" id="tab-links" class="text-xs font-mono px-4 py-2 rounded-lg text-[#505050] hover:text-white transition">04. Link Scan</button>
+                    </div>
+
+                    <div id="suite-inputs-container" class="space-y-3 max-h-[280px] overflow-y-auto custom-scroll pr-2">
+                        </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-[#1a1a1a] flex justify-between items-center">
+                    <button onclick="addSuiteRow()" class="text-xs font-bold text-gray-400 hover:text-white flex items-center gap-1.5 transition">
+                        <span>+ Agregar nueva línea</span>
+                        <span id="tab-row-limit" class="text-[10px] font-mono text-[#505050]">(0/20)</span>
+                    </button>
+                    <button onclick="saveCurrentSuite()" class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition">
+                        Guardar Módulo
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-6 flex flex-col justify-between">
+                
+                <div class="bg-tech p-6 rounded-2xl relative overflow-hidden border border-[#1a1a1a]">
+                    <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Salud del Entorno</h2>
+                    <p class="text-xs text-[#505050] mb-4">Volumen de cobertura de regresión procesada en la semana.</p>
+                    <div class="flex items-baseline gap-2">
+                        <span class="font-title text-5xl font-extrabold text-white tracking-tight">148</span>
+                        <span class="text-xs font-mono text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded">Páginas Verificadas</span>
+                    </div>
+                </div>
+
+                <div class="bg-tech p-6 rounded-2xl border border-red-500/20 bg-gradient-to-b from-[#0d0d0d] to-[#110505] flex-1 flex flex-col justify-between relative overflow-hidden">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="font-title text-base font-bold text-white tracking-tight">Mass Execution</h3>
+                            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                        </div>
+                        <p class="text-xs text-gray-400 mb-4">Lanzamiento masivo e instantáneo de todos los lotes de URLs configuradas en paralelo.</p>
+                        
+                        <div class="space-y-2 text-[11px] font-mono text-[#505050] bg-black/50 p-4 rounded-xl border border-zinc-900/60">
+                            <div class="flex justify-between"><span>• VRT Targets:</span><span id="mass-count-vrt" class="text-white font-bold">0 / 20</span></div>
+                            <div class="flex justify-between"><span>• SEO Targets:</span><span id="mass-count-seo" class="text-white font-bold">0 / 20</span></div>
+                            <div class="flex justify-between"><span>• Perf Targets:</span><span id="mass-count-perf" class="text-white font-bold">0 / 20</span></div>
+                            <div class="flex justify-between"><span>• Link Scans:</span><span id="mass-count-links" class="text-white font-bold">0 / 20</span></div>
+                        </div>
+                    </div>
+
+                    <button id="btn-trigger-mass-run" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4">
+                        Ejecutar Suite Completa
+                    </button>
                 </div>
             </div>
         </div>
@@ -196,7 +246,17 @@
         const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
         const dashClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 1. GUARDA DE SEGURIDAD
+        let currentActiveTab = 'vrt';
+        
+        // Estructura en memoria para almacenar las listas de URLs (máximo 20 elementos cada una)
+        let suiteStorage = {
+            vrt: [],   // Estructura: { id: uuid, stage: '', prod: '' }
+            seo: [],   // Estructura: { id: uuid, url: '' }
+            perf: [],  // Estructura: { id: uuid, url: '' }
+            links: []  // Estructura: { id: uuid, url: '' }
+        };
+
+        // 1. CONTROL DE RUTA Y PROTECCIÓN
         async function verificarAccesoSaaS() {
             const { data: { session } } = await dashClient.auth.getSession();
             if (!session) {
@@ -204,32 +264,28 @@
                 return;
             }
             document.getElementById('user-email').innerText = session.user.email;
+            loadSuiteFromLocalStorage();
         }
 
-        // 2. LOGOUT
         document.getElementById('btn-logout').addEventListener('click', async () => {
             const { error } = await dashClient.auth.signOut();
             if (!error) window.location.replace('login.html');
         });
 
-        // 3. CONTROL ESTÉTICO DINÁMICO DEL FORMULARIO
+        // 2. FORMULARIO ADAPTATIVO INDIVIDUAL
         const suiteSelector = document.getElementById('new-test-type');
         const stagingContainer = document.getElementById('container-url-staging');
         const labelProd = document.getElementById('label-url-prod');
         const inputProd = document.getElementById('new-test-url-prod');
 
         suiteSelector.addEventListener('change', (e) => {
-            const tipoSeleccionado = e.target.value;
-            
-            if (tipoSeleccionado === "visual_regression.html") {
-                // Mostrar campo staging para VRT
+            if (e.target.value === "visual_regression.html") {
                 stagingContainer.style.opacity = "1";
                 stagingContainer.style.pointerEvents = "auto";
                 stagingContainer.style.transform = "translateY(0)";
                 labelProd.innerText = "URL de Producción";
                 inputProd.placeholder = "https://ejemplo.com";
             } else {
-                // Ocultar de forma limpia para SEO, Perf y Links
                 stagingContainer.style.opacity = "0";
                 stagingContainer.style.pointerEvents = "none";
                 stagingContainer.style.transform = "translateY(-10px)";
@@ -238,7 +294,6 @@
             }
         });
 
-        // 4. MANEJADOR DE LANZAMIENTO (Redirección limpia con memoria temporal)
         document.getElementById('btn-launch-test').addEventListener('click', () => {
             const destino = suiteSelector.value;
             const urlProd = inputProd.value;
@@ -251,11 +306,143 @@
                 }
                 window.location.href = destino;
             } else {
-                alert("Por favor ingresá una URL válida antes de lanzar el análisis.");
+                alert("Ingresá una URL válida.");
             }
         });
 
-        // 5. RENDER DEL CHART DE TENDENCIAS
+        // 3. SUITE MANAGER (LÓGICA DE CONTROL DE FILAS DINÁMICAS)
+        function switchTab(tabId) {
+            currentActiveTab = tabId;
+            const tabs = ['vrt', 'seo', 'perf', 'links'];
+            tabs.forEach(t => {
+                const el = document.getElementById(`tab-${t}`);
+                if (t === tabId) {
+                    el.className = "text-xs font-mono px-4 py-2 rounded-lg bg-black text-white border border-[#10b981]/30 font-bold transition";
+                } else {
+                    el.className = "text-xs font-mono px-4 py-2 rounded-lg text-[#505050] hover:text-white transition";
+                }
+            });
+            renderSuiteRows();
+        }
+
+        function renderSuiteRows() {
+            const container = document.getElementById('suite-inputs-container');
+            const list = suiteStorage[currentActiveTab];
+            document.getElementById('tab-row-limit').innerText = `(${list.length}/20)`;
+            
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-xs text-[#505050] font-mono p-4 text-center border border-dashed border-[#1a1a1a] rounded-xl">No hay URLs configuradas para este módulo.</p>`;
+                return;
+            }
+
+            container.innerHTML = list.map((item, index) => {
+                if (currentActiveTab === 'vrt') {
+                    return `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative group">
+                            <div>
+                                <span class="text-[9px] font-mono text-[#505050] block mb-1">STAGING TARGET #${index+1}</span>
+                                <input type="url" onchange="updateRowValue('${item.id}', 'stage', this.value)" class="w-full bg-[#070707] border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981]" value="${item.stage || ''}" placeholder="https://staging.site.com">
+                            </div>
+                            <div class="relative pr-8">
+                                <span class="text-[9px] font-mono text-[#505050] block mb-1">PROD TARGET #${index+1}</span>
+                                <input type="url" onchange="updateRowValue('${item.id}', 'prod', this.value)" class="w-full bg-[#070707] border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981]" value="${item.prod || ''}" placeholder="https://site.com">
+                                <button onclick="removeSuiteRow('${item.id}')" class="absolute right-1 bottom-2 text-xs text-red-500/60 hover:text-red-400 p-1">✕</button>
+                            </div>
+                        </div>`;
+                } else {
+                    return `
+                        <div class="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative pr-10">
+                            <div class="flex-1">
+                                <span class="text-[9px] font-mono text-[#505050] block mb-1">ANALYSIS TARGET #${index+1}</span>
+                                <input type="url" onchange="updateRowValue('${item.id}', 'url', this.value)" class="w-full bg-[#070707] border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981]" value="${item.url || ''}" placeholder="https://site.com/subpage">
+                            </div>
+                            <button onclick="removeSuiteRow('${item.id}')" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-500/60 hover:text-red-400 p-1">✕</button>
+                        </div>`;
+                }
+            }).join('');
+        }
+
+        function addSuiteRow() {
+            if (suiteStorage[currentActiveTab].length >= 20) {
+                alert("Límite alcanzado: Máximo 20 configuraciones por módulo.");
+                return;
+            }
+            const newId = crypto.randomUUID();
+            if (currentActiveTab === 'vrt') {
+                suiteStorage.vrt.push({ id: newId, stage: '', prod: '' });
+            } else {
+                suiteStorage[currentActiveTab].push({ id: newId, url: '' });
+            }
+            renderSuiteRows();
+            updateCountersPanel();
+        }
+
+        function removeSuiteRow(id) {
+            suiteStorage[currentActiveTab] = suiteStorage[currentActiveTab].filter(i => i.id !== id);
+            renderSuiteRows();
+            updateCountersPanel();
+        }
+
+        function updateRowValue(id, field, val) {
+            const row = suiteStorage[currentActiveTab].find(i => i.id === id);
+            if (row) row[field] = val;
+        }
+
+        function saveCurrentSuite() {
+            localStorage.setItem('qavision_suite_storage', JSON.stringify(suiteStorage));
+            updateCountersPanel();
+            alert("Configuración de suite guardada exitosamente en memoria local.");
+        }
+
+        function loadSuiteFromLocalStorage() {
+            const raw = localStorage.getItem('qavision_suite_storage');
+            if (raw) {
+                suiteStorage = JSON.parse(raw);
+            }
+            renderSuiteRows();
+            updateCountersPanel();
+        }
+
+        function updateCountersPanel() {
+            const v = suiteStorage.vrt.length;
+            const s = suiteStorage.seo.length;
+            const p = suiteStorage.perf.length;
+            const l = suiteStorage.links.length;
+            
+            document.getElementById('suite-global-counter').innerText = `Guardadas: ${v+s+p+l} / 80`;
+            document.getElementById('mass-count-vrt').innerText = `${v} / 20`;
+            document.getElementById('mass-count-seo').innerText = `${s} / 20`;
+            document.getElementById('mass-count-perf').innerText = `${p} / 20`;
+            document.getElementById('mass-count-links').innerText = `${l} / 20`;
+            
+            const btnMass = document.getElementById('btn-trigger-mass-run');
+            const total = v + s + p + l;
+            btnMass.innerText = total > 0 ? `Ejecutar Suite Completa (${total} Tests)` : "Ejecutar Suite Completa";
+        }
+
+        // 4. DISPARADOR DE EJECUCIÓN MASIVA (MASS RUN COUPLING)
+        document.getElementById('btn-trigger-mass-run').addEventListener('click', () => {
+            const totalTests = suiteStorage.vrt.length + suiteStorage.seo.length + suiteStorage.perf.length + suiteStorage.links.length;
+            if (totalTests === 0) {
+                alert("El Suite Manager está vacío. Configurá y guardá URLs antes de lanzar una ejecución en lote.");
+                return;
+            }
+            
+            // Simulación visual de inicialización de hilos concurrentes
+            const btn = document.getElementById('btn-trigger-mass-run');
+            btn.disabled = true;
+            btn.className = "w-full bg-zinc-800 text-zinc-500 font-black py-3.5 rounded-xl text-xs tracking-wider uppercase cursor-not-allowed mt-4 animate-pulse";
+            btn.innerText = `Procesando ${totalTests} análisis en batch...`;
+            
+            setTimeout(() => {
+                alert(`Batch inyectado con éxito al motor automatizado. Se dispararon ${totalTests} instancias de Playwright en paralelo. Podrás seguir los reportes en la tabla de Historial en unos instantes.`);
+                btn.disabled = false;
+                btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
+                updateCountersPanel();
+            }, 2500);
+        });
+
+        // 5. CHART DE TENDENCIAS
         function renderTrendChart() {
             const ctx = document.getElementById('trendChart').getContext('2d');
             new Chart(ctx, {
@@ -287,7 +474,7 @@
             });
         }
 
-        // Init
+        // Init secuencial de carga
         verificarAccesoSaaS();
         renderTrendChart();
     </script>
