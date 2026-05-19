@@ -242,302 +242,304 @@
     </main>
 
 <script>
-        const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
-        let dashClient = null;
-        let currentActiveTab = 'vrt';
-        
-        let suiteStorage = {
-            vrt: [],
-            seo: [],
-            perf: [],
-            links: []
-        };
+    const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+    let dashClient = null;
+    let currentActiveTab = 'vrt';
+    
+    let suiteStorage = {
+        vrt: [],
+        seo: [],
+        perf: [],
+        links: []
+    };
 
-        // Encapsulamiento seguro para evitar que caídas de red congelen la UI
-        function inicializarPlataforma() {
-            try {
-                // Validación de dependencias críticas
-                if (typeof supabase === 'undefined') {
-                    console.error("Critical: El CDN de Supabase no se cargó correctamente.");
-                    document.getElementById('user-email').innerText = "Offline Console";
-                    configurarListenersBasicos();
-                    return;
-                }
-
-                dashClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-                // Ejecución de flujos protegidos
-                verificarAccesoSaaS();
-                configurarListenersCompletos();
-
-                if (typeof Chart !== 'undefined') {
-                    renderTrendChart();
-                } else {
-                    console.warn("Chart.js no disponible. Omitiendo renderizado de gráfico.");
-                }
-
-            } catch (err) {
-                console.error("Error general en inicialización:", err);
+    function inicializarPlataforma() {
+        try {
+            if (typeof supabase === 'undefined') {
+                console.error("Critical: El CDN de Supabase no se cargó correctamente.");
+                document.getElementById('user-email').innerText = "Offline Console";
+                configurarListenersBasicos();
+                return;
             }
+
+            dashClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            verificarAccesoSaaS();
+            configurarListenersCompletos();
+
+            if (typeof Chart !== 'undefined') {
+                renderTrendChart();
+            } else {
+                console.warn("Chart.js no disponible. Omitiendo renderizado de gráfico.");
+            }
+
+        } catch (err) {
+            console.error("Error general en inicialización:", err);
+        }
+    }
+
+    function configurarListenersBasicos() {
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            window.location.replace('login.html');
+        });
+    }
+
+    async function verificarAccesoSaaS() {
+        if (!dashClient) return;
+        try {
+            const { data: { session }, error } = await dashClient.auth.getSession();
+            if (error || !session) {
+                window.location.replace('login.html');
+                return;
+            }
+            document.getElementById('user-email').innerText = session.user.email;
+            loadSuiteFromLocalStorage();
+        } catch (e) {
+            console.error("Error verificando credenciales:", e);
+        }
+    }
+
+    function configurarListenersCompletos() {
+        configurarListenersBasicos();
+
+        const suiteSelector = document.getElementById('new-test-type');
+        const stagingContainer = document.getElementById('container-url-staging');
+        const labelProd = document.getElementById('label-url-prod');
+        const inputProd = document.getElementById('new-test-url-prod');
+
+        // FIX: aplicar estado inicial correcto al cargar la página
+        if (suiteSelector && suiteSelector.value !== 'visual_regression.html') {
+            if (stagingContainer) {
+                stagingContainer.style.opacity = '0';
+                stagingContainer.style.pointerEvents = 'none';
+                stagingContainer.style.transform = 'translateY(-10px)';
+            }
+            if (labelProd) labelProd.innerText = 'Target URL Analysis';
+            if (inputProd) inputProd.placeholder = 'https://ejemplo.com/pagina-a-auditar';
         }
 
-        // Si falla la red, al menos permitimos que el entorno responda de forma básica
-        function configurarListenersBasicos() {
-            document.getElementById('btn-logout').addEventListener('click', () => {
-                window.location.replace('login.html');
+        if (suiteSelector) {
+            suiteSelector.addEventListener('change', (e) => {
+                if (e.target.value === "visual_regression.html") {
+                    if (stagingContainer) {
+                        stagingContainer.style.opacity = "1";
+                        stagingContainer.style.pointerEvents = "auto";
+                        stagingContainer.style.transform = "translateY(0)";
+                    }
+                    if (labelProd) labelProd.innerText = "URL de Producción";
+                    if (inputProd) inputProd.placeholder = "https://ejemplo.com";
+                } else {
+                    if (stagingContainer) {
+                        stagingContainer.style.opacity = "0";
+                        stagingContainer.style.pointerEvents = "none";
+                        stagingContainer.style.transform = "translateY(-10px)";
+                    }
+                    if (labelProd) labelProd.innerText = "Target URL Analysis";
+                    if (inputProd) inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
+                }
             });
         }
 
-        async function verificarAccesoSaaS() {
-            if (!dashClient) return;
-            try {
-                const { data: { session }, error } = await dashClient.auth.getSession();
-                if (error || !session) {
-                    window.location.replace('login.html');
-                    return;
-                }
-                document.getElementById('user-email').innerText = session.user.email;
-                loadSuiteFromLocalStorage();
-            } catch (e) {
-                console.error("Error verificando credenciales:", e);
-            }
-        }
+        // FIX: guardar user_id en sessionStorage antes de redirigir
+        document.getElementById('btn-launch-test').addEventListener('click', async function () {
+            const testType = document.getElementById('new-test-type').value;
+            const urlProd = document.getElementById('new-test-url-prod').value.trim();
+            const urlStage = document.getElementById('new-test-url-stage').value.trim();
 
-        function configurarListenersCompletos() {
-            configurarListenersBasicos(); // Habilita logout seguro
-
-            const suiteSelector = document.getElementById('new-test-type');
-            const stagingContainer = document.getElementById('container-url-staging');
-            const labelProd = document.getElementById('label-url-prod');
-            const inputProd = document.getElementById('new-test-url-prod');
-
-            if (suiteSelector) {
-                suiteSelector.addEventListener('change', (e) => {
-                    if (e.target.value === "visual_regression.html") {
-                        if (stagingContainer) {
-                            stagingContainer.style.opacity = "1";
-                            stagingContainer.style.pointerEvents = "auto";
-                            stagingContainer.style.transform = "translateY(0)";
-                        }
-                        if (labelProd) labelProd.innerText = "URL de Producción";
-                        if (inputProd) inputProd.placeholder = "https://ejemplo.com";
-                    } else {
-                        if (stagingContainer) {
-                            stagingContainer.style.opacity = "0";
-                            stagingContainer.style.pointerEvents = "none";
-                            stagingContainer.style.transform = "translateY(-10px)";
-                        }
-                        if (labelProd) labelProd.innerText = "Target URL Analysis";
-                        if (inputProd) inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
-                    }
-                });
-            }
-
-            // --- LÓGICA DE CLAUDE INTEGRADA AQUÍ ---
-            document.getElementById('btn-launch-test').addEventListener('click', function () {
-              const testType = document.getElementById('new-test-type').value;
-              const urlProd = document.getElementById('new-test-url-prod').value.trim();
-              const urlStage = document.getElementById('new-test-url-stage').value.trim();
-
-              if (!urlProd) {
+            if (!urlProd) {
                 alert('La URL de producción es obligatoria.');
                 return;
-              }
+            }
 
-              const { data: { session } } = await dashClient.auth.getSession();
-              const userId = session?.user?.id || null;
-              sessionStorage.setItem('qavision_user_id', userId);  
+            const { data: { session } } = await dashClient.auth.getSession();
+            const userId = session?.user?.id || null;
 
-              sessionStorage.setItem('qavision_last_prod', urlProd);
-              sessionStorage.setItem('qavision_last_stage', urlStage);
-              sessionStorage.setItem('qavision_trigger_test', 'true');
+            sessionStorage.setItem('qavision_user_id', userId);
+            sessionStorage.setItem('qavision_last_prod', urlProd);
+            sessionStorage.setItem('qavision_last_stage', urlStage);
+            sessionStorage.setItem('qavision_trigger_test', 'true');
 
-              window.location.href = testType;
-            });
-            // ---------------------------------------
+            window.location.href = testType;
+        });
 
-            document.getElementById('btn-trigger-mass-run').addEventListener('click', () => {
-                const totalTests = suiteStorage.vrt.length + suiteStorage.seo.length + suiteStorage.perf.length + suiteStorage.links.length;
-                if (totalTests === 0) {
-                    alert("El Suite Manager está vacío.");
-                    return;
-                }
-                
-                const btn = document.getElementById('btn-trigger-mass-run');
-                btn.disabled = true;
-                btn.className = "w-full bg-zinc-800 text-zinc-500 font-black py-3.5 rounded-xl text-xs tracking-wider uppercase cursor-not-allowed mt-4 animate-pulse";
-                btn.innerText = `Procesando ${totalTests} análisis en batch...`;
-                
-                setTimeout(() => {
-                    alert(`Batch inyectado con éxito al motor automatizado. Se dispararon ${totalTests} instancias de Playwright en paralelo.`);
-                    btn.disabled = false;
-                    btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
-                    updateCountersPanel();
-                }, 2500);
-            });
-        }
-
-        // Hacer globales estas funciones mapeadas de forma inline en el HTML (onclick)
-        window.switchTab = function(tabId) {
-            currentActiveTab = tabId;
-            ['vrt', 'seo', 'perf', 'links'].forEach(t => {
-                const el = document.getElementById(`tab-${t}`);
-                if (el) {
-                    el.className = t === tabId 
-                        ? "text-xs font-mono px-4 py-2 rounded-lg bg-black text-white border border-[#10b981]/30 font-bold transition"
-                        : "text-xs font-mono px-4 py-2 rounded-lg text-[#505050] hover:text-white transition";
-                }
-            });
-            renderSuiteRows();
-        };
-
-        window.renderSuiteRows = function() {
-            const container = document.getElementById('suite-inputs-container');
-            if (!container) return;
-            const list = suiteStorage[currentActiveTab];
-            
-            const limitEl = document.getElementById('tab-row-limit');
-            if (limitEl) limitEl.innerText = `(${list.length}/20)`;
-            
-            if (list.length === 0) {
-                container.innerHTML = `<p class="text-xs text-[#505050] font-mono p-4 text-center border border-dashed border-[#1a1a1a] rounded-xl">No hay URLs configuradas para este módulo.</p>`;
+        document.getElementById('btn-trigger-mass-run').addEventListener('click', () => {
+            const totalTests = suiteStorage.vrt.length + suiteStorage.seo.length + suiteStorage.perf.length + suiteStorage.links.length;
+            if (totalTests === 0) {
+                alert("El Suite Manager está vacío.");
                 return;
             }
+            
+            const btn = document.getElementById('btn-trigger-mass-run');
+            btn.disabled = true;
+            btn.className = "w-full bg-zinc-800 text-zinc-500 font-black py-3.5 rounded-xl text-xs tracking-wider uppercase cursor-not-allowed mt-4 animate-pulse";
+            btn.innerText = `Procesando ${totalTests} análisis en batch...`;
+            
+            setTimeout(() => {
+                alert(`Batch inyectado con éxito al motor automatizado. Se dispararon ${totalTests} instancias de Playwright en paralelo.`);
+                btn.disabled = false;
+                btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
+                updateCountersPanel();
+            }, 2500);
+        });
+    }
 
-            container.innerHTML = list.map((item, index) => {
-                if (currentActiveTab === 'vrt') {
-                    return `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative group">
-                            <div>
-                                <span class="text-[9px] font-mono text-[#505050] block mb-1">STAGING TARGET #${index+1}</span>
-                                <input type="url" onchange="updateRowValue('${item.id}', 'stage', this.value)" class="w-full bg-[#070707] border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981]" value="${item.stage || ''}" placeholder="https://staging.site.com">
-                            </div>
-                            <div class="relative pr-8">
-                                <span class="text-[9px] font-mono text-[#505050] block mb-1">PROD TARGET #${index+1}</span>
-                                <input type="url" onchange="updateRowValue('${item.id}', 'prod', this.value)" class="w-full bg-[#070707] border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981]" value="${item.prod || ''}" placeholder="https://site.com">
-                                <button onclick="removeSuiteRow('${item.id}')" class="absolute right-1 bottom-2 text-xs text-red-500/60 hover:text-red-400 p-1">✕</button>
-                            </div>
-                        </div>`;
-                } else {
-                    return `
-                        <div class="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative pr-10">
-                            <div class="flex-1">
-                                <span class="text-[9px] font-mono text-[#505050] block mb-1">ANALYSIS TARGET #${index+1}</span>
-                                <input type="url" onchange="updateRowValue('${item.id}', 'url', this.value)" class="w-full bg-[#070707] border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981]" value="${item.url || ''}" placeholder="https://site.com/subpage">
-                            </div>
-                            <button onclick="removeSuiteRow('${item.id}')" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-500/60 hover:text-red-400 p-1">✕</button>
-                        </div>`;
-                }
-            }).join('');
-        };
-
-        // Generador alternativo de ID por si se abre local sin HTTPS
-        function generateSafeID() {
-            try {
-                return crypto.randomUUID();
-            } catch (e) {
-                return 'f_xxxxxx'.replace(/[x]/g, () => (Math.random() * 16 | 0).toString(16));
+    window.switchTab = function(tabId) {
+        currentActiveTab = tabId;
+        ['vrt', 'seo', 'perf', 'links'].forEach(t => {
+            const el = document.getElementById(`tab-${t}`);
+            if (el) {
+                el.className = t === tabId 
+                    ? "text-xs font-mono px-4 py-2 rounded-lg bg-black text-white border border-[#10b981]/30 font-bold transition"
+                    : "text-xs font-mono px-4 py-2 rounded-lg text-[#505050] hover:text-white transition";
             }
+        });
+        renderSuiteRows();
+    };
+
+    window.renderSuiteRows = function() {
+        const container = document.getElementById('suite-inputs-container');
+        if (!container) return;
+        const list = suiteStorage[currentActiveTab];
+        
+        const limitEl = document.getElementById('tab-row-limit');
+        if (limitEl) limitEl.innerText = `(${list.length}/20)`;
+        
+        if (list.length === 0) {
+            container.innerHTML = `<p class="text-xs text-[#505050] font-mono p-4 text-center border border-dashed border-[#1a1a1a] rounded-xl">No hay URLs configuradas para este módulo.</p>`;
+            return;
         }
 
-        window.addSuiteRow = function() {
-            if (suiteStorage[currentActiveTab].length >= 20) {
-                alert("Límite alcanzado: Máximo 20 configuraciones por módulo.");
-                return;
-            }
-            const newId = generateSafeID();
+        container.innerHTML = list.map((item, index) => {
             if (currentActiveTab === 'vrt') {
-                suiteStorage.vrt.push({ id: newId, stage: '', prod: '' });
+                return `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative group">
+                        <div>
+                            <span class="text-[9px] font-mono text-[#505050] block mb-1">STAGING TARGET #${index+1}</span>
+                            <input type="url" onchange="updateRowValue('${item.id}', 'stage', this.value)" class="w-full bg-[#070707] border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981]" value="${item.stage || ''}" placeholder="https://staging.site.com">
+                        </div>
+                        <div class="relative pr-8">
+                            <span class="text-[9px] font-mono text-[#505050] block mb-1">PROD TARGET #${index+1}</span>
+                            <input type="url" onchange="updateRowValue('${item.id}', 'prod', this.value)" class="w-full bg-[#070707] border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981]" value="${item.prod || ''}" placeholder="https://site.com">
+                            <button onclick="removeSuiteRow('${item.id}')" class="absolute right-1 bottom-2 text-xs text-red-500/60 hover:text-red-400 p-1">✕</button>
+                        </div>
+                    </div>`;
             } else {
-                suiteStorage[currentActiveTab].push({ id: newId, url: '' });
+                return `
+                    <div class="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative pr-10">
+                        <div class="flex-1">
+                            <span class="text-[9px] font-mono text-[#505050] block mb-1">ANALYSIS TARGET #${index+1}</span>
+                            <input type="url" onchange="updateRowValue('${item.id}', 'url', this.value)" class="w-full bg-[#070707] border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981]" value="${item.url || ''}" placeholder="https://site.com/subpage">
+                        </div>
+                        <button onclick="removeSuiteRow('${item.id}')" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-500/60 hover:text-red-400 p-1">✕</button>
+                    </div>`;
             }
-            renderSuiteRows();
-            updateCountersPanel();
-        };
+        }).join('');
+    };
 
-        window.removeSuiteRow = function(id) {
-            suiteStorage[currentActiveTab] = suiteStorage[currentActiveTab].filter(i => i.id !== id);
-            renderSuiteRows();
-            updateCountersPanel();
-        };
-
-        window.updateRowValue = function(id, field, val) {
-            const row = suiteStorage[currentActiveTab].find(i => i.id === id);
-            if (row) row[field] = val;
-        };
-
-        window.saveCurrentSuite = function() {
-            localStorage.setItem('qavision_suite_storage', JSON.stringify(suiteStorage));
-            updateCountersPanel();
-            alert("Configuración de suite guardada.");
-        };
-
-        function loadSuiteFromLocalStorage() {
-            const raw = localStorage.getItem('qavision_suite_storage');
-            if (raw) {
-                try { suiteStorage = JSON.parse(raw); } catch(e) {}
-            }
-            renderSuiteRows();
-            updateCountersPanel();
+    function generateSafeID() {
+        try {
+            return crypto.randomUUID();
+        } catch (e) {
+            return 'f_xxxxxx'.replace(/[x]/g, () => (Math.random() * 16 | 0).toString(16));
         }
+    }
 
-        function updateCountersPanel() {
-            const v = suiteStorage.vrt.length;
-            const s = suiteStorage.seo.length;
-            const p = suiteStorage.perf.length;
-            const l = suiteStorage.links.length;
-            
-            const globalCount = document.getElementById('suite-global-counter');
-            if (globalCount) globalCount.innerText = `Guardadas: ${v+s+p+l} / 80`;
-            
-            if (document.getElementById('mass-count-vrt')) document.getElementById('mass-count-vrt').innerText = `${v} / 20`;
-            if (document.getElementById('mass-count-seo')) document.getElementById('mass-count-seo').innerText = `${s} / 20`;
-            if (document.getElementById('mass-count-perf')) document.getElementById('mass-count-perf').innerText = `${p} / 20`;
-            if (document.getElementById('mass-count-links')) document.getElementById('mass-count-links').innerText = `${l} / 20`;
-            
-            const btnMass = document.getElementById('btn-trigger-mass-run');
-            if (btnMass) {
-                const total = v + s + p + l;
-                btnMass.innerText = total > 0 ? `Ejecutar Suite Completa (${total} Tests)` : "Ejecutar Suite Completa";
-            }
+    window.addSuiteRow = function() {
+        if (suiteStorage[currentActiveTab].length >= 20) {
+            alert("Límite alcanzado: Máximo 20 configuraciones por módulo.");
+            return;
         }
+        const newId = generateSafeID();
+        if (currentActiveTab === 'vrt') {
+            suiteStorage.vrt.push({ id: newId, stage: '', prod: '' });
+        } else {
+            suiteStorage[currentActiveTab].push({ id: newId, url: '' });
+        }
+        renderSuiteRows();
+        updateCountersPanel();
+    };
 
-        function renderTrendChart() {
-            const ctx = document.getElementById('trendChart').getContext('2d');
-            if (!ctx) return;
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-                    datasets: [{
-                        label: 'Errores',
-                        data: [32, 28, 19, 24, 12, 7, 3],
-                        borderColor: '#ef4444',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#070707',
-                        pointBorderColor: '#ef4444',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        tension: 0.4,
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: '#505050', font: { size: 10, family: 'monospace' } } },
-                        y: { grid: { color: '#1a1a1a' }, ticks: { color: '#505050', font: { size: 10, family: 'monospace' } } }
-                    }
+    window.removeSuiteRow = function(id) {
+        suiteStorage[currentActiveTab] = suiteStorage[currentActiveTab].filter(i => i.id !== id);
+        renderSuiteRows();
+        updateCountersPanel();
+    };
+
+    window.updateRowValue = function(id, field, val) {
+        const row = suiteStorage[currentActiveTab].find(i => i.id === id);
+        if (row) row[field] = val;
+    };
+
+    window.saveCurrentSuite = function() {
+        localStorage.setItem('qavision_suite_storage', JSON.stringify(suiteStorage));
+        updateCountersPanel();
+        alert("Configuración de suite guardada.");
+    };
+
+    function loadSuiteFromLocalStorage() {
+        const raw = localStorage.getItem('qavision_suite_storage');
+        if (raw) {
+            try { suiteStorage = JSON.parse(raw); } catch(e) {}
+        }
+        renderSuiteRows();
+        updateCountersPanel();
+    }
+
+    function updateCountersPanel() {
+        const v = suiteStorage.vrt.length;
+        const s = suiteStorage.seo.length;
+        const p = suiteStorage.perf.length;
+        const l = suiteStorage.links.length;
+        
+        const globalCount = document.getElementById('suite-global-counter');
+        if (globalCount) globalCount.innerText = `Guardadas: ${v+s+p+l} / 80`;
+        
+        if (document.getElementById('mass-count-vrt')) document.getElementById('mass-count-vrt').innerText = `${v} / 20`;
+        if (document.getElementById('mass-count-seo')) document.getElementById('mass-count-seo').innerText = `${s} / 20`;
+        if (document.getElementById('mass-count-perf')) document.getElementById('mass-count-perf').innerText = `${p} / 20`;
+        if (document.getElementById('mass-count-links')) document.getElementById('mass-count-links').innerText = `${l} / 20`;
+        
+        const btnMass = document.getElementById('btn-trigger-mass-run');
+        if (btnMass) {
+            const total = v + s + p + l;
+            btnMass.innerText = total > 0 ? `Ejecutar Suite Completa (${total} Tests)` : "Ejecutar Suite Completa";
+        }
+    }
+
+    function renderTrendChart() {
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        if (!ctx) return;
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                datasets: [{
+                    label: 'Errores',
+                    data: [32, 28, 19, 24, 12, 7, 3],
+                    borderColor: '#ef4444',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#070707',
+                    pointBorderColor: '#ef4444',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    tension: 0.4,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#505050', font: { size: 10, family: 'monospace' } } },
+                    y: { grid: { color: '#1a1a1a' }, ticks: { color: '#505050', font: { size: 10, family: 'monospace' } } }
                 }
-            });
-        }
+            }
+        });
+    }
 
-        // Inicialización segura garantizada al cargar el DOM
-        window.addEventListener('DOMContentLoaded', inicializarPlataforma);
-    </script>
+    window.addEventListener('DOMContentLoaded', inicializarPlataforma);
+</script>
     
 </body>
 </html>
