@@ -170,8 +170,8 @@
                 sessionStorage.removeItem('qavision_trigger_test');
 
                 try {
-                    // ATENCIÓN: Asegurate de que el puerto (7860) y la IP coincidan con tu servidor Python
-                    const response = await fetch('http://localhost:7860/api/comparar', {
+                    
+                    const response = await fetch('https://qavision-qavision-engine.hf.space/api/comparar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
