@@ -241,242 +241,93 @@
         </div>
     </main>
 
-    <script>
-        const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
-        const dashClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<script>
+        const sb = supabase.createClient("https://xdufdcwvaxvcdcjgdvvt.supabase.co", "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf");
 
-        let currentActiveTab = 'vrt';
-        
-        // Estructura en memoria para almacenar las listas de URLs (máximo 20 elementos cada una)
-        let suiteStorage = {
-            vrt: [],   // Estructura: { id: uuid, stage: '', prod: '' }
-            seo: [],   // Estructura: { id: uuid, url: '' }
-            perf: [],  // Estructura: { id: uuid, url: '' }
-            links: []  // Estructura: { id: uuid, url: '' }
-        };
-
-        // 1. CONTROL DE RUTA Y PROTECCIÓN
-        async function verificarAccesoSaaS() {
-            const { data: { session } } = await dashClient.auth.getSession();
-            if (!session) {
+        async function init() {
+            // 1. Obtener la sesión del usuario logueado
+            const { data: { user } } = await sb.auth.getUser();
+            
+            if (!user) {
+                console.error("Usuario no autenticado.");
                 window.location.replace('login.html');
                 return;
             }
-            document.getElementById('user-email').innerText = session.user.email;
-            loadSuiteFromLocalStorage();
-        }
 
-        document.getElementById('btn-logout').addEventListener('click', async () => {
-            const { error } = await dashClient.auth.signOut();
-            if (!error) window.location.replace('login.html');
-        });
+            // 2. Verificar si venimos del Dashboard con un test pendiente
+            const pendingProd = localStorage.getItem('qavision_last_prod');
+            const pendingStage = localStorage.getItem('qavision_last_stage');
 
-        // 2. FORMULARIO ADAPTATIVO INDIVIDUAL
-        const suiteSelector = document.getElementById('new-test-type');
-        const stagingContainer = document.getElementById('container-url-staging');
-        const labelProd = document.getElementById('label-url-prod');
-        const inputProd = document.getElementById('new-test-url-prod');
+            if (pendingProd && pendingStage) {
+                // Actualizamos la UI para mostrar que está cargando
+                document.getElementById('sub-header').innerText = "⏳ Ejecutando análisis con Playwright... Esto puede tardar unos segundos.";
+                document.getElementById('badge').innerText = "Procesando...";
+                document.getElementById('badge').className = "px-4 py-2 rounded-full text-xs font-black uppercase bg-amber-500/20 text-amber-500 border border-amber-500/50";
 
-        suiteSelector.addEventListener('change', (e) => {
-            if (e.target.value === "visual_regression.html") {
-                stagingContainer.style.opacity = "1";
-                stagingContainer.style.pointerEvents = "auto";
-                stagingContainer.style.transform = "translateY(0)";
-                labelProd.innerText = "URL de Producción";
-                inputProd.placeholder = "https://ejemplo.com";
-            } else {
-                stagingContainer.style.opacity = "0";
-                stagingContainer.style.pointerEvents = "none";
-                stagingContainer.style.transform = "translateY(-10px)";
-                labelProd.innerText = "Target URL Analysis";
-                inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
-            }
-        });
+                try {
+                    // 3. EJECUTAMOS EL BACKEND INYECTANDO EL USER_ID
+                    // NOTA: Asegúrate de usar la URL real de tu backend si no es localhost
+                    const response = await fetch("http://localhost:8000/api/comparar", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            url_a: pendingStage,
+                            url_b: pendingProd,
+                            user_id: user.id // <--- ESTO VINCULA LA PRUEBA AL USUARIO
+                        })
+                    });
 
-        document.getElementById('btn-launch-test').addEventListener('click', () => {
-            const destino = suiteSelector.value;
-            const urlProd = inputProd.value;
-            const urlStage = document.getElementById('new-test-url-stage').value;
-
-            if (urlProd) {
-                localStorage.setItem('qavision_last_prod', urlProd);
-                if (destino === "visual_regression.html" && urlStage) {
-                    localStorage.setItem('qavision_last_stage', urlStage);
+                    // Limpiamos las variables para que el test no se repita si el usuario presiona F5
+                    localStorage.removeItem('qavision_last_prod');
+                    localStorage.removeItem('qavision_last_stage');
+                } catch (error) {
+                    console.error("Error ejecutando el test:", error);
+                    document.getElementById('sub-header').innerText = "❌ Error al conectar con el motor QA.";
+                    return; // Detiene la ejecución si el backend falla
                 }
-                window.location.href = destino;
             } else {
-                alert("Ingresá una URL válida.");
+                document.getElementById('sub-header').innerText = "Cargando tu historial de pruebas...";
             }
-        });
 
-        // 3. SUITE MANAGER (LÓGICA DE CONTROL DE FILAS DINÁMICAS)
-        function switchTab(tabId) {
-            currentActiveTab = tabId;
-            const tabs = ['vrt', 'seo', 'perf', 'links'];
-            tabs.forEach(t => {
-                const el = document.getElementById(`tab-${t}`);
-                if (t === tabId) {
-                    el.className = "text-xs font-mono px-4 py-2 rounded-lg bg-black text-white border border-[#10b981]/30 font-bold transition";
+            // 4. Consultar a Supabase ÚNICAMENTE los tests de este usuario
+            const { data, error } = await sb
+                .from('pruebas_qa')
+                .select('*')
+                .eq('user_id', user.id) // <--- FILTRO DE SEGURIDAD AISLADO
+                .order('creado_el', { ascending: false });
+
+            // 5. Renderizar los resultados
+            if (data && data.length > 0) {
+                const last = data[0];
+                document.getElementById('img-diff').src = last.img_diff_url || last.img_a_url;
+                document.getElementById('img-a').src = last.img_a_url;
+                document.getElementById('img-b').src = last.img_b_url;
+                document.getElementById('sub-header').innerText = `Comparativa ejecutada el ${new Date(last.creado_el).toLocaleString()}`;
+                
+                const badge = document.getElementById('badge');
+                if (last.diferencias > 0) {
+                    badge.innerText = `${last.diferencias} Errores de Propiedad`;
+                    badge.className = "px-4 py-2 rounded-full text-xs font-black uppercase bg-red-500/20 text-red-500 border border-red-500/50";
                 } else {
-                    el.className = "text-xs font-mono px-4 py-2 rounded-lg text-[#505050] hover:text-white transition";
+                    badge.innerText = "UI Match";
+                    badge.className = "px-4 py-2 rounded-full text-xs font-black uppercase bg-green-500/20 text-green-500 border border-green-500/50";
                 }
-            });
-            renderSuiteRows();
-        }
 
-        function renderSuiteRows() {
-            const container = document.getElementById('suite-inputs-container');
-            const list = suiteStorage[currentActiveTab];
-            document.getElementById('tab-row-limit').innerText = `(${list.length}/20)`;
-            
-            if (list.length === 0) {
-                container.innerHTML = `<p class="text-xs text-[#505050] font-mono p-4 text-center border border-dashed border-[#1a1a1a] rounded-xl">No hay URLs configuradas para este módulo.</p>`;
-                return;
-            }
-
-            container.innerHTML = list.map((item, index) => {
-                if (currentActiveTab === 'vrt') {
-                    return `
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative group">
-                            <div>
-                                <span class="text-[9px] font-mono text-[#505050] block mb-1">STAGING TARGET #${index+1}</span>
-                                <input type="url" onchange="updateRowValue('${item.id}', 'stage', this.value)" class="w-full bg-[#070707] border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981]" value="${item.stage || ''}" placeholder="https://staging.site.com">
-                            </div>
-                            <div class="relative pr-8">
-                                <span class="text-[9px] font-mono text-[#505050] block mb-1">PROD TARGET #${index+1}</span>
-                                <input type="url" onchange="updateRowValue('${item.id}', 'prod', this.value)" class="w-full bg-[#070707] border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981]" value="${item.prod || ''}" placeholder="https://site.com">
-                                <button onclick="removeSuiteRow('${item.id}')" class="absolute right-1 bottom-2 text-xs text-red-500/60 hover:text-red-400 p-1">✕</button>
-                            </div>
-                        </div>`;
-                } else {
-                    return `
-                        <div class="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative pr-10">
-                            <div class="flex-1">
-                                <span class="text-[9px] font-mono text-[#505050] block mb-1">ANALYSIS TARGET #${index+1}</span>
-                                <input type="url" onchange="updateRowValue('${item.id}', 'url', this.value)" class="w-full bg-[#070707] border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981]" value="${item.url || ''}" placeholder="https://site.com/subpage">
-                            </div>
-                            <button onclick="removeSuiteRow('${item.id}')" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-500/60 hover:text-red-400 p-1">✕</button>
-                        </div>`;
-                }
-            }).join('');
-        }
-
-        function addSuiteRow() {
-            if (suiteStorage[currentActiveTab].length >= 20) {
-                alert("Límite alcanzado: Máximo 20 configuraciones por módulo.");
-                return;
-            }
-            const newId = crypto.randomUUID();
-            if (currentActiveTab === 'vrt') {
-                suiteStorage.vrt.push({ id: newId, stage: '', prod: '' });
+                document.getElementById('historial').innerHTML = data.slice(0, 10).map(i => `
+                    <div class="p-3 bg-[#334155] rounded-xl border-l-4 ${i.diferencias > 0 ? 'border-red-500' : 'border-green-500'} mb-2">
+                        <p class="text-[10px] font-bold text-gray-400">${new Date(i.creado_el).toLocaleTimeString()}</p>
+                        <p class="text-xs truncate">${i.url_a}</p>
+                    </div>
+                `).join('');
             } else {
-                suiteStorage[currentActiveTab].push({ id: newId, url: '' });
+                // Estado vacío si es la primera vez que el usuario entra y no tiene pruebas
+                document.getElementById('sub-header').innerText = "No tienes pruebas en tu historial.";
+                document.getElementById('badge').style.display = "none";
+                document.getElementById('historial').innerHTML = '<p class="text-xs text-gray-500 mt-2">Historial vacío.</p>';
             }
-            renderSuiteRows();
-            updateCountersPanel();
         }
-
-        function removeSuiteRow(id) {
-            suiteStorage[currentActiveTab] = suiteStorage[currentActiveTab].filter(i => i.id !== id);
-            renderSuiteRows();
-            updateCountersPanel();
-        }
-
-        function updateRowValue(id, field, val) {
-            const row = suiteStorage[currentActiveTab].find(i => i.id === id);
-            if (row) row[field] = val;
-        }
-
-        function saveCurrentSuite() {
-            localStorage.setItem('qavision_suite_storage', JSON.stringify(suiteStorage));
-            updateCountersPanel();
-            alert("Configuración de suite guardada exitosamente en memoria local.");
-        }
-
-        function loadSuiteFromLocalStorage() {
-            const raw = localStorage.getItem('qavision_suite_storage');
-            if (raw) {
-                suiteStorage = JSON.parse(raw);
-            }
-            renderSuiteRows();
-            updateCountersPanel();
-        }
-
-        function updateCountersPanel() {
-            const v = suiteStorage.vrt.length;
-            const s = suiteStorage.seo.length;
-            const p = suiteStorage.perf.length;
-            const l = suiteStorage.links.length;
-            
-            document.getElementById('suite-global-counter').innerText = `Guardadas: ${v+s+p+l} / 80`;
-            document.getElementById('mass-count-vrt').innerText = `${v} / 20`;
-            document.getElementById('mass-count-seo').innerText = `${s} / 20`;
-            document.getElementById('mass-count-perf').innerText = `${p} / 20`;
-            document.getElementById('mass-count-links').innerText = `${l} / 20`;
-            
-            const btnMass = document.getElementById('btn-trigger-mass-run');
-            const total = v + s + p + l;
-            btnMass.innerText = total > 0 ? `Ejecutar Suite Completa (${total} Tests)` : "Ejecutar Suite Completa";
-        }
-
-        // 4. DISPARADOR DE EJECUCIÓN MASIVA (MASS RUN COUPLING)
-        document.getElementById('btn-trigger-mass-run').addEventListener('click', () => {
-            const totalTests = suiteStorage.vrt.length + suiteStorage.seo.length + suiteStorage.perf.length + suiteStorage.links.length;
-            if (totalTests === 0) {
-                alert("El Suite Manager está vacío. Configurá y guardá URLs antes de lanzar una ejecución en lote.");
-                return;
-            }
-            
-            // Simulación visual de inicialización de hilos concurrentes
-            const btn = document.getElementById('btn-trigger-mass-run');
-            btn.disabled = true;
-            btn.className = "w-full bg-zinc-800 text-zinc-500 font-black py-3.5 rounded-xl text-xs tracking-wider uppercase cursor-not-allowed mt-4 animate-pulse";
-            btn.innerText = `Procesando ${totalTests} análisis en batch...`;
-            
-            setTimeout(() => {
-                alert(`Batch inyectado con éxito al motor automatizado. Se dispararon ${totalTests} instancias de Playwright en paralelo. Podrás seguir los reportes en la tabla de Historial en unos instantes.`);
-                btn.disabled = false;
-                btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
-                updateCountersPanel();
-            }, 2500);
-        });
-
-        // 5. CHART DE TENDENCIAS
-        function renderTrendChart() {
-            const ctx = document.getElementById('trendChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-                    datasets: [{
-                        label: 'Errores',
-                        data: [32, 28, 19, 24, 12, 7, 3],
-                        borderColor: '#ef4444',
-                        borderWidth: 3,
-                        pointBackgroundColor: '#070707',
-                        pointBorderColor: '#ef4444',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        tension: 0.4,
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: '#505050', font: { size: 10, family: 'monospace' } } },
-                        y: { grid: { color: '#1a1a1a' }, ticks: { color: '#505050', font: { size: 10, family: 'monospace' } } }
-                    }
-                }
-            });
-        }
-
-        // Init secuencial de carga
-        verificarAccesoSaaS();
-        renderTrendChart();
+        
+        init();
     </script>
 </body>
 </html>
