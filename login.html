@@ -163,7 +163,7 @@
         document.getElementById('btn-google').addEventListener('click', async () => {
             const { error } = await authClient.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.origin + '/index.html' }
+                options: { redirectTo: window.location.origin + '/QAVision/index.html' }
             });
             if (error) showAlert(error.message, 'error');
         });
@@ -172,7 +172,7 @@
         document.getElementById('btn-github').addEventListener('click', async () => {
             const { error } = await authClient.auth.signInWithOAuth({
                 provider: 'github',
-                options: { redirectTo: window.location.origin + '/index.html' }
+                options: { redirectTo: window.location.origin + '/QAVision/index.html' }
             });
             if (error) showAlert(error.message, 'error');
         });
