@@ -52,35 +52,75 @@
         const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function cargarHistorial() {
-            // 1. OBTENEMOS EL USUARIO LOGUEADO
+        // --- CÓDIGO DE CONTROL (CLAUDE) ---
+        async function init() {
             const { data: { user } } = await sb.auth.getUser();
-            
+
             if (!user) {
-                console.error("Usuario no autenticado");
+                window.location.href = 'login.html';
                 return;
             }
 
-            // 2. HACEMOS LA CONSULTA FILTRADA POR SU ID
+            const shouldTrigger = sessionStorage.getItem('qavision_trigger_test') === 'true';
+
+            if (shouldTrigger) {
+                document.getElementById('sub-header').textContent = '⏳ Ejecutando análisis en el backend con Playwright...';
+
+                const urlStage = sessionStorage.getItem('qavision_last_stage');
+                const urlProd  = sessionStorage.getItem('qavision_last_prod');
+
+                sessionStorage.removeItem('qavision_last_prod');
+                sessionStorage.removeItem('qavision_last_stage');
+                sessionStorage.removeItem('qavision_trigger_test');
+
+                try {
+                    const response = await fetch('http://localhost:8000/api/comparar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            url_a: urlStage,
+                            url_b: urlProd,
+                            user_id: user.id
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Error del servidor: ${response.status}`);
+                    }
+                } catch (error) {
+                    document.getElementById('sub-header').textContent = `❌ Error al conectar con el backend: ${error.message}`;
+                }
+            } else {
+                 document.getElementById('sub-header').textContent = 'Cargando tu historial de pruebas...';
+            }
+
             const { data, error } = await sb
                 .from('pruebas_qa')
                 .select('*')
-                .eq('user_id', user.id) // <--- FILTRO DE SEGURIDAD
+                .eq('user_id', user.id)
                 .order('creado_el', { ascending: false });
 
-            if (error) {
-                console.error("Error cargando historial:", error);
-                return;
+            if (!error && data) {
+                renderizarResultados(data);
             }
+        }
 
+        // --- CÓDIGO VISUAL (TU MAQUETA ORIGINAL AISLADA) ---
+        function renderizarResultados(data) {
             if (data && data.length > 0) {
                 const last = data[0];
+                
+                // Pinta las imágenes
                 document.getElementById('img-diff').src = last.img_diff_url || last.img_a_url;
                 document.getElementById('img-a').src = last.img_a_url;
                 document.getElementById('img-b').src = last.img_b_url;
+                
+                // Actualiza los textos
                 document.getElementById('sub-header').innerText = `Comparativa ejecutada el ${new Date(last.creado_el).toLocaleString()}`;
                 
+                // Renderiza el badge
                 const badge = document.getElementById('badge');
+                badge.style.display = "inline-block";
                 if (last.diferencias > 0) {
                     badge.innerText = `${last.diferencias} Errores de Propiedad`;
                     badge.className = "px-4 py-2 rounded-full text-xs font-black uppercase bg-red-500/20 text-red-500 border border-red-500/50";
@@ -89,16 +129,25 @@
                     badge.className = "px-4 py-2 rounded-full text-xs font-black uppercase bg-green-500/20 text-green-500 border border-green-500/50";
                 }
 
+                // Renderiza la lista lateral (máximo 10 items)
                 document.getElementById('historial').innerHTML = data.slice(0, 10).map(i => `
                     <div class="p-3 bg-[#334155] rounded-xl border-l-4 ${i.diferencias > 0 ? 'border-red-500' : 'border-green-500'} mb-2">
-                        <p class="text-[10px] font-bold text-gray-400 uppercase">${new Date(i.creado_el).toLocaleDateString()}</p>
-                        <p class="text-xs font-bold">${i.diferencias > 0 ? i.diferencias + ' diferencias' : 'Sin cambios'}</p>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase">${new Date(i.creado_el).toLocaleDateString()} - ${new Date(i.creado_el).toLocaleTimeString()}</p>
+                        <p class="text-xs font-bold mt-1">${i.diferencias > 0 ? i.diferencias + ' diferencias detectadas' : 'Sin cambios'}</p>
+                        <p class="text-[10px] text-gray-400 truncate mt-1">${i.url_a}</p>
                     </div>
                 `).join('');
+            } else {
+                // Estado vacío si el usuario no tiene historial
+                document.getElementById('sub-header').innerText = "No tienes pruebas en tu historial.";
+                document.getElementById('badge').style.display = "none";
+                document.getElementById('historial').innerHTML = '<p class="text-xs text-gray-500 mt-2">Historial vacío.</p>';
             }
         }
 
-        cargarHistorial();
+        // Ejecutar al cargar la página
+        init();
     </script>
+    
 </body>
 </html>
