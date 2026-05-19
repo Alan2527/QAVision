@@ -83,6 +83,15 @@
         const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
         const qaClient = supabase.createClient(SB_URL, SB_KEY);
 
+        async function protegerReporte() {
+            const { data: { session } } = await _supabase.auth.getSession();
+            if (!session) {
+                // Si intenta entrar sin login, lo mandamos a loguearse
+                window.location.replace('login.html');
+            }
+        }
+        protegerReporte();
+
         async function cargarReporte() {
             const { data, error } = await qaClient
                 .from('auditoria_links')
