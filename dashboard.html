@@ -334,22 +334,24 @@
                 });
             }
 
-            document.getElementById('btn-launch-test').addEventListener('click', () => {
-                const destino = suiteSelector ? suiteSelector.value : 'visual_regression.html';
-                const urlProd = inputProd ? inputProd.value : '';
-                const inputStage = document.getElementById('new-test-url-stage');
-                const urlStage = inputStage ? inputStage.value : '';
+            // --- LÓGICA DE CLAUDE INTEGRADA AQUÍ ---
+            document.getElementById('btn-launch-test').addEventListener('click', function () {
+              const testType = document.getElementById('new-test-type').value;
+              const urlProd = document.getElementById('new-test-url-prod').value.trim();
+              const urlStage = document.getElementById('new-test-url-stage').value.trim();
 
-                if (urlProd) {
-                    localStorage.setItem('qavision_last_prod', urlProd);
-                    if (destino === "visual_regression.html" && urlStage) {
-                        localStorage.setItem('qavision_last_stage', urlStage);
-                    }
-                    window.location.href = destino;
-                } else {
-                    alert("Ingresá una URL válida.");
-                }
+              if (!urlProd) {
+                alert('La URL de producción es obligatoria.');
+                return;
+              }
+
+              sessionStorage.setItem('qavision_last_prod', urlProd);
+              sessionStorage.setItem('qavision_last_stage', urlStage);
+              sessionStorage.setItem('qavision_trigger_test', 'true');
+
+              window.location.href = testType;
             });
+            // ---------------------------------------
 
             document.getElementById('btn-trigger-mass-run').addEventListener('click', () => {
                 const totalTests = suiteStorage.vrt.length + suiteStorage.seo.length + suiteStorage.perf.length + suiteStorage.links.length;
