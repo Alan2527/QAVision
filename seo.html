@@ -57,164 +57,194 @@
 
     </main>
 
-    <script>
-        const SB_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
-        const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
-        const qaClient = supabase.createClient(SB_URL, SB_KEY);
+<script>
+    const SB_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+    const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+    const qaClient = supabase.createClient(SB_URL, SB_KEY);
 
-        function badge(tipo) {
-            const map = { ok: 'badge-ok', warn: 'badge-warn', error: 'badge-error' };
-            const txt = { ok: '✓ OK', warn: '⚠ Advertencia', error: '✗ Error' };
-            return `<span class="badge ${map[tipo]}">${txt[tipo]}</span>`;
+    function badge(tipo) {
+        const map = { ok: 'badge-ok', warn: 'badge-warn', error: 'badge-error' };
+        const txt = { ok: '✓ OK', warn: '⚠ Advertencia', error: '✗ Error' };
+        return `<span class="badge ${map[tipo]}">${txt[tipo]}</span>`;
+    }
+
+    function row(titulo, detalle, tipo) {
+        return `<div class="check-row">
+            <div style="padding-top:2px">${badge(tipo)}</div>
+            <div>
+                <p class="text-sm font-bold">${titulo}</p>
+                <p class="text-xs text-gray-500 mt-1 font-mono">${detalle}</p>
+            </div>
+        </div>`;
+    }
+
+    function seccion(titulo) {
+        return `<p class="section-title">${titulo}</p>`;
+    }
+
+    async function init() {
+        const { data: { user } } = await qaClient.auth.getUser();
+        if (!user) { window.location.href = 'login.html'; return; }
+
+        const shouldTrigger = sessionStorage.getItem('qavision_trigger_test') === 'true';
+
+        if (shouldTrigger) {
+            document.getElementById('url-auditada').textContent = '⏳ Ejecutando análisis SEO...';
+            const url = sessionStorage.getItem('qavision_last_prod');
+
+            sessionStorage.removeItem('qavision_last_prod');
+            sessionStorage.removeItem('qavision_last_stage');
+            sessionStorage.removeItem('qavision_trigger_test');
+            sessionStorage.removeItem('qavision_user_id');
+
+            try {
+                const response = await fetch('https://qavision-qavision-engine.hf.space/api/seo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, user_id: user.id })
+                });
+                if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            } catch (error) {
+                document.getElementById('url-auditada').textContent = `❌ Error: ${error.message}`;
+            }
         }
 
-        function row(titulo, detalle, tipo) {
-            return `<div class="check-row">
-                <div style="padding-top:2px">${badge(tipo)}</div>
-                <div>
-                    <p class="text-sm font-bold">${titulo}</p>
-                    <p class="text-xs text-gray-500 mt-1 font-mono">${detalle}</p>
-                </div>
-            </div>`;
+        await cargarReporte(user.id);
+    }
+
+    async function cargarReporte(userId) {
+        const { data, error } = await qaClient
+            .from('seo_audits')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        if (error || !data.length) {
+            document.getElementById('url-auditada').textContent = 'No hay auditorías registradas.';
+            return;
         }
 
-        function seccion(titulo) {
-            return `<p class="section-title">${titulo}</p>`;
+        const r = data[0];
+        document.getElementById('url-auditada').textContent = r.url;
+
+        let html = '';
+        let oks = 0, warns = 0, errors = 0;
+
+        const cuenta = (t) => { if(t==='ok') oks++; else if(t==='warn') warns++; else errors++; };
+
+        html += seccion('Title & Meta Description');
+        if (!r.title) {
+            const t = 'error'; cuenta(t);
+            html += row('Title', 'No encontrado — crítico para SEO', t);
+        } else if (r.title_len < 30 || r.title_len > 60) {
+            const t = 'warn'; cuenta(t);
+            html += row('Title', `"${r.title}" — ${r.title_len} caracteres (recomendado: 30–60)`, t);
+        } else {
+            const t = 'ok'; cuenta(t);
+            html += row('Title', `"${r.title}" — ${r.title_len} caracteres`, t);
         }
 
-        async function cargarReporte() {
-            const { data, error } = await qaClient
-                .from('seo_audits')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(1);
-
-            if (error || !data.length) return console.error('Sin datos:', error);
-            const r = data[0];
-
-            document.getElementById('url-auditada').textContent = r.url;
-
-            let html = '';
-            let oks = 0, warns = 0, errors = 0;
-
-            const cuenta = (t) => { if(t==='ok') oks++; else if(t==='warn') warns++; else errors++; };
-
-            // --- TITLE ---
-            html += seccion('Title & Meta Description');
-            if (!r.title) {
-                const t = 'error'; cuenta(t);
-                html += row('Title', 'No encontrado — crítico para SEO', t);
-            } else if (r.title_len < 30 || r.title_len > 60) {
-                const t = 'warn'; cuenta(t);
-                html += row('Title', `"${r.title}" — ${r.title_len} caracteres (recomendado: 30–60)`, t);
-            } else {
-                const t = 'ok'; cuenta(t);
-                html += row('Title', `"${r.title}" — ${r.title_len} caracteres`, t);
-            }
-
-            if (!r.description) {
-                const t = 'error'; cuenta(t);
-                html += row('Meta Description', 'No encontrada — afecta el CTR en buscadores', t);
-            } else if (r.desc_len < 70 || r.desc_len > 160) {
-                const t = 'warn'; cuenta(t);
-                html += row('Meta Description', `${r.desc_len} caracteres (recomendado: 70–160)`, t);
-            } else {
-                const t = 'ok'; cuenta(t);
-                html += row('Meta Description', `${r.desc_len} caracteres`, t);
-            }
-
-            // --- H1 ---
-            html += seccion('Estructura de Encabezados');
-            if (r.h1_count === 0) {
-                const t = 'error'; cuenta(t);
-                html += row('H1', 'No encontrado — necesario para SEO', t);
-            } else if (r.h1_count > 1) {
-                const t = 'warn'; cuenta(t);
-                html += row('H1', `${r.h1_count} H1 encontrados — debería haber solo uno`, t);
-            } else {
-                const t = 'ok'; cuenta(t);
-                html += row('H1', `"${r.h1_text}"`, t);
-            }
-
-            // --- CANONICAL & ROBOTS ---
-            html += seccion('Indexación');
-            if (!r.canonical) {
-                const t = 'warn'; cuenta(t);
-                html += row('Canonical', 'No definido — puede causar contenido duplicado', t);
-            } else {
-                const t = 'ok'; cuenta(t);
-                html += row('Canonical', r.canonical, t);
-            }
-
-            if (!r.robots) {
-                const t = 'warn'; cuenta(t);
-                html += row('Meta Robots', 'No definido — se asume indexación por defecto', t);
-            } else if (r.robots.includes('noindex')) {
-                const t = 'error'; cuenta(t);
-                html += row('Meta Robots', `"${r.robots}" — página bloqueada para indexación`, t);
-            } else {
-                const t = 'ok'; cuenta(t);
-                html += row('Meta Robots', r.robots, t);
-            }
-
-            // --- OPEN GRAPH ---
-            html += seccion('Open Graph (Redes Sociales)');
-            const ogOk = r.og_title && r.og_image;
-            if (!r.og_title) {
-                const t = 'warn'; cuenta(t);
-                html += row('og:title', 'No definido — afecta cómo se ve al compartir en redes', t);
-            } else {
-                const t = 'ok'; cuenta(t);
-                html += row('og:title', r.og_title, t);
-            }
-            if (!r.og_image) {
-                const t = 'warn'; cuenta(t);
-                html += row('og:image', 'No definida — sin imagen al compartir en redes', t);
-            } else {
-                const t = 'ok'; cuenta(t);
-                html += row('og:image', r.og_image, t);
-            }
-            if (!r.og_description) {
-                const t = 'warn'; cuenta(t);
-                html += row('og:description', 'No definida', t);
-            } else {
-                const t = 'ok'; cuenta(t);
-                html += row('og:description', r.og_description.slice(0, 100) + (r.og_description.length > 100 ? '...' : ''), t);
-            }
-
-            // --- ACCESIBILIDAD ---
-            html += seccion('Accesibilidad');
-            if (r.imgs_sin_alt > 0) {
-                const t = r.imgs_sin_alt > 5 ? 'error' : 'warn'; cuenta(t);
-                html += row('Imágenes sin alt', `${r.imgs_sin_alt} de ${r.total_imgs} imágenes no tienen atributo alt`, t);
-            } else {
-                const t = 'ok'; cuenta(t);
-                html += row('Imágenes sin alt', `Todas las ${r.total_imgs} imágenes tienen alt`, t);
-            }
-
-            if (r.inputs_sin_label > 0) {
-                const t = 'error'; cuenta(t);
-                html += row('Inputs sin label', `${r.inputs_sin_label} campos de formulario sin etiqueta accesible`, t);
-            } else {
-                const t = 'ok'; cuenta(t);
-                html += row('Inputs sin label', 'Todos los inputs tienen label o aria-label', t);
-            }
-
-            if (r.botones_sin_etiqueta > 0) {
-                const t = 'warn'; cuenta(t);
-                html += row('Botones sin etiqueta', `${r.botones_sin_etiqueta} botones sin texto ni aria-label`, t);
-            } else {
-                const t = 'ok'; cuenta(t);
-                html += row('Botones sin etiqueta', 'Todos los botones tienen texto o aria-label', t);
-            }
-
-            document.getElementById('checklist').innerHTML = html;
-            document.getElementById('stat-ok').textContent = oks;
-            document.getElementById('stat-warn').textContent = warns;
-            document.getElementById('stat-error').textContent = errors;
+        if (!r.description) {
+            const t = 'error'; cuenta(t);
+            html += row('Meta Description', 'No encontrada — afecta el CTR en buscadores', t);
+        } else if (r.desc_len < 70 || r.desc_len > 160) {
+            const t = 'warn'; cuenta(t);
+            html += row('Meta Description', `${r.desc_len} caracteres (recomendado: 70–160)`, t);
+        } else {
+            const t = 'ok'; cuenta(t);
+            html += row('Meta Description', `${r.desc_len} caracteres`, t);
         }
 
-        cargarReporte();
-    </script>
+        html += seccion('Estructura de Encabezados');
+        if (r.h1_count === 0) {
+            const t = 'error'; cuenta(t);
+            html += row('H1', 'No encontrado — necesario para SEO', t);
+        } else if (r.h1_count > 1) {
+            const t = 'warn'; cuenta(t);
+            html += row('H1', `${r.h1_count} H1 encontrados — debería haber solo uno`, t);
+        } else {
+            const t = 'ok'; cuenta(t);
+            html += row('H1', `"${r.h1_text}"`, t);
+        }
+
+        html += seccion('Indexación');
+        if (!r.canonical) {
+            const t = 'warn'; cuenta(t);
+            html += row('Canonical', 'No definido — puede causar contenido duplicado', t);
+        } else {
+            const t = 'ok'; cuenta(t);
+            html += row('Canonical', r.canonical, t);
+        }
+
+        if (!r.robots) {
+            const t = 'warn'; cuenta(t);
+            html += row('Meta Robots', 'No definido — se asume indexación por defecto', t);
+        } else if (r.robots.includes('noindex')) {
+            const t = 'error'; cuenta(t);
+            html += row('Meta Robots', `"${r.robots}" — página bloqueada para indexación`, t);
+        } else {
+            const t = 'ok'; cuenta(t);
+            html += row('Meta Robots', r.robots, t);
+        }
+
+        html += seccion('Open Graph (Redes Sociales)');
+        if (!r.og_title) {
+            const t = 'warn'; cuenta(t);
+            html += row('og:title', 'No definido — afecta cómo se ve al compartir en redes', t);
+        } else {
+            const t = 'ok'; cuenta(t);
+            html += row('og:title', r.og_title, t);
+        }
+        if (!r.og_image) {
+            const t = 'warn'; cuenta(t);
+            html += row('og:image', 'No definida — sin imagen al compartir en redes', t);
+        } else {
+            const t = 'ok'; cuenta(t);
+            html += row('og:image', r.og_image, t);
+        }
+        if (!r.og_description) {
+            const t = 'warn'; cuenta(t);
+            html += row('og:description', 'No definida', t);
+        } else {
+            const t = 'ok'; cuenta(t);
+            html += row('og:description', r.og_description.slice(0, 100) + (r.og_description.length > 100 ? '...' : ''), t);
+        }
+
+        html += seccion('Accesibilidad');
+        if (r.imgs_sin_alt > 0) {
+            const t = r.imgs_sin_alt > 5 ? 'error' : 'warn'; cuenta(t);
+            html += row('Imágenes sin alt', `${r.imgs_sin_alt} de ${r.total_imgs} imágenes no tienen atributo alt`, t);
+        } else {
+            const t = 'ok'; cuenta(t);
+            html += row('Imágenes sin alt', `Todas las ${r.total_imgs} imágenes tienen alt`, t);
+        }
+
+        if (r.inputs_sin_label > 0) {
+            const t = 'error'; cuenta(t);
+            html += row('Inputs sin label', `${r.inputs_sin_label} campos de formulario sin etiqueta accesible`, t);
+        } else {
+            const t = 'ok'; cuenta(t);
+            html += row('Inputs sin label', 'Todos los inputs tienen label o aria-label', t);
+        }
+
+        if (r.botones_sin_etiqueta > 0) {
+            const t = 'warn'; cuenta(t);
+            html += row('Botones sin etiqueta', `${r.botones_sin_etiqueta} botones sin texto ni aria-label`, t);
+        } else {
+            const t = 'ok'; cuenta(t);
+            html += row('Botones sin etiqueta', 'Todos los botones tienen texto o aria-label', t);
+        }
+
+        document.getElementById('checklist').innerHTML = html;
+        document.getElementById('stat-ok').textContent = oks;
+        document.getElementById('stat-warn').textContent = warns;
+        document.getElementById('stat-error').textContent = errors;
+    }
+
+    init();
+</script>
+    
 </body>
 </html>
