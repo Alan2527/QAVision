@@ -51,7 +51,7 @@
         const sb = supabase.createClient("https://xdufdcwvaxvcdcjgdvvt.supabase.co", "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf");
 
         async function init() {
-            const { data } = await sb.from('pruebas_qa').select('*').order('creado_el', { ascending: false });
+            const { data: { user } } = await supabase.auth.getUser();
             if (data && data.length > 0) {
                 const last = data[0];
                 document.getElementById('img-diff').src = last.img_diff_url || last.img_a_url;
