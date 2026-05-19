@@ -6,6 +6,7 @@
     <title>QAVision — Panel de Control</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -24,114 +25,158 @@
         }
         .font-title { font-family: 'Syne', sans-serif; }
         .bg-tech { background-color: var(--surface-2); border: 1px solid var(--border); }
-        .card-hover:hover { 
-            border-color: var(--green); 
-            background-color: #121212; 
-            transform: translateY(-2px); 
+        
+        /* Custom scrollbar para la tabla scrolleable */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #222;
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--green);
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col relative overflow-x-hidden">
+<body class="min-h-screen flex flex-col">
 
-    <div class="absolute w-[600px] h-[600px] bg-[#10b981]/3 rounded-full blur-[150px] -top-40 -left-40 pointer-events-none"></div>
-
-    <header class="border-b border-[#1a1a1a] bg-[#070707]/80 backdrop-blur-md sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-[#10b981]/10 rounded-lg flex items-center justify-center text-[#10b981] font-title font-black italic text-lg border border-[#10b981]/20">Q</div>
-                <h1 class="text-xl font-title font-bold tracking-tight text-white">QAVision</h1>
-                <span class="text-[9px] uppercase tracking-widest font-bold bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 px-2 py-0.5 rounded-md hidden sm:inline-block">SaaS Workspace</span>
+    <header class="bg-tech border-b border-[#1a1a1a] px-6 py-4 flex justify-between items-center sticky top-0 z-50 backdrop-blur-md bg-opacity-80">
+        <div class="flex items-center gap-3">
+            <span class="font-title text-2xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
+                QAVision
+            </span>
+            <span class="text-[10px] font-mono bg-zinc-900 border border-zinc-800 text-gray-400 px-2 py-0.5 rounded-full">Console v2.0</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2 bg-black px-3 py-1.5 rounded-xl border border-zinc-900">
+                <div class="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"></div>
+                <span id="user-email" class="text-xs font-mono text-gray-400">Cargando...</span>
             </div>
-            
-            <div class="flex items-center gap-6">
-                <div class="flex flex-col items-end hidden sm:flex">
-                    <span class="text-[9px] uppercase tracking-widest text-[#505050] font-bold">Operador Autenticado</span>
-                    <span id="user-email" class="text-xs text-white font-medium">Verificando...</span>
-                </div>
-                <button id="btn-logout" class="text-xs font-bold text-red-400 hover:text-red-300 bg-red-500/10 hover:bg-red-500/20 px-4 py-2 rounded-xl transition-all border border-red-500/10 active:scale-95">
-                    Cerrar Sesión
-                </button>
-            </div>
+            <button id="btn-logout" class="text-xs font-bold text-red-400 hover:text-red-300 transition-colors bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 px-3 py-1.5 rounded-xl">
+                Salir
+            </button>
         </div>
     </header>
 
-    <main class="flex-1 max-w-7xl mx-auto px-6 py-12 w-full z-10">
-        <div class="mb-10">
-            <h2 class="text-3xl font-title font-bold text-white tracking-tight mb-2">Consola de Auditoría</h2>
-            <p class="text-sm text-[#505050]">Bienvenido al entorno encapsulado de QAVision. Seleccioná el módulo técnico que deseás operar.</p>
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-8 space-y-8">
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <div class="lg:col-span-2 bg-tech p-6 rounded-2xl flex flex-col justify-between relative overflow-hidden group">
+                <div>
+                    <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Quick Actions</h2>
+                    <p class="text-xs text-[#505050] mb-4">Lanzamiento inmediato de suites automatizadas sobre el último target.</p>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
+                        <span class="text-[10px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
+                        <span class="text-xs font-bold mt-1 text-white">Visual VRT</span>
+                    </button>
+                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
+                        <span class="text-[10px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
+                        <span class="text-xs font-bold mt-1 text-white">SEO Audit</span>
+                    </button>
+                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
+                        <span class="text-[10px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
+                        <span class="text-xs font-bold mt-1 text-white">Perf CWV</span>
+                    </button>
+                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
+                        <span class="text-[10px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
+                        <span class="text-xs font-bold mt-1 text-white">Link Scan</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-tech p-6 rounded-2xl relative overflow-hidden flex flex-col justify-between">
+                <div class="absolute -right-4 -bottom-4 w-32 h-32 bg-[#10b981]/5 rounded-full blur-2xl pointer-events-none"></div>
+                <div>
+                    <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Salud del Proyecto</h2>
+                    <p class="text-xs text-[#505050]">Volumen de cobertura procesada en los últimos 7 días.</p>
+                </div>
+                <div class="mt-4 flex items-baseline gap-2">
+                    <span class="font-title text-5xl font-extrabold text-white tracking-tight">148</span>
+                    <span class="text-xs font-mono text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded">Páginas Auditadas</span>
+                </div>
+            </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <a href="visual_regression.html" class="bg-tech rounded-2xl p-6 block transition-all duration-300 card-hover group relative overflow-hidden">
-                <div class="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                    <span class="text-indigo-400 text-xl">👁️</span>
+            <div class="lg:col-span-2 bg-tech rounded-2xl flex flex-col overflow-hidden">
+                <div class="p-6 border-b border-[#1a1a1a]">
+                    <h3 class="font-title text-lg font-bold text-white tracking-tight">Auditorías Recientes</h3>
+                    <p class="text-xs text-[#505050] mt-0.5">Historial consolidado de ejecuciones multiplataforma.</p>
                 </div>
-                <h3 class="text-lg font-bold text-white mb-1 group-hover:text-[#10b981] transition-colors">Visual Regression</h3>
-                <p class="text-xs text-[#505050] leading-relaxed">Comparación visual automatizada píxel por píxel analizando mutaciones de CSS y ADN del DOM.</p>
-                <div class="mt-6 flex items-center justify-between">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-400 bg-indigo-500/5 px-2 py-1 rounded border border-indigo-500/10">Motor VRT</span>
-                    <span class="text-xs text-[#505050] group-hover:translate-x-1 transition-transform">→</span>
+                
+                <div class="overflow-x-auto custom-scroll max-h-[340px]">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-black/40 text-[#505050] font-mono border-b border-[#1a1a1a]">
+                                <th class="p-4 font-bold">FECHA</th>
+                                <th class="p-4 font-bold">TARGET URL</th>
+                                <th class="p-4 font-bold">SUITE TYPE</th>
+                                <th class="p-4 font-bold text-right">STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-zinc-900 font-medium text-gray-300">
+                            <tr class="hover:bg-zinc-900/40 transition">
+                                <td class="p-4 font-mono text-gray-500">19/05/2026</td>
+                                <td class="p-4 truncate max-w-[200px] font-mono text-white">staging.artear.com.ar</td>
+                                <td class="p-4"><span class="bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 text-[10px] font-mono">VISUAL_VRT</span></td>
+                                <td class="p-4 text-right"><span class="bg-red-500/10 text-red-400 px-2 py-0.5 rounded text-[10px] font-black border border-red-500/20">FAIL</span></td>
+                            </tr>
+                            <tr class="hover:bg-zinc-900/40 transition">
+                                <td class="p-4 font-mono text-gray-500">19/05/2026</td>
+                                <td class="p-4 truncate max-w-[200px] font-mono text-white">tn.com.ar/tecno</td>
+                                <td class="p-4"><span class="bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 text-[10px] font-mono">SEO_AUDIT</span></td>
+                                <td class="p-4 text-right"><span class="bg-[#10b981]/10 text-[#10b981] px-2 py-0.5 rounded text-[10px] font-black border border-[#10b981]/20">PASS</span></td>
+                            </tr>
+                            <tr class="hover:bg-zinc-900/40 transition">
+                                <td class="p-4 font-mono text-gray-500">18/05/2026</td>
+                                <td class="p-4 truncate max-w-[200px] font-mono text-white">eltrece.com.ar/videos</td>
+                                <td class="p-4"><span class="bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 text-[10px] font-mono">PERF_CWV</span></td>
+                                <td class="p-4 text-right"><span class="bg-[#10b981]/10 text-[#10b981] px-2 py-0.5 rounded text-[10px] font-black border border-[#10b981]/20">PASS</span></td>
+                            </tr>
+                            <tr class="hover:bg-zinc-900/40 transition">
+                                <td class="p-4 font-mono text-gray-500">17/05/2026</td>
+                                <td class="p-4 truncate max-w-[200px] font-mono text-white">ciudad.com.ar</td>
+                                <td class="p-4"><span class="bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 text-[10px] font-mono">LINK_SCAN</span></td>
+                                <td class="p-4 text-right"><span class="bg-red-500/10 text-red-400 px-2 py-0.5 rounded text-[10px] font-black border border-red-500/20">FAIL</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-            </a>
+            </div>
 
-            <a href="seo.html" class="bg-tech rounded-2xl p-6 block transition-all duration-300 card-hover group relative overflow-hidden">
-                <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                    <span class="text-blue-400 text-xl">🔍</span>
+            <div class="bg-tech p-6 rounded-2xl flex flex-col justify-between">
+                <div>
+                    <h3 class="font-title text-lg font-bold text-white tracking-tight">Tendencia de Errores</h3>
+                    <p class="text-xs text-[#505050] mt-0.5">Curva descendente de bugs detectados (Últimos 7 días).</p>
                 </div>
-                <h3 class="text-lg font-bold text-white mb-1 group-hover:text-[#10b981] transition-colors">SEO & Accesibilidad</h3>
-                <p class="text-xs text-[#505050] leading-relaxed">Auditoría profunda de meta tags, grafos de estructura HTML, tags semánticos y atributos Aria indispensables.</p>
-                <div class="mt-6 flex items-center justify-between">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-blue-400 bg-blue-500/5 px-2 py-1 rounded border border-blue-500/10">Crawler SEO</span>
-                    <span class="text-xs text-[#505050] group-hover:translate-x-1 transition-transform">→</span>
+                <div class="flex-1 mt-4 flex items-center justify-center relative min-h-[180px]">
+                    <canvas id="trendChart"></canvas>
                 </div>
-            </a>
-
-            <a href="interaction_audit.html" class="bg-tech rounded-2xl p-6 block transition-all duration-300 card-hover group relative overflow-hidden">
-                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                    <span class="text-[#10b981] text-xl">🖱️</span>
-                </div>
-                <h3 class="text-lg font-bold text-white mb-1 group-hover:text-[#10b981] transition-colors">Auditoría de Enlaces</h3>
-                <p class="text-xs text-[#505050] leading-relaxed">Escaneo de punteros y elementos bloqueados o solapados por capas invisibles o z-index corruptos.</p>
-                <div class="mt-6 flex items-center justify-between">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-[#10b981] bg-[#10b981]/5 px-2 py-1 rounded border border-[#10b981]/10">Pointer Check</span>
-                    <span class="text-xs text-[#505050] group-hover:translate-x-1 transition-transform">→</span>
-                </div>
-            </a>
-
-            <a href="performance.html" class="bg-tech rounded-2xl p-6 block transition-all duration-300 card-hover group relative overflow-hidden">
-                <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-                    <span class="text-amber-400 text-xl">⚡</span>
-                </div>
-                <h3 class="text-lg font-bold text-white mb-1 group-hover:text-[#10b981] transition-colors">Core Web Vitals</h3>
-                <p class="text-xs text-[#505050] leading-relaxed">Análisis de rendimiento, peso de carga de red, latencias y métricas críticas de renderizado inicial.</p>
-                <div class="mt-6 flex items-center justify-between">
-                    <span class="text-[10px] font-bold uppercase tracking-wider text-amber-400 bg-amber-500/5 px-2 py-1 rounded border border-amber-500/10">Perf Engine</span>
-                    <span class="text-xs text-[#505050] group-hover:translate-x-1 transition-transform">→</span>
-                </div>
-            </a>
-
+            </div>
         </div>
     </main>
 
     <script>
         const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
         const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
-        
-        // Cliente de Supabase específico para la Consola Privada
         const dashClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // 1. GUARDA DE SEGURIDAD (Ruta Protegida asíncrona)
+        // 1. GUARDA DE SEGURIDAD
         async function verificarAccesoSaaS() {
             const { data: { session } } = await dashClient.auth.getSession();
-            
-            // Si no existe token válido, expulsar de manera fulminante al Login
             if (!session) {
                 window.location.replace('login.html');
                 return;
             }
-
-            // Si pasa la validación, pintar su e-mail en el navbar
             document.getElementById('user-email').innerText = session.user.email;
         }
 
@@ -139,15 +184,45 @@
         document.getElementById('btn-logout').addEventListener('click', async () => {
             const { error } = await dashClient.auth.signOut();
             if (!error) {
-                // Usamos replace para limpiar el historial de navegación y evitar bucles
                 window.location.replace('login.html');
-            } else {
-                console.error("Error signing out:", error.message);
             }
         });
 
-        // Autoejecución inmediata de la guarda al cargar el DOM
+        // 3. INICIALIZACIÓN DEL GRÁFICO ESTÍTICO (Curva Limpia)
+        function renderTrendChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                    datasets: [{
+                        label: 'Errores',
+                        data: [32, 28, 19, 24, 12, 7, 3], // Simulación de línea roja descendente satisfactoria
+                        borderColor: '#ef4444',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#070707',
+                        pointBorderColor: '#ef4444',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        tension: 0.4,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#505050', font: { size: 10, family: 'monospace' } } },
+                        y: { grid: { color: '#1a1a1a' }, ticks: { color: '#505050', font: { size: 10, family: 'monospace' } } }
+                    }
+                }
+            });
+        }
+
+        // Ejecución automática al cargar
         verificarAccesoSaaS();
+        renderTrendChart();
     </script>
 </body>
 </html>
