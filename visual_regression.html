@@ -2,47 +2,144 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>QAVision - Auditoría de Componentes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QAVision — Visual Regression Report</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green: #10b981;
+            --surface: #070707;
+            --surface-2: #0d0d0d;
+            --border: #1a1a1a;
+            --text: #e8e8e8;
+            --muted: #505050;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #000;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* Grain overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.4;
+        }
+
+        .hero-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse 60% 60% at 50% 0%, black 20%, transparent 100%);
+            z-index: 0;
+        }
+
+        .font-title { font-family: 'Syne', sans-serif; }
+        .font-mono { font-family: 'DM Mono', monospace; }
+
+        .bg-tech { 
+            background-color: var(--surface-2); 
+            border: 1px solid var(--border); 
+            backdrop-filter: blur(10px);
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+        .image-container {
+            background-image: 
+                linear-gradient(45deg, #0a0a0a 25%, transparent 25%), 
+                linear-gradient(-45deg, #0a0a0a 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #0a0a0a 75%), 
+                linear-gradient(-45deg, transparent 75%, #0a0a0a 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+    </style>
 </head>
-<body class="bg-[#0f172a] text-white min-h-screen flex">
-    <!-- Sidebar -->
-    <aside class="w-72 bg-[#1e293b] p-6 border-r border-gray-700 h-screen sticky top-0">
-        <h1 class="text-2xl font-bold text-[#10b981] mb-8">QAVision</h1>
-        <p class="text-xs font-bold text-gray-500 uppercase mb-4">Historial de Auditoría</p>
-        <div id="historial" class="space-y-3 overflow-y-auto max-h-[70vh]"></div>
+<body class="min-h-screen flex">
+    <div class="hero-grid"></div>
+
+    <aside class="w-80 bg-black border-r border-[#1a1a1a] p-8 h-screen sticky top-0 flex flex-col z-10">
+        <div class="mb-10">
+            <h1 class="font-title text-2xl font-black text-[#10b981] tracking-tighter italic">QAVision</h1>
+            <div class="h-px bg-gradient-to-r from-[#10b981]/50 to-transparent mt-2"></div>
+        </div>
+
+        <p class="font-mono text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-6">Activity History</p>
+        
+        <div id="historial" class="space-y-4 overflow-y-auto custom-scroll flex-1 pr-2">
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-[#1a1a1a]">
+            <a href="dashboard.html" class="flex items-center gap-3 text-xs font-bold text-gray-400 hover:text-[#10b981] transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Volver al Panel
+            </a>
+        </div>
     </aside>
 
-    <!-- Main -->
-    <main class="flex-1 p-10">
-        <header class="flex justify-between items-end mb-10">
-            <div>
-                <h2 class="text-4xl font-bold">Reporte de Componentes</h2>
-                <p id="sub-header" class="text-gray-400 mt-2">Cargando última prueba...</p>
+    <main class="flex-1 p-12 relative z-10 overflow-y-auto">
+        <header class="flex justify-between items-start mb-12">
+            <div class="max-w-2xl">
+                <h2 class="font-title text-5xl font-extrabold tracking-tight mb-3">
+                    Reporte de <span class="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500">Regresión</span>
+                </h2>
+                <div class="flex items-center gap-3">
+                    <span class="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
+                    <p id="sub-header" class="font-mono text-sm text-[#505050]">Inicializando motor de auditoría...</p>
+                </div>
             </div>
-            <span id="badge" class="px-4 py-2 rounded-full text-xs font-black uppercase tracking-tighter"></span>
+            <div id="badge-container">
+                <span id="badge" class="font-mono px-5 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest border border-transparent transition-all duration-500"></span>
+            </div>
         </header>
 
-        <!-- Diferencia Visual Principal: AJUSTADA PARA EL FOOTER -->
-        <div class="bg-[#1e293b] rounded-3xl p-8 border border-gray-700 shadow-2xl mb-10">
-            <h3 class="text-gray-500 text-xs font-bold uppercase mb-6">Mapa de Atributos CSS (Diferencias marcadas)</h3>
+        <div class="bg-tech rounded-3xl p-1 pb-1 mb-12 overflow-hidden group shadow-2xl">
+            <div class="p-6 border-b border-[#1a1a1a] flex justify-between items-center bg-black/20">
+                <h3 class="font-mono text-[10px] text-gray-500 font-bold uppercase tracking-widest">Master Diff View</h3>
+                <div class="flex gap-1">
+                    <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
+                    <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
+                    <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
+                </div>
+            </div>
             
-            <!-- Eliminamos overflow-hidden y flex-justify-center para que no colapse -->
-            <!-- Agregamos pb-12 para que las etiquetas del footer tengan espacio abajo -->
-            <div class="bg-[#0f172a] rounded-2xl border border-gray-800 p-4 pb-12">
-                <img id="img-diff" src="" class="w-full h-auto block" style="image-rendering: -webkit-optimize-contrast;">
+            <div class="p-8">
+                <div class="bg-[#030303] rounded-2xl border border-[#1a1a1a] image-container overflow-hidden group-hover:border-[#10b981]/30 transition-colors">
+                    <img id="img-diff" src="" class="w-full h-auto block opacity-0 transition-opacity duration-1000" style="image-rendering: -webkit-optimize-contrast;">
+                </div>
             </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-10">
-            <div class="bg-[#1e293b] p-6 rounded-2xl border border-gray-700">
-                <p class="text-xs font-bold text-gray-500 uppercase mb-4">Ambiente A (Expected)</p>
-                <img id="img-a" src="" class="rounded-xl w-full">
+        <div class="grid grid-cols-2 gap-8">
+            <div class="bg-tech p-6 rounded-2xl border border-[#1a1a1a] hover:bg-[#0d0d0d] transition-colors">
+                <p class="font-mono text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Ambiente A // Expected</p>
+                <div class="rounded-xl overflow-hidden border border-[#1a1a1a] bg-black">
+                    <img id="img-a" src="" class="w-full h-auto block opacity-0 transition-opacity duration-1000">
+                </div>
             </div>
-            <div class="bg-[#1e293b] p-6 rounded-2xl border border-gray-700">
-                <p class="text-xs font-bold text-gray-500 uppercase mb-4">Ambiente B (Actual)</p>
-                <img id="img-b" src="" class="rounded-xl w-full">
+            <div class="bg-tech p-6 rounded-2xl border border-[#1a1a1a] hover:bg-[#0d0d0d] transition-colors">
+                <p class="font-mono text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Ambiente B // Actual</p>
+                <div class="rounded-xl overflow-hidden border border-[#1a1a1a] bg-black">
+                    <img id="img-b" src="" class="w-full h-auto block opacity-0 transition-opacity duration-1000">
+                </div>
             </div>
         </div>
     </main>
