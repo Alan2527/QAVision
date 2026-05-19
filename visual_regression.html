@@ -87,6 +87,7 @@
                     if (!response.ok) {
                         throw new Error(`Error del servidor: ${response.status}`);
                     }
+                await new Promise(resolve => setTimeout(resolve, 2000));    
                 } catch (error) {
                     document.getElementById('sub-header').textContent = `❌ Error al conectar con el backend: ${error.message}`;
                 }
