@@ -47,11 +47,32 @@
         </div>
     </main>
 
-    <script>
-        const sb = supabase.createClient("https://xdufdcwvaxvcdcjgdvvt.supabase.co", "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf");
+<script>
+        const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function init() {
-            const { data: { user } } = await supabase.auth.getUser();
+        async function cargarHistorial() {
+            // 1. OBTENEMOS EL USUARIO LOGUEADO
+            const { data: { user } } = await sb.auth.getUser();
+            
+            if (!user) {
+                console.error("Usuario no autenticado");
+                return;
+            }
+
+            // 2. HACEMOS LA CONSULTA FILTRADA POR SU ID
+            const { data, error } = await sb
+                .from('pruebas_qa')
+                .select('*')
+                .eq('user_id', user.id) // <--- FILTRO DE SEGURIDAD
+                .order('creado_el', { ascending: false });
+
+            if (error) {
+                console.error("Error cargando historial:", error);
+                return;
+            }
+
             if (data && data.length > 0) {
                 const last = data[0];
                 document.getElementById('img-diff').src = last.img_diff_url || last.img_a_url;
@@ -70,13 +91,14 @@
 
                 document.getElementById('historial').innerHTML = data.slice(0, 10).map(i => `
                     <div class="p-3 bg-[#334155] rounded-xl border-l-4 ${i.diferencias > 0 ? 'border-red-500' : 'border-green-500'} mb-2">
-                        <p class="text-[10px] font-bold text-gray-400">${new Date(i.creado_el).toLocaleTimeString()}</p>
-                        <p class="text-xs truncate">${i.url_a}</p>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase">${new Date(i.creado_el).toLocaleDateString()}</p>
+                        <p class="text-xs font-bold">${i.diferencias > 0 ? i.diferencias + ' diferencias' : 'Sin cambios'}</p>
                     </div>
                 `).join('');
             }
         }
-        init();
+
+        cargarHistorial();
     </script>
 </body>
 </html>
