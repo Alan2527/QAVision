@@ -159,12 +159,12 @@
         </div>
     </div>
 
-    <script>
+<script>
         const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
         const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         
-        let globalData = []; // Guardamos los datos en memoria para no volver a llamar a la base de datos al abrir el drawer
+        let globalData = []; // Guardamos los datos en memoria
 
         async function init() {
             const { data: { user } } = await sb.auth.getUser();
@@ -173,11 +173,12 @@
                 return;
             }
 
-            // Traemos todo el historial del usuario
+            // Traemos el historial del usuario, PERO filtramos solo los de ejecuciones masivas (batch_id no nulo)
             const { data, error } = await sb
                 .from('pruebas_qa')
                 .select('*')
                 .eq('user_id', user.id)
+                .not('batch_id', 'is', null) // <-- FILTRO APLICADO
                 .order('creado_el', { ascending: false });
 
             if (error) {
@@ -204,7 +205,7 @@
             const contenedor = document.getElementById('lista-masiva');
             
             if (globalData.length === 0) {
-                contenedor.innerHTML = `<div class="p-8 border border-dashed border-[#1a1a1a] rounded-xl text-center"><p class="font-mono text-[10px] text-gray-500">NO HAY REGISTROS EN EL MOTOR</p></div>`;
+                contenedor.innerHTML = `<div class="p-8 border border-dashed border-[#1a1a1a] rounded-xl text-center"><p class="font-mono text-[10px] text-gray-500">NO HAY REGISTROS DE LOTES MASIVOS EN EL MOTOR</p></div>`;
                 return;
             }
 
@@ -214,6 +215,9 @@
                 const textColor = hasError ? 'text-red-500' : 'text-[#10b981]';
                 const statusText = hasError ? `${item.diferencias} DIFFS` : 'OK';
                 const timeStr = new Date(item.creado_el).toLocaleTimeString();
+                
+                // Pequeña etiqueta visual para mostrar a qué lote pertenece la prueba
+                const batchBadge = item.batch_id ? `<span class="px-2 py-0.5 rounded bg-zinc-800 text-[#505050] text-[9px] font-mono mr-2">LOTE: ${item.batch_id.substring(0,8)}</span>` : '';
 
                 return `
                     <div class="flex items-center justify-between p-4 bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl hover:border-zinc-700 transition group">
@@ -221,7 +225,7 @@
                             <span class="w-2 h-2 rounded-full ${statusColor} shrink-0"></span>
                             <div class="truncate">
                                 <p class="font-mono text-xs text-gray-300 truncate">${item.url_a}</p>
-                                <p class="font-mono text-[9px] text-gray-600 mt-1">${timeStr}</p>
+                                <p class="font-mono text-[9px] text-gray-600 mt-1">${batchBadge} ${timeStr}</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-6">
@@ -277,5 +281,6 @@
 
         init();
     </script>
+    
 </body>
 </html>
