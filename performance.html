@@ -127,88 +127,122 @@
 
     </main>
 
-    <script>
-        const SB_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
-        const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
-        const qaClient = supabase.createClient(SB_URL, SB_KEY);
+<script>
+    const SB_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+    const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+    const qaClient = supabase.createClient(SB_URL, SB_KEY);
 
-        // Clasificar métrica y devolver { clase, label, pct }
-        const clasificar = {
-            lcp:   v => v <= 2500 ? {c:'good',l:'Bueno',pct:100}   : v <= 4000 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
-            fcp:   v => v <= 1800 ? {c:'good',l:'Bueno',pct:100}   : v <= 3000 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
-            cls:   v => v <= 0.1  ? {c:'good',l:'Bueno',pct:100}   : v <= 0.25 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
-            tti:   v => v <= 3800 ? {c:'good',l:'Bueno',pct:100}   : v <= 7300 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
-            carga: v => v <= 3000 ? {c:'good',l:'Bueno',pct:100}   : v <= 6000 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
-            peso:  v => v <= 1    ? {c:'good',l:'Liviano',pct:100} : v <= 3    ? {c:'warn',l:'Moderado',pct:60}: {c:'poor',l:'Pesado',pct:30},
-        };
+    const clasificar = {
+        lcp:   v => v <= 2500 ? {c:'good',l:'Bueno',pct:100}   : v <= 4000 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
+        fcp:   v => v <= 1800 ? {c:'good',l:'Bueno',pct:100}   : v <= 3000 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
+        cls:   v => v <= 0.1  ? {c:'good',l:'Bueno',pct:100}   : v <= 0.25 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
+        tti:   v => v <= 3800 ? {c:'good',l:'Bueno',pct:100}   : v <= 7300 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
+        carga: v => v <= 3000 ? {c:'good',l:'Bueno',pct:100}   : v <= 6000 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
+        peso:  v => v <= 1    ? {c:'good',l:'Liviano',pct:100} : v <= 3    ? {c:'warn',l:'Moderado',pct:60}: {c:'poor',l:'Pesado',pct:30},
+    };
 
-        const colorBar = { good: '#10b981', warn: '#f59e0b', poor: '#ef4444' };
+    const colorBar = { good: '#10b981', warn: '#f59e0b', poor: '#ef4444' };
 
-        function renderMetrica(id, valor, tipo, sufijo) {
-            if (valor === null || valor === undefined) {
-                document.getElementById(`val-${id}`).textContent = 'N/D';
-                document.getElementById(`label-${id}`).textContent = 'Sin datos';
-                return null;
-            }
-            const { c, l, pct } = clasificar[tipo](valor);
-            const card = document.getElementById(`card-${id}`);
-            card.classList.add(`bg-${c}`);
-            const valEl = document.getElementById(`val-${id}`);
-            valEl.textContent = sufijo === 'ms' ? (valor / 1000).toFixed(2) + 's' : valor + sufijo;
-            valEl.className = `text-3xl font-black tracking-tighter mb-3 ${c}`;
-            document.getElementById(`bar-${id}`).style.cssText = `width:${pct}%;background:${colorBar[c]}`;
-            const labelEl = document.getElementById(`label-${id}`);
-            labelEl.textContent = l;
-            labelEl.className = `text-[9px] font-black uppercase mt-2 ${c}`;
-            return c;
+    function renderMetrica(id, valor, tipo, sufijo) {
+        if (valor === null || valor === undefined) {
+            document.getElementById(`val-${id}`).textContent = 'N/D';
+            document.getElementById(`label-${id}`).textContent = 'Sin datos';
+            return null;
         }
+        const { c, l, pct } = clasificar[tipo](valor);
+        const card = document.getElementById(`card-${id}`);
+        card.classList.add(`bg-${c}`);
+        const valEl = document.getElementById(`val-${id}`);
+        valEl.textContent = sufijo === 'ms' ? (valor / 1000).toFixed(2) + 's' : valor + sufijo;
+        valEl.className = `text-3xl font-black tracking-tighter mb-3 ${c}`;
+        document.getElementById(`bar-${id}`).style.cssText = `width:${pct}%;background:${colorBar[c]}`;
+        const labelEl = document.getElementById(`label-${id}`);
+        labelEl.textContent = l;
+        labelEl.className = `text-[9px] font-black uppercase mt-2 ${c}`;
+        return c;
+    }
 
-        async function cargarReporte() {
-            const { data, error } = await qaClient
-                .from('performance_audits')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(1);
+    async function init() {
+        const { data: { user } } = await qaClient.auth.getUser();
+        if (!user) { window.location.href = 'login.html'; return; }
 
-            if (error || !data.length) return console.error('Sin datos:', error);
-            const r = data[0];
+        const shouldTrigger = sessionStorage.getItem('qavision_trigger_test') === 'true';
 
-            document.getElementById('url-auditada').textContent = r.url;
+        if (shouldTrigger) {
+            document.getElementById('url-auditada').textContent = '⏳ Ejecutando análisis de performance...';
+            const url = sessionStorage.getItem('qavision_last_prod');
 
-            const resultados = [
-                renderMetrica('lcp',   r.lcp_ms,          'lcp',   'ms'),
-                renderMetrica('fcp',   r.fcp_ms,          'fcp',   'ms'),
-                renderMetrica('cls',   r.cls,             'cls',   ''),
-                renderMetrica('tti',   r.tti_ms,          'tti',   'ms'),
-                renderMetrica('carga', r.tiempo_carga_ms, 'carga', 'ms'),
-                renderMetrica('peso',  r.peso_mb,         'peso',  ' MB'),
-            ].filter(Boolean);
+            sessionStorage.removeItem('qavision_last_prod');
+            sessionStorage.removeItem('qavision_last_stage');
+            sessionStorage.removeItem('qavision_trigger_test');
+            sessionStorage.removeItem('qavision_user_id');
 
-            // Score general: % de métricas en "good"
-            const score = Math.round((resultados.filter(c => c === 'good').length / resultados.length) * 100);
-            const scoreEl = document.getElementById('score-valor');
-            const scoreCircle = document.getElementById('score-circle');
-            const scoreLabel = document.getElementById('score-label');
-            scoreEl.textContent = score;
-            if (score >= 80) {
-                scoreEl.className = 'text-5xl font-black tracking-tighter good';
-                scoreCircle.classList.add('border-emerald-500');
-                scoreLabel.textContent = 'Rendimiento Óptimo';
-                scoreLabel.className = 'mt-3 text-sm font-black uppercase tracking-widest good';
-            } else if (score >= 50) {
-                scoreEl.className = 'text-5xl font-black tracking-tighter warn';
-                scoreCircle.classList.add('border-amber-500');
-                scoreLabel.textContent = 'Necesita Mejoras';
-                scoreLabel.className = 'mt-3 text-sm font-black uppercase tracking-widest warn';
-            } else {
-                scoreEl.className = 'text-5xl font-black tracking-tighter poor';
-                scoreCircle.classList.add('border-red-500');
-                scoreLabel.textContent = 'Rendimiento Pobre';
-                scoreLabel.className = 'mt-3 text-sm font-black uppercase tracking-widest poor';
+            try {
+                const response = await fetch('https://qavision-qavision-engine.hf.space/api/performance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, user_id: user.id })
+                });
+                if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            } catch (error) {
+                document.getElementById('url-auditada').textContent = `❌ Error: ${error.message}`;
             }
         }
 
-        cargarReporte();
-    </script>
+        await cargarReporte(user.id);
+    }
+
+    async function cargarReporte(userId) {
+        const { data, error } = await qaClient
+            .from('performance_audits')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        if (error || !data.length) {
+            document.getElementById('url-auditada').textContent = 'No hay auditorías registradas.';
+            return;
+        }
+
+        const r = data[0];
+        document.getElementById('url-auditada').textContent = r.url;
+
+        const resultados = [
+            renderMetrica('lcp',   r.lcp_ms,          'lcp',   'ms'),
+            renderMetrica('fcp',   r.fcp_ms,          'fcp',   'ms'),
+            renderMetrica('cls',   r.cls,             'cls',   ''),
+            renderMetrica('tti',   r.tti_ms,          'tti',   'ms'),
+            renderMetrica('carga', r.tiempo_carga_ms, 'carga', 'ms'),
+            renderMetrica('peso',  r.peso_mb,         'peso',  ' MB'),
+        ].filter(Boolean);
+
+        const score = Math.round((resultados.filter(c => c === 'good').length / resultados.length) * 100);
+        const scoreEl = document.getElementById('score-valor');
+        const scoreCircle = document.getElementById('score-circle');
+        const scoreLabel = document.getElementById('score-label');
+        scoreEl.textContent = score;
+        if (score >= 80) {
+            scoreEl.className = 'text-5xl font-black tracking-tighter good';
+            scoreCircle.classList.add('border-emerald-500');
+            scoreLabel.textContent = 'Rendimiento Óptimo';
+            scoreLabel.className = 'mt-3 text-sm font-black uppercase tracking-widest good';
+        } else if (score >= 50) {
+            scoreEl.className = 'text-5xl font-black tracking-tighter warn';
+            scoreCircle.classList.add('border-amber-500');
+            scoreLabel.textContent = 'Necesita Mejoras';
+            scoreLabel.className = 'mt-3 text-sm font-black uppercase tracking-widest warn';
+        } else {
+            scoreEl.className = 'text-5xl font-black tracking-tighter poor';
+            scoreCircle.classList.add('border-red-500');
+            scoreLabel.textContent = 'Rendimiento Pobre';
+            scoreLabel.className = 'mt-3 text-sm font-black uppercase tracking-widest poor';
+        }
+    }
+
+    init();
+</script>
+    
 </body>
 </html>
