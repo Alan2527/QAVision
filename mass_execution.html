@@ -232,64 +232,43 @@ function verDetalle(id, modulo) {
     let html = "";
 
     if (modulo === 'seo') html = renderSEO(item);
+    if (modulo === 'perf') html = renderPERF(item);
     if (modulo === 'links') html = renderLINKS(item);
     if (modulo === 'vrt') html = renderVRT(item);
-    if (modulo === 'perf') html = renderPERF(item);
 
     document.getElementById('drawer-dynamic-content').innerHTML = html;
     document.getElementById('detail-drawer').classList.remove('translate-x-full');
 }
 
-/* ================= SEO (FULL DASHBOARD) ================= */
+/* ================= SEO ================= */
 function renderSEO(item) {
+    let ok=0,warn=0,error=0;
 
-    let ok = 0, warn = 0, error = 0;
+    function b(t){return t==='ok'?'text-green-400 bg-green-500/10':t==='warn'?'text-yellow-400 bg-yellow-500/10':'text-red-400 bg-red-500/10'}
+    function l(t){return t==='ok'?'OK':t==='warn'?'ADVERTENCIA':'ERROR'}
 
-    function badge(type){
-        if(type==='ok') return "text-green-400 bg-green-500/10";
-        if(type==='warn') return "text-yellow-400 bg-yellow-500/10";
-        return "text-red-400 bg-red-500/10";
-    }
-
-    function label(type){
-        if(type==='ok') return "OK";
-        if(type==='warn') return "ADVERTENCIA";
-        return "ERROR";
-    }
-
-    function check(type, title, detail){
-        if(type==='ok') ok++;
-        else if(type==='warn') warn++;
-        else error++;
-
-        return `
-        <div class="py-4 border-b border-zinc-800">
-            <div class="flex items-center gap-3 mb-1">
-                <span class="text-[10px] font-black px-2 py-1 rounded ${badge(type)}">
-                    ${label(type)}
-                </span>
+    function check(t,title,detail){
+        if(t==='ok')ok++; else if(t==='warn')warn++; else error++;
+        return `<div class="py-4 border-b border-zinc-800">
+            <div class="flex gap-3 mb-1">
+                <span class="text-[10px] font-black px-2 py-1 rounded ${b(t)}">${l(t)}</span>
                 <span class="font-bold">${title}</span>
             </div>
             <div class="text-xs text-gray-500 font-mono ml-1">${detail}</div>
         </div>`;
     }
 
-    let html = "";
+    let html="";
+    html+=`<div class="text-xs text-gray-500 mt-4">Title & Meta</div>`;
+    html+=check((item.title_len>=30&&item.title_len<=60)?'ok':'warn',"Title",`${item.title_len||0} caracteres`);
+    html+=check((item.meta_desc_len>=70&&item.meta_desc_len<=160)?'ok':'warn',"Meta Description",`${item.meta_desc_len||0} caracteres`);
 
-    const titleLen = item.title_len || 0;
-    html += `<div class="text-xs uppercase text-gray-500 mt-4">Title & Meta</div>`;
-    html += check(titleLen >=30 && titleLen<=60 ? 'ok':'warn',"Title",`${titleLen} caracteres`);
+    html+=`<div class="text-xs text-gray-500 mt-6">Estructura</div>`;
+    html+=check(item.h1_count===1?'ok':'error',"H1",item.h1_count?`${item.h1_count} encontrados`:"No encontrado");
 
-    const metaLen = item.meta_desc_len || 0;
-    html += check(metaLen>=70 && metaLen<=160 ? 'ok':'warn',"Meta Description",`${metaLen} caracteres`);
-
-    html += `<div class="text-xs uppercase text-gray-500 mt-6">Estructura</div>`;
-    const h1 = item.h1_count || 0;
-    html += check(h1===1?'ok':'error',"H1",h1===0?"No encontrado":`${h1} encontrados`);
-
-    html += `<div class="text-xs uppercase text-gray-500 mt-6">Indexación</div>`;
-    html += check(item.canonical?'ok':'warn',"Canonical",item.canonical||"No definido");
-    html += check(item.meta_robots?'ok':'warn',"Meta Robots",item.meta_robots||"No definido");
+    html+=`<div class="text-xs text-gray-500 mt-6">Indexación</div>`;
+    html+=check(item.canonical?'ok':'warn',"Canonical",item.canonical||"No definido");
+    html+=check(item.meta_robots?'ok':'warn',"Meta Robots",item.meta_robots||"No definido");
 
     return `
     <div>
@@ -298,18 +277,61 @@ function renderSEO(item) {
             <div class="bg-tech p-4 rounded-xl"><h2 class="text-yellow-400 text-2xl">${warn}</h2></div>
             <div class="bg-tech p-4 rounded-xl"><h2 class="text-red-400 text-2xl">${error}</h2></div>
         </div>
+        <div class="bg-tech p-6 rounded-2xl">${html}</div>
+    </div>`;
+}
 
-        <div class="bg-tech p-6 rounded-2xl">
-            ${html}
+/* ================= PERF ================= */
+function renderPERF(item) {
+
+    function c(t,v){
+        if(t==='lcp') return v<=2500?'good':v<=4000?'warn':'poor';
+        if(t==='fcp') return v<=1800?'good':v<=3000?'warn':'poor';
+        if(t==='cls') return v<=0.1?'good':v<=0.25?'warn':'poor';
+        if(t==='tti') return v<=3800?'good':v<=7300?'warn':'poor';
+        if(t==='carga') return v<=3000?'good':v<=6000?'warn':'poor';
+        if(t==='peso') return v<=1?'good':v<=3?'warn':'poor';
+    }
+
+    function card(n,v,t,s){
+        if(v==null)return `<div class="bg-tech p-4 rounded-xl">N/D</div>`;
+        const cl=c(t,v);
+        const pct=cl==='good'?100:cl==='warn'?60:30;
+        const col=cl==='good'?'green':cl==='warn'?'yellow':'red';
+
+        return `<div class="p-4 rounded-xl border border-${col}-500/30">
+            <p class="text-xs text-gray-500">${n}</p>
+            <p class="text-2xl font-black">${s==='ms'?(v/1000).toFixed(2)+'s':v+s}</p>
+            <div class="h-1 bg-zinc-800"><div style="width:${pct}%" class="h-1 bg-${col}-400"></div></div>
+        </div>`;
+    }
+
+    return `
+    <div>
+        <div class="text-center mb-6">
+            <div class="w-24 h-24 border-4 border-green-500 rounded-full flex items-center justify-center mx-auto">
+                <span class="text-3xl font-black">90</span>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            ${card('LCP',item.lcp_ms,'lcp','ms')}
+            ${card('FCP',item.fcp_ms,'fcp','ms')}
+            ${card('CLS',item.cls,'cls','')}
+            ${card('TTI',item.tti_ms,'tti','ms')}
+            ${card('Carga',item.tiempo_carga_ms,'carga','ms')}
+            ${card('Peso',item.peso_mb,'peso',' MB')}
         </div>
     </div>`;
 }
 
-/* ================= OTROS ================= */
+/* ================= LINKS ================= */
 function renderLINKS(item){
     return (item.reporte||[]).map(r=>`
         <div class="flex justify-between border-b border-zinc-800 py-2 text-xs">
-            <div>${r.tipo || 'elemento'}<br>${r.href || r.url || '-'}</div>
+            <div>
+                <div class="font-bold">${r.tipo||'elemento'}</div>
+                <div class="text-gray-500">${r.href||r.url||'-'}</div>
+            </div>
             <div class="${r.obstruido?'text-red-500':'text-green-500'}">
                 ${r.obstruido?'OBSTRUIDO':'OK'}
             </div>
@@ -317,12 +339,9 @@ function renderLINKS(item){
     `).join('');
 }
 
+/* ================= VRT ================= */
 function renderVRT(item){
-    return `<img src="${item.img_diff_url}" class="w-full">`;
-}
-
-function renderPERF(item){
-    return `<div>FCP: ${item.fcp_ms}</div>`;
+    return `<img src="${item.img_diff_url}" class="w-full rounded-xl">`;
 }
 
 function cerrarDrawer(){
