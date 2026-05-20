@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QAVision — Mass Execution Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green: #10b981;
+            --surface: #070707;
+            --surface-2: #0d0d0d;
+            --border: #1a1a1a;
+            --text: #e8e8e8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #000;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.4;
+        }
+
+        .hero-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 20%, transparent 100%);
+            z-index: 0;
+        }
+
+        .font-title { font-family: 'Syne', sans-serif; }
+        .font-mono { font-family: 'DM Mono', monospace; }
+
+        .bg-tech { 
+            background-color: var(--surface-2); 
+            border: 1px solid var(--border); 
+            backdrop-filter: blur(10px);
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
+    </style>
+</head>
+<body class="min-h-screen flex">
+    <div class="hero-grid"></div>
+
+    <aside class="w-20 md:w-64 bg-black border-r border-[#1a1a1a] p-6 h-screen sticky top-0 flex flex-col z-10 transition-all">
+        <div class="mb-10 hidden md:block">
+            <h1 class="font-title text-2xl font-black text-[#10b981] tracking-tighter italic">QAVision</h1>
+            <div class="h-px bg-gradient-to-r from-[#10b981]/50 to-transparent mt-2"></div>
+        </div>
+        
+        <nav class="flex-1 space-y-4">
+            <a href="dashboard.html" class="flex items-center gap-3 text-xs font-bold text-gray-400 hover:text-[#10b981] transition-colors p-2 rounded-lg hover:bg-[#10b981]/10">
+                <span class="font-mono text-lg">◂</span> <span class="hidden md:inline">Volver al Panel</span>
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 p-6 md:p-12 relative z-10 overflow-y-auto">
+        <header class="mb-10">
+            <span class="font-mono text-[10px] text-[#10b981] uppercase tracking-[0.3em] font-bold">Suite Manager View</span>
+            <h2 class="font-title text-4xl mt-2 font-extrabold tracking-tight">Mass Execution <span class="text-gray-600">Explorer</span></h2>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="bg-tech p-6 rounded-2xl">
+                <span class="font-mono text-[10px] text-gray-500 block mb-2 uppercase tracking-widest">Total Audited URLs</span>
+                <span id="kpi-total" class="font-mono text-3xl font-black text-white">0</span>
+            </div>
+            <div class="bg-tech p-6 rounded-2xl border-b-4 border-b-[#10b981]">
+                <span class="font-mono text-[10px] text-gray-500 block mb-2 uppercase tracking-widest">Perfect Matches</span>
+                <span id="kpi-success" class="font-mono text-3xl font-black text-[#10b981]">0</span>
+            </div>
+            <div class="bg-tech p-6 rounded-2xl border-b-4 border-b-red-500">
+                <span class="font-mono text-[10px] text-gray-500 block mb-2 uppercase tracking-widest">Regressions Found</span>
+                <span id="kpi-fails" class="font-mono text-3xl font-black text-red-500">0</span>
+            </div>
+        </div>
+
+        <div class="bg-tech rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-6 border-b border-[#1a1a1a] pb-4">
+                <h3 class="font-mono text-xs text-gray-400 uppercase tracking-widest font-bold">Lotes Recientes (VRT)</h3>
+                <span class="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
+            </div>
+            
+            <div id="lista-masiva" class="space-y-3">
+                <p class="text-xs text-gray-500 font-mono text-center py-10">Cargando reportes del motor QA...</p>
+            </div>
+        </div>
+    </main>
+
+    <div id="detail-drawer" class="fixed inset-y-0 right-0 w-full md:w-[600px] bg-[#070707]/95 border-l border-[#1a1a1a] backdrop-blur-xl z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
+        
+        <div class="p-6 border-b border-[#1a1a1a] flex justify-between items-start bg-black/50">
+            <div class="flex-1 pr-4 overflow-hidden">
+                <span class="font-mono text-[9px] text-[#505050] block uppercase tracking-widest mb-1">INSPECTOR VISUAL //</span>
+                <h4 id="drawer-url" class="font-mono text-xs font-bold text-white truncate w-full">Cargando...</h4>
+            </div>
+            <button onclick="cerrarDrawer()" class="text-gray-500 hover:text-white font-mono text-xs p-2 bg-[#1a1a1a] rounded-lg border border-zinc-800 transition">✕ CLOSE</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scroll">
+            
+            <div class="flex items-center justify-between bg-[#0d0d0d] border border-[#1a1a1a] p-4 rounded-xl">
+                <div>
+                    <span class="font-mono text-[9px] text-[#505050] block mb-1">ESTADO DEL COMPONENTE</span>
+                    <span id="drawer-status" class="font-mono text-sm font-black">---</span>
+                </div>
+                <div class="text-right">
+                    <span class="font-mono text-[9px] text-[#505050] block mb-1">TIMESTAMP</span>
+                    <span id="drawer-time" class="font-mono text-[11px] text-gray-400">--:--:--</span>
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <span class="font-mono text-[10px] font-bold text-gray-500 uppercase tracking-widest block flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Diferencias (Diff)
+                </span>
+                <div class="border border-[#1a1a1a] rounded-xl overflow-hidden bg-black flex items-center justify-center min-h-[150px]">
+                    <img id="drawer-img-diff" src="" class="w-full h-auto block">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-[#1a1a1a]">
+                <div class="space-y-3">
+                    <span class="font-mono text-[9px] font-bold text-gray-500 uppercase tracking-widest block">A / Staging</span>
+                    <div class="border border-[#1a1a1a] rounded-lg overflow-hidden bg-black">
+                        <img id="drawer-img-a" src="" class="w-full h-auto block">
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <span class="font-mono text-[9px] font-bold text-gray-500 uppercase tracking-widest block">B / Production</span>
+                    <div class="border border-[#1a1a1a] rounded-lg overflow-hidden bg-black">
+                        <img id="drawer-img-b" src="" class="w-full h-auto block">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        
+        let globalData = []; // Guardamos los datos en memoria para no volver a llamar a la base de datos al abrir el drawer
+
+        async function init() {
+            const { data: { user } } = await sb.auth.getUser();
+            if (!user) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Traemos todo el historial del usuario
+            const { data, error } = await sb
+                .from('pruebas_qa')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('creado_el', { ascending: false });
+
+            if (error) {
+                document.getElementById('lista-masiva').innerHTML = `<p class="text-red-500 font-mono text-xs">Error de red: ${error.message}</p>`;
+                return;
+            }
+
+            globalData = data || [];
+            actualizarKPIs();
+            renderizarLista();
+        }
+
+        function actualizarKPIs() {
+            const total = globalData.length;
+            const fails = globalData.filter(item => item.diferencias > 0).length;
+            const success = total - fails;
+
+            document.getElementById('kpi-total').innerText = total;
+            document.getElementById('kpi-success').innerText = success;
+            document.getElementById('kpi-fails').innerText = fails;
+        }
+
+        function renderizarLista() {
+            const contenedor = document.getElementById('lista-masiva');
+            
+            if (globalData.length === 0) {
+                contenedor.innerHTML = `<div class="p-8 border border-dashed border-[#1a1a1a] rounded-xl text-center"><p class="font-mono text-[10px] text-gray-500">NO HAY REGISTROS EN EL MOTOR</p></div>`;
+                return;
+            }
+
+            contenedor.innerHTML = globalData.map(item => {
+                const hasError = item.diferencias > 0;
+                const statusColor = hasError ? 'bg-red-500' : 'bg-[#10b981]';
+                const textColor = hasError ? 'text-red-500' : 'text-[#10b981]';
+                const statusText = hasError ? `${item.diferencias} DIFFS` : 'OK';
+                const timeStr = new Date(item.creado_el).toLocaleTimeString();
+
+                return `
+                    <div class="flex items-center justify-between p-4 bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl hover:border-zinc-700 transition group">
+                        <div class="flex items-center gap-4 w-2/3">
+                            <span class="w-2 h-2 rounded-full ${statusColor} shrink-0"></span>
+                            <div class="truncate">
+                                <p class="font-mono text-xs text-gray-300 truncate">${item.url_a}</p>
+                                <p class="font-mono text-[9px] text-gray-600 mt-1">${timeStr}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <span class="font-mono text-[10px] font-bold ${textColor} tracking-widest">${statusText}</span>
+                            <button onclick="verReporteIndividual('${item.id}')" class="font-mono text-[10px] px-4 py-2 bg-[#1a1a1a] text-white rounded-lg hover:bg-zinc-800 hover:text-[#10b981] transition border border-transparent hover:border-[#10b981]/30">
+                                INSPECT
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function verReporteIndividual(id) {
+            // Buscamos el elemento exacto en nuestra variable de memoria
+            const testDetails = globalData.find(item => item.id == id);
+            if (!testDetails) return;
+
+            // Inyectamos la data en el drawer
+            document.getElementById('drawer-url').innerText = testDetails.url_a;
+            document.getElementById('drawer-time').innerText = new Date(testDetails.creado_el).toLocaleString();
+            
+            const statusEl = document.getElementById('drawer-status');
+            if (testDetails.diferencias > 0) {
+                statusEl.innerText = `${testDetails.diferencias} REGRESIONES DETECTADAS`;
+                statusEl.className = "font-mono text-xs font-black text-red-500";
+            } else {
+                statusEl.innerText = "PERFECT MATCH";
+                statusEl.className = "font-mono text-xs font-black text-[#10b981]";
+            }
+
+            document.getElementById('drawer-img-diff').src = testDetails.img_diff_url || testDetails.img_a_url;
+            document.getElementById('drawer-img-a').src = testDetails.img_a_url;
+            document.getElementById('drawer-img-b').src = testDetails.img_b_url;
+
+            // Mostramos el drawer
+            const drawer = document.getElementById('detail-drawer');
+            drawer.classList.remove('translate-x-full');
+        }
+
+        function cerrarDrawer() {
+            const drawer = document.getElementById('detail-drawer');
+            drawer.classList.add('translate-x-full');
+        }
+
+        // Prevenir que el drawer se cierre al hacer clic adentro, pero permitir cerrar si se hace clic afuera
+        document.addEventListener('mousedown', (e) => {
+            const drawer = document.getElementById('detail-drawer');
+            if (!drawer.classList.contains('translate-x-full') && !drawer.contains(e.target) && !e.target.closest('button')) {
+                cerrarDrawer();
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>
