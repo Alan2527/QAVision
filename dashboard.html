@@ -420,25 +420,26 @@
             btn.innerText = `Procesando ${totalTests} análisis en batch...`;
             
             try {
-                // Recuperamos el ID del usuario para mandarlo al backend
+                // Recuperamos el ID del usuario
                 const { data: { session } } = await dashClient.auth.getSession();
                 const userId = session?.user?.id || null;
 
-                // Armamos el array de peticiones reales al motor QA
+                // 1. GENERAMOS EL BATCH ID ÚNICO PARA ESTA EJECUCIÓN
+                const batchId = generateSafeID(); 
+
+                // 2. INYECTAMOS EL BATCH ID EN EL PAYLOAD DE CADA LLAMADA
                 const llamadas = [
-                    ...suiteStorage.vrt.map(r => fetch('https://qavision-qavision-engine.hf.space/api/comparar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url_a: r.stage, url_b: r.prod, user_id: userId }) })),
-                    ...suiteStorage.seo.map(r => fetch('https://qavision-qavision-engine.hf.space/api/seo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId }) })),
-                    ...suiteStorage.perf.map(r => fetch('https://qavision-qavision-engine.hf.space/api/performance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId }) })),
-                    ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId }) })),
+                    ...suiteStorage.vrt.map(r => fetch('https://qavision-qavision-engine.hf.space/api/comparar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url_a: r.stage, url_b: r.prod, user_id: userId, batch_id: batchId }) })),
+                    ...suiteStorage.seo.map(r => fetch('https://qavision-qavision-engine.hf.space/api/seo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId }) })),
+                    ...suiteStorage.perf.map(r => fetch('https://qavision-qavision-engine.hf.space/api/performance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId }) })),
+                    ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId }) })),
                 ];
 
-                // Esperamos a que los hilos concurrentes terminen
                 await Promise.allSettled(llamadas);
-
-                // Una vez procesados, redirigimos al visor
                 window.location.href = 'mass_execution.html';
 
-            } catch (error) {
+             } catch (error) {
+                // ... (el catch queda igual)
                 console.error("Error disparando el batch:", error);
                 btn.disabled = false;
                 btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
