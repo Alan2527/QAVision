@@ -341,15 +341,92 @@ function renderLINKS(item){
 
 /* ================= VRT ================= */
 function renderVRT(item){
-    return `<img src="${item.img_diff_url}" class="w-full rounded-xl">`;
+
+    const errores = item.diferencias || 0;
+
+    const id = "vrt-" + Math.random().toString(36).substring(2,7);
+
+    return `
+    <div class="space-y-4">
+
+        <!-- RESUMEN -->
+        <div class="flex justify-between items-center p-3 border border-zinc-800 rounded-xl">
+            <div>
+                <div class="text-sm text-gray-400">Diferencias detectadas</div>
+                <div class="text-xs ${errores>0?'text-red-400':'text-green-400'}">
+                    ${errores>0?'ERROR':'OK'}
+                </div>
+            </div>
+            <div class="text-lg font-bold ${errores>0?'text-red-400':'text-green-400'}">
+                ${errores}
+            </div>
+        </div>
+
+        <!-- SLIDER COMPARACIÓN -->
+        <div class="relative w-full overflow-hidden rounded-xl border border-zinc-800">
+            
+            <img src="${item.img_a_url || ''}" class="w-full block">
+
+            <div id="${id}-overlay" class="absolute top-0 left-0 h-full overflow-hidden" style="width:50%">
+                <img src="${item.img_b_url || ''}" class="w-full block">
+            </div>
+
+            <input type="range" min="0" max="100" value="50"
+                class="absolute bottom-2 left-1/2 -translate-x-1/2 w-2/3"
+                oninput="
+                    document.getElementById('${id}-overlay').style.width = this.value + '%'
+                "
+            >
+        </div>
+
+        <!-- DIFF -->
+        <div>
+            <div class="text-xs text-red-400 mb-1">DIFF</div>
+            <img src="${item.img_diff_url || ''}" 
+                 onclick="openImageModal('${item.img_diff_url}')"
+                 class="rounded border border-red-500 w-full cursor-zoom-in">
+        </div>
+
+        <!-- ORIGINALES -->
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <div class="text-xs text-gray-400 mb-1">BASELINE</div>
+                <img src="${item.img_a_url || ''}" 
+                     onclick="openImageModal('${item.img_a_url}')"
+                     class="rounded border border-zinc-800 cursor-zoom-in">
+            </div>
+
+            <div>
+                <div class="text-xs text-gray-400 mb-1">ACTUAL</div>
+                <img src="${item.img_b_url || ''}" 
+                     onclick="openImageModal('${item.img_b_url}')"
+                     class="rounded border border-zinc-800 cursor-zoom-in">
+            </div>
+        </div>
+
+    </div>`;
+}
+function openImageModal(src){
+    const modal = document.getElementById('img-modal');
+    const img = document.getElementById('img-modal-src');
+
+    img.src = src;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
+document.getElementById('img-modal').addEventListener('click', function(){
+    this.classList.add('hidden');
+    this.classList.remove('flex');
+});
 function cerrarDrawer(){
     document.getElementById('detail-drawer').classList.add('translate-x-full');
 }
 
 init();
 </script>
-    
+<div id="img-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-50">
+    <img id="img-modal-src" class="max-w-[90%] max-h-[90%] rounded">
+</div>    
 </body>
 </html>
