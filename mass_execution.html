@@ -328,21 +328,11 @@ function renderPERF(item) {
 function renderLINKS(item){
 
     function getLabel(r){
-        // prioridad: texto visible
         if(r.texto && r.texto.trim() !== '') return r.texto;
-
-        // fallback: aria-label
         if(r.aria_label) return `[aria] ${r.aria_label}`;
-
-        // fallback: id
         if(r.id) return `#${r.id}`;
-
-        // fallback: class
         if(r.class) return `.${r.class}`;
-
-        // fallback: tag
         if(r.tag) return `<${r.tag}>`;
-
         return 'elemento sin identificar';
     }
 
@@ -351,36 +341,56 @@ function renderLINKS(item){
         return url.length > 50 ? url.substring(0,50) + '...' : url;
     }
 
-    return (item.reporte || []).map(r => {
+    const total = item.reporte?.length || 0;
+    const errores = item.reporte?.filter(r => r.obstruido).length || 0;
 
-        const label = getLabel(r);
-        const fullUrl = r.href || r.url || '-';
-        const short = shortUrl(fullUrl);
+    return `
+    <div class="space-y-4">
 
-        return `
-        <div class="flex justify-between items-start border-b border-zinc-800 py-3 text-xs">
-
-            <div class="max-w-[75%]">
-                <!-- IDENTIFICADOR -->
-                <div class="font-bold text-gray-200 mb-1">
-                    ${label}
-                </div>
-
-                <!-- URL -->
-                <div class="text-gray-500 truncate"
-                     title="${fullUrl}">
-                    ${short}
+        <!-- RESULTADO GLOBAL -->
+        <div class="flex justify-between items-center p-3 border border-zinc-800 rounded-xl">
+            <div>
+                <div class="text-sm text-gray-400">RESULTADO GLOBAL</div>
+                <div class="text-xs ${errores>0?'text-red-400':'text-green-400'}">
+                    ${errores>0?'ERROR':'OK'}
                 </div>
             </div>
-
-            <!-- STATUS -->
-            <div class="ml-3 ${r.obstruido?'text-red-500':'text-green-500'} font-semibold">
-                ${r.obstruido?'OBSTRUIDO':'OK'}
+            <div class="text-lg font-bold ${errores>0?'text-red-400':'text-green-400'}">
+                ${errores} / ${total}
             </div>
-
         </div>
-        `;
-    }).join('');
+
+        <!-- LISTADO -->
+        ${(item.reporte || []).map(r => {
+
+            const label = getLabel(r);
+            const fullUrl = r.href || r.url || '-';
+            const short = shortUrl(fullUrl);
+
+            return `
+            <div class="flex justify-between items-start border-b border-zinc-800 py-3 text-xs">
+
+                <div class="max-w-[75%]">
+                    <div class="font-bold text-gray-200 mb-1">
+                        ${label}
+                    </div>
+
+                    <div class="text-gray-500 truncate"
+                         title="${fullUrl}">
+                        ${short}
+                    </div>
+                </div>
+
+                <div class="ml-3 ${r.obstruido?'text-red-500':'text-green-500'} font-semibold">
+                    ${r.obstruido?'OBSTRUIDO':'OK'}
+                </div>
+
+            </div>
+            `;
+        }).join('')}
+
+    </div>
+    `;
 }
 
 /* ================= VRT ================= */
