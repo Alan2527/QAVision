@@ -165,7 +165,13 @@ async function init() {
             ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.creado_el, errores: i.diferencias || 0 })),
             ...(seo.data || []).map(i => ({ ...i, modulo: 'seo', url_m: i.url, fecha: i.created_at, errores: 0 })),
             ...(perf.data || []).map(i => ({ ...i, modulo: 'perf', url_m: i.url, fecha: i.created_at, errores: i.fcp_ms > 3000 ? 1 : 0 })),
-            ...(links.data || []).map(i => ({ ...i, modulo: 'links', url_m: i.url_auditada, fecha: i.created_at, errores: (Array.isArray(i.reporte) ? i.reporte.filter(r=>r.obstruido).length : 0) }))
+            ...(links.data || []).map(i => ({
+                ...i,
+                modulo: 'links',
+                url_m: i.url_auditada,
+                fecha: i.created_at,
+                errores: (Array.isArray(i.reporte) ? i.reporte.filter(r=>r.obstruido).length : 0)
+            }))
         ].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
 
         renderizarLista();
@@ -228,6 +234,16 @@ function verDetalle(id, modulo) {
 
     document.getElementById('drawer-url').innerText = item.url_m;
     document.getElementById('drawer-time').innerText = new Date(item.fecha).toLocaleString();
+
+    // ✅ RESULTADO GLOBAL
+    const statusEl = document.getElementById('drawer-status');
+    if (item.errores > 0) {
+        statusEl.innerText = `${item.errores} ALERTAS`;
+        statusEl.className = "font-mono text-xs font-black text-red-500";
+    } else {
+        statusEl.innerText = "PASSED";
+        statusEl.className = "font-mono text-xs font-black text-green-500";
+    }
 
     let html = "";
 
@@ -306,11 +322,23 @@ function renderLINKS(item) {
     return `
         <div class="space-y-2">
             ${(item.reporte || []).map(r => `
-                <div class="flex justify-between border-b border-zinc-800 py-2">
-                    <span class="truncate w-2/3">${r.url}</span>
-                    <span class="${r.obstruido ? 'text-red-500' : 'text-green-500'}">
-                        ${r.obstruido ? 'OBSTRUIDO' : 'OK'}
-                    </span>
+                <div class="flex justify-between border-b border-zinc-800 py-2 text-xs">
+
+                    <div class="w-2/3">
+                        <div class="font-bold text-white">
+                            ${r.tipo || 'elemento'}
+                        </div>
+                        <div class="text-gray-500 font-mono truncate">
+                            ${r.href || r.url || 'sin url'}
+                        </div>
+                    </div>
+
+                    <div class="text-right">
+                        <span class="${r.obstruido ? 'text-red-500' : 'text-green-500'} font-bold">
+                            ${r.obstruido ? 'OBSTRUIDO' : 'OK'}
+                        </span>
+                    </div>
+
                 </div>
             `).join('')}
         </div>
