@@ -179,8 +179,6 @@ async function init() {
 
     } catch (e) {
         console.error(e);
-        document.getElementById('lista-masiva').innerHTML =
-            '<p class="text-red-500 text-xs font-mono text-center py-10">Error cargando datos</p>';
     }
 }
 
@@ -199,27 +197,19 @@ function actualizarKPIs() {
 function renderizarLista() {
     const cont = document.getElementById('lista-masiva');
 
-    if (!globalData.length) {
-        cont.innerHTML = '<p class="text-xs text-gray-500 font-mono text-center py-10">Sin datos</p>';
-        return;
-    }
-
     cont.innerHTML = globalData.map(item => {
         const s = M_STYLES[item.modulo];
         return `
-            <div class="flex items-center justify-between p-4 bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl hover:border-zinc-700 transition">
+            <div class="flex items-center justify-between p-4 bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl">
                 <div class="flex items-center gap-4">
                     <div class="w-1.5 h-10 rounded-full ${s.bg.replace('/10','/50')}"></div>
                     <div>
-                        <p class="font-mono text-xs text-gray-300 truncate max-w-[200px]">${item.url_m}</p>
+                        <p class="font-mono text-xs text-gray-300">${item.url_m}</p>
                         <span class="text-[9px] font-bold ${s.color} uppercase">${item.modulo}</span>
-                        <span class="text-[9px] text-gray-600">
-                            | LOTE: ${(item.batch_id ? item.batch_id.substring(0,8) : 'N/A')}
-                        </span>
                     </div>
                 </div>
                 <button onclick="verDetalle('${item.id}', '${item.modulo}')" 
-                    class="font-mono text-[10px] px-4 py-2 bg-[#1a1a1a] text-white rounded-lg hover:bg-zinc-800">
+                    class="text-xs px-3 py-1 bg-zinc-800 rounded">
                     INSPECT
                 </button>
             </div>
@@ -235,122 +225,110 @@ function verDetalle(id, modulo) {
     document.getElementById('drawer-url').innerText = item.url_m;
     document.getElementById('drawer-time').innerText = new Date(item.fecha).toLocaleString();
 
-    // ✅ RESULTADO GLOBAL
     const statusEl = document.getElementById('drawer-status');
-    if (item.errores > 0) {
-        statusEl.innerText = `${item.errores} ALERTAS`;
-        statusEl.className = "font-mono text-xs font-black text-red-500";
-    } else {
-        statusEl.innerText = "PASSED";
-        statusEl.className = "font-mono text-xs font-black text-green-500";
-    }
+    statusEl.innerText = item.errores > 0 ? "ERROR" : "OK";
+    statusEl.className = item.errores > 0 ? "text-red-500" : "text-green-500";
 
     let html = "";
 
-    switch(modulo) {
-        case 'vrt':
-            html = renderVRT(item);
-            break;
-        case 'seo':
-            html = renderSEO(item);
-            break;
-        case 'perf':
-            html = renderPERF(item);
-            break;
-        case 'links':
-            html = renderLINKS(item);
-            break;
-    }
+    if (modulo === 'seo') html = renderSEO(item);
+    if (modulo === 'links') html = renderLINKS(item);
+    if (modulo === 'vrt') html = renderVRT(item);
+    if (modulo === 'perf') html = renderPERF(item);
 
     document.getElementById('drawer-dynamic-content').innerHTML = html;
     document.getElementById('detail-drawer').classList.remove('translate-x-full');
 }
 
-/* ================= RENDERERS ================= */
-
-function renderVRT(item) {
-    return `
-        <div class="space-y-6">
-            <div class="bg-tech rounded-2xl p-4">
-                <p class="text-xs text-gray-500 mb-2">Master Diff</p>
-                <img src="${item.img_diff_url}" class="w-full rounded-lg border border-zinc-800">
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-                <div class="bg-tech p-4 rounded-xl">
-                    <p class="text-xs text-gray-500 mb-2">Expected</p>
-                    <img src="${item.img_a_url}" class="w-full rounded-lg">
-                </div>
-                <div class="bg-tech p-4 rounded-xl">
-                    <p class="text-xs text-gray-500 mb-2">Actual</p>
-                    <img src="${item.img_b_url}" class="w-full rounded-lg">
-                </div>
-            </div>
-        </div>
-    `;
-}
-
+/* ================= SEO (FULL DASHBOARD) ================= */
 function renderSEO(item) {
+
+    let ok = 0, warn = 0, error = 0;
+
+    function badge(type){
+        if(type==='ok') return "text-green-400 bg-green-500/10";
+        if(type==='warn') return "text-yellow-400 bg-yellow-500/10";
+        return "text-red-400 bg-red-500/10";
+    }
+
+    function label(type){
+        if(type==='ok') return "OK";
+        if(type==='warn') return "ADVERTENCIA";
+        return "ERROR";
+    }
+
+    function check(type, title, detail){
+        if(type==='ok') ok++;
+        else if(type==='warn') warn++;
+        else error++;
+
+        return `
+        <div class="py-4 border-b border-zinc-800">
+            <div class="flex items-center gap-3 mb-1">
+                <span class="text-[10px] font-black px-2 py-1 rounded ${badge(type)}">
+                    ${label(type)}
+                </span>
+                <span class="font-bold">${title}</span>
+            </div>
+            <div class="text-xs text-gray-500 font-mono ml-1">${detail}</div>
+        </div>`;
+    }
+
+    let html = "";
+
+    const titleLen = item.title_len || 0;
+    html += `<div class="text-xs uppercase text-gray-500 mt-4">Title & Meta</div>`;
+    html += check(titleLen >=30 && titleLen<=60 ? 'ok':'warn',"Title",`${titleLen} caracteres`);
+
+    const metaLen = item.meta_desc_len || 0;
+    html += check(metaLen>=70 && metaLen<=160 ? 'ok':'warn',"Meta Description",`${metaLen} caracteres`);
+
+    html += `<div class="text-xs uppercase text-gray-500 mt-6">Estructura</div>`;
+    const h1 = item.h1_count || 0;
+    html += check(h1===1?'ok':'error',"H1",h1===0?"No encontrado":`${h1} encontrados`);
+
+    html += `<div class="text-xs uppercase text-gray-500 mt-6">Indexación</div>`;
+    html += check(item.canonical?'ok':'warn',"Canonical",item.canonical||"No definido");
+    html += check(item.meta_robots?'ok':'warn',"Meta Robots",item.meta_robots||"No definido");
+
     return `
-        <div class="space-y-3">
-            <div class="bg-tech p-4 rounded-xl">
-                <p class="text-xs text-gray-500">Title length</p>
-                <p class="text-lg">${item.title_len || 0}</p>
-            </div>
-            <div class="bg-tech p-4 rounded-xl">
-                <p class="text-xs text-gray-500">H1 count</p>
-                <p class="text-lg">${item.h1_count || 0}</p>
-            </div>
-            <div class="bg-tech p-4 rounded-xl">
-                <p class="text-xs text-gray-500">Canonical</p>
-                <p class="text-xs break-all">${item.canonical || 'N/A'}</p>
-            </div>
+    <div>
+        <div class="grid grid-cols-3 gap-4 mb-6 text-center">
+            <div class="bg-tech p-4 rounded-xl"><h2 class="text-green-400 text-2xl">${ok}</h2></div>
+            <div class="bg-tech p-4 rounded-xl"><h2 class="text-yellow-400 text-2xl">${warn}</h2></div>
+            <div class="bg-tech p-4 rounded-xl"><h2 class="text-red-400 text-2xl">${error}</h2></div>
         </div>
-    `;
+
+        <div class="bg-tech p-6 rounded-2xl">
+            ${html}
+        </div>
+    </div>`;
 }
 
-function renderPERF(item) {
-    return `
-        <div class="space-y-3">
-            <div class="bg-tech p-4 rounded-xl">FCP: ${item.fcp_ms}ms</div>
-            <div class="bg-tech p-4 rounded-xl">LCP: ${item.lcp_ms}ms</div>
-            <div class="bg-tech p-4 rounded-xl">Peso: ${item.peso_mb}MB</div>
+/* ================= OTROS ================= */
+function renderLINKS(item){
+    return (item.reporte||[]).map(r=>`
+        <div class="flex justify-between border-b border-zinc-800 py-2 text-xs">
+            <div>${r.tipo || 'elemento'}<br>${r.href || r.url || '-'}</div>
+            <div class="${r.obstruido?'text-red-500':'text-green-500'}">
+                ${r.obstruido?'OBSTRUIDO':'OK'}
+            </div>
         </div>
-    `;
+    `).join('');
 }
 
-function renderLINKS(item) {
-    return `
-        <div class="space-y-2">
-            ${(item.reporte || []).map(r => `
-                <div class="flex justify-between border-b border-zinc-800 py-2 text-xs">
-
-                    <div class="w-2/3">
-                        <div class="font-bold text-white">
-                            ${r.tipo || 'elemento'}
-                        </div>
-                        <div class="text-gray-500 font-mono truncate">
-                            ${r.href || r.url || 'sin url'}
-                        </div>
-                    </div>
-
-                    <div class="text-right">
-                        <span class="${r.obstruido ? 'text-red-500' : 'text-green-500'} font-bold">
-                            ${r.obstruido ? 'OBSTRUIDO' : 'OK'}
-                        </span>
-                    </div>
-
-                </div>
-            `).join('')}
-        </div>
-    `;
+function renderVRT(item){
+    return `<img src="${item.img_diff_url}" class="w-full">`;
 }
 
-/* ================= UI ================= */
-function cerrarDrawer() {
+function renderPERF(item){
+    return `<div>FCP: ${item.fcp_ms}</div>`;
+}
+
+function cerrarDrawer(){
     document.getElementById('detail-drawer').classList.add('translate-x-full');
 }
 
-/* ================= START ================= */
 init();
 </script>
     
