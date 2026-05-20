@@ -134,7 +134,15 @@
         </div>
     </div>
 
-    <script>
+<script>
+        // =========================================================
+        // CONFIGURACIÓN DE TABLAS (Reemplazá por tus nombres reales)
+        // =========================================================
+        const TABLA_VRT   = 'pruebas_qa';
+        const TABLA_SEO   = 'seo_audits';
+        const TABLA_PERF  = 'performance_audits';
+        const TABLA_LINKS = 'auditoria_links';
+
         const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
         const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -145,21 +153,28 @@
             const { data: { user } } = await sb.auth.getUser();
             if (!user) { window.location.href = 'login.html'; return; }
 
-            const { data, error } = await sb
-                .from('pruebas_qa')
-                .select('*')
-                .eq('user_id', user.id)
-                .not('batch_id', 'is', null)
-                .order('creado_el', { ascending: false });
+            try {
+                // El Promise.all ahora usa las variables que configuraste arriba
+                const [vrtRes, seoRes, perfRes, linksRes] = await Promise.all([
+                    sb.from(TABLA_VRT).select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+                    sb.from(TABLA_SEO).select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+                    sb.from(TABLA_PERF).select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+                    sb.from(TABLA_LINKS).select('*').eq('user_id', user.id).not('batch_id', 'is', null)
+                ]);
 
-            if (error) {
-                document.getElementById('lista-masiva').innerHTML = `<p class="text-red-500 font-mono text-xs">Error: ${error.message}</p>`;
-                return;
+                const vrtData = (vrtRes.data || []).map(item => ({ ...item, modulo: 'vrt' }));
+                const seoData = (seoRes.data || []).map(item => ({ ...item, modulo: 'seo' }));
+                const perfData = (perfRes.data || []).map(item => ({ ...item, modulo: 'perf' }));
+                const linksData = (linksRes.data || []).map(item => ({ ...item, modulo: 'links' }));
+
+                const combinedData = [...vrtData, ...seoData, ...perfData, ...linksData];
+                globalData = combinedData.sort((a, b) => new Date(b.creado_el) - new Date(a.creado_el));
+
+                actualizarKPIs();
+                renderizarLista();
+            } catch (error) {
+                document.getElementById('lista-masiva').innerHTML = `<p class="text-red-500 font-mono text-xs">Error consolidando datos: ${error.message}</p>`;
             }
-
-            globalData = data || [];
-            actualizarKPIs();
-            renderizarLista();
         }
 
         function actualizarKPIs() {
@@ -179,16 +194,15 @@
 
             contenedor.innerHTML = globalData.map(item => {
                 const hasError = item.diferencias > 0;
-                const m = item.modulo ? item.modulo.toUpperCase() : 'VRT'; // Default a VRT por seguridad
+                const m = item.modulo.toUpperCase();
                 
-                // Colores específicos por módulo
                 const modColors = {
                     'VRT': 'bg-purple-500/20 text-purple-400 border-purple-500/30',
                     'SEO': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
                     'PERF': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
                     'LINKS': 'bg-pink-500/20 text-pink-400 border-pink-500/30'
                 };
-                const modColor = modColors[m] || modColors['VRT'];
+                const modColor = modColors[m];
 
                 return `
                     <div class="flex items-center justify-between p-4 bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl hover:border-zinc-700 transition group">
@@ -204,20 +218,19 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-6">
-                            <span class="font-mono text-[10px] font-bold ${hasError ? 'text-red-500' : 'text-[#10b981]'} tracking-widest">${hasError ? item.diferencias + ' ERRORES' : 'OK'}</span>
-                            <button onclick="verReporteIndividual('${item.id}')" class="font-mono text-[10px] px-4 py-2 bg-[#1a1a1a] text-white rounded-lg hover:bg-zinc-800 hover:text-[#10b981] transition border border-transparent hover:border-[#10b981]/30">INSPECT</button>
+                            <span class="font-mono text-[10px] font-bold ${hasError ? 'text-red-500' : 'text-[#10b981]'} tracking-widest">${hasError ? item.diferencias + ' ALERTAS' : 'OK'}</span>
+                            <button onclick="verReporteIndividual('${item.id}', '${item.modulo}')" class="font-mono text-[10px] px-4 py-2 bg-[#1a1a1a] text-white rounded-lg hover:bg-zinc-800 hover:text-[#10b981] transition border border-transparent hover:border-[#10b981]/30">INSPECT</button>
                         </div>
                     </div>
                 `;
             }).join('');
         }
 
-        function verReporteIndividual(id) {
-            const test = globalData.find(item => item.id == id);
+        function verReporteIndividual(id, modulo) {
+            const test = globalData.find(item => item.id == id && item.modulo === modulo);
             if (!test) return;
 
-            const m = test.modulo ? test.modulo.toLowerCase() : 'vrt';
-            document.getElementById('drawer-module-badge').innerText = `INSPECTOR // MÓDULO ${m.toUpperCase()}`;
+            document.getElementById('drawer-module-badge').innerText = `INSPECTOR // MÓDULO ${modulo.toUpperCase()}`;
             document.getElementById('drawer-url').innerText = test.url_a;
             document.getElementById('drawer-time').innerText = new Date(test.creado_el).toLocaleString();
             
@@ -230,40 +243,32 @@
                 statusEl.className = "font-mono text-xs font-black text-[#10b981]";
             }
 
-            // --- MAGIA DINÁMICA: Renderizamos el interior según el módulo ---
             const contentBox = document.getElementById('drawer-dynamic-content');
             
-            if (m === 'vrt') {
+            if (modulo === 'vrt') {
                 contentBox.innerHTML = `
                     <div class="space-y-3">
-                        <span class="font-mono text-[10px] font-bold text-gray-500 uppercase tracking-widest block">Diferencias (Diff)</span>
+                        <span class="font-mono text-[10px] font-bold text-gray-500 uppercase tracking-widest block">Diferencias Visuales</span>
                         <div class="border border-[#1a1a1a] rounded-xl overflow-hidden bg-black flex items-center justify-center min-h-[150px]">
                             <img src="${test.img_diff_url || test.img_a_url}" class="w-full h-auto block">
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-4 pt-4 border-t border-[#1a1a1a]">
-                        <div class="space-y-3">
-                            <span class="font-mono text-[9px] font-bold text-gray-500 uppercase tracking-widest block">A / Staging</span>
-                            <div class="border border-[#1a1a1a] rounded-lg overflow-hidden bg-black"><img src="${test.img_a_url}" class="w-full h-auto block"></div>
-                        </div>
-                        <div class="space-y-3">
-                            <span class="font-mono text-[9px] font-bold text-gray-500 uppercase tracking-widest block">B / Production</span>
-                            <div class="border border-[#1a1a1a] rounded-lg overflow-hidden bg-black"><img src="${test.img_b_url}" class="w-full h-auto block"></div>
+                `;
+            } else if (modulo === 'seo') {
+                contentBox.innerHTML = `
+                    <div class="p-6 bg-black border border-[#1a1a1a] rounded-xl font-mono text-xs text-gray-400 space-y-3">
+                        <p class="text-[#10b981]">> Análisis SEO completado.</p>
+                        <div class="grid grid-cols-2 gap-4 mt-4">
+                            <div class="bg-zinc-900 p-3 rounded"><span class="block text-[9px] text-gray-500 mb-1">TITLE LENGTH</span><span class="text-white">${test.title_length || 'N/A'} chars</span></div>
+                            <div class="bg-zinc-900 p-3 rounded"><span class="block text-[9px] text-gray-500 mb-1">H1 TAGS</span><span class="text-white">${test.h1_count || 0}</span></div>
                         </div>
                     </div>
                 `;
             } else {
-                // Diseño de terminal/consola para SEO, Perf y Links
-                contentBox.innerHTML = `
-                    <div class="space-y-3">
-                        <span class="font-mono text-[10px] font-bold text-gray-500 uppercase tracking-widest block flex items-center gap-2">Output Logs</span>
-                        <div class="p-6 bg-black border border-[#1a1a1a] rounded-xl font-mono text-xs text-gray-400 space-y-2">
-                            <p class="text-[#10b981]">>> Target: ${test.url_a}</p>
-                            <p>>> Ejecución de motor: Completada.</p>
-                            <p class="text-white mt-4 border-t border-zinc-800 pt-4">Payload de Auditoría:</p>
-                            <p class="text-yellow-500">Identificadores comprometidos: ${test.diferencias}</p>
-                            <p class="text-zinc-500 italic mt-4">// Ampliar backend para inyectar JSON estructurado en este bloque.</p>
-                        </div>
+                 contentBox.innerHTML = `
+                    <div class="p-6 bg-black border border-[#1a1a1a] rounded-xl font-mono text-xs text-gray-400 space-y-3">
+                        <p class="text-[#10b981]">> Ejecución de motor completada.</p>
+                        <p class="text-white">Total Errores: ${test.diferencias || 0}</p>
                     </div>
                 `;
             }
@@ -271,9 +276,7 @@
             document.getElementById('detail-drawer').classList.remove('translate-x-full');
         }
 
-        function cerrarDrawer() {
-            document.getElementById('detail-drawer').classList.add('translate-x-full');
-        }
+        function cerrarDrawer() { document.getElementById('detail-drawer').classList.add('translate-x-full'); }
 
         document.addEventListener('mousedown', (e) => {
             const drawer = document.getElementById('detail-drawer');
@@ -284,5 +287,6 @@
 
         init();
     </script>
+    
 </body>
 </html>
