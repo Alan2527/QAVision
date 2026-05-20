@@ -305,7 +305,27 @@ function renderSEO(item) {
 /* ================= PERF ================= */
 function renderPERF(item) {
 
+    function calcularScore(item){
+        let total = 0;
+        let puntos = 0;
+
+        function evaluar(valor, good, mid){
+            if(valor == null) return;
+            total++;
+            if(valor <= good) puntos += 100;
+            else if(valor <= mid) puntos += 50;
+        }
+
+        evaluar(item.lcp_ms, 2500, 4000);
+        evaluar(item.fcp_ms, 1800, 3000);
+        evaluar(item.cls, 0.1, 0.25);
+        evaluar(item.tti_ms, 3800, 7300);
+
+        return total ? Math.round(puntos / total) : 0;
+    }
+
     function c(t,v){
+        if(v == null) return 'poor';
         if(t==='lcp') return v<=2500?'good':v<=4000?'warn':'poor';
         if(t==='fcp') return v<=1800?'good':v<=3000?'warn':'poor';
         if(t==='cls') return v<=0.1?'good':v<=0.25?'warn':'poor';
@@ -315,45 +335,42 @@ function renderPERF(item) {
     }
 
     function card(n,v,t,s){
-        if(v==null)return `<div class="bg-tech p-4 rounded-xl">N/D</div>`;
+        if(v==null)return `<div class="bg-tech p-4 rounded-xl text-center text-xs text-gray-500">N/D</div>`;
+
         const cl=c(t,v);
         const pct=cl==='good'?100:cl==='warn'?60:30;
         const col=cl==='good'?'green':cl==='warn'?'yellow':'red';
 
         return `<div class="p-4 rounded-xl border border-${col}-500/30">
             <p class="text-xs text-gray-500">${n}</p>
-            <p class="text-2xl font-black">${s==='ms'?(v/1000).toFixed(2)+'s':v+s}</p>
-            <div class="h-1 bg-zinc-800"><div style="width:${pct}%" class="h-1 bg-${col}-400"></div></div>
+            <p class="text-2xl font-black">
+                ${s==='ms'?(v/1000).toFixed(2)+'s':v+s}
+            </p>
+            <div class="h-1 bg-zinc-800 mt-2">
+                <div style="width:${pct}%" class="h-1 bg-${col}-400"></div>
+            </div>
         </div>`;
     }
 
+    const score = calcularScore(item);
+
     return `
     <div>
+
+        <!-- SCORE -->
         <div class="text-center mb-6">
-            <div class="w-24 h-24 border-4 border-green-500 rounded-full flex items-center justify-center mx-auto">
-                function calcularScore(item){
-    let total = 0;
-    let puntos = 0;
-
-    function evaluar(valor, good, mid){
-        if(valor == null) return null;
-        total++;
-        if(valor <= good) puntos += 100;
-        else if(valor <= mid) puntos += 50;
-        else puntos += 0;
-    }
-
-    evaluar(item.lcp_ms, 2500, 4000);
-    evaluar(item.fcp_ms, 1800, 3000);
-    evaluar(item.cls, 0.1, 0.25);
-    evaluar(item.tti_ms, 3800, 7300);
-
-    if(total === 0) return 0;
-
-    return Math.round(puntos / total);
-}
+            <div class="w-24 h-24 border-4 
+                ${score >= 80 ? 'border-green-500' : score >= 50 ? 'border-yellow-500' : 'border-red-500'}
+                rounded-full flex items-center justify-center mx-auto">
+                
+                <span class="text-3xl font-black 
+                    ${score >= 80 ? 'text-green-400' : score >= 50 ? 'text-yellow-400' : 'text-red-400'}">
+                    ${score}
+                </span>
             </div>
         </div>
+
+        <!-- METRICAS -->
         <div class="grid grid-cols-2 gap-4">
             ${card('LCP',item.lcp_ms,'lcp','ms')}
             ${card('FCP',item.fcp_ms,'fcp','ms')}
@@ -362,6 +379,7 @@ function renderPERF(item) {
             ${card('Carga',item.tiempo_carga_ms,'carga','ms')}
             ${card('Peso',item.peso_mb,'peso',' MB')}
         </div>
+
     </div>`;
 }
 
