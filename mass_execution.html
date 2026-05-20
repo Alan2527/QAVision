@@ -138,53 +138,46 @@
     const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
     const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    const M_STYLES = {
-        vrt:   { color: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
-        seo:   { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-        perf:  { color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20' },
-        links: { color: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20' }
-    };
-
+    
     let globalData = [];
 
     async function init() {
         const { data: { user } } = await sb.auth.getUser();
         if (!user) { window.location.href = 'login.html'; return; }
 
-        const [vrt, seo, perf, links] = await Promise.all([
-            sb.from('pruebas_qa').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
-            sb.from('seo_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
-            sb.from('performance_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
-            sb.from('auditoria_links').select('*').eq('user_id', user.id).not('batch_id', 'is', null)
-        ]);
+        try {
+            const [vrt, seo, perf, links] = await Promise.all([
+                sb.from('pruebas_qa').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+                sb.from('seo_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+                sb.from('performance_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+                sb.from('auditoria_links').select('*').eq('user_id', user.id).not('batch_id', 'is', null)
+            ]);
 
-        // Mapeo manteniendo todas las propiedades originales
-        globalData = [
-            ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.creado_el, errores: i.diferencias || 0 })),
-            ...(seo.data || []).map(i => ({ ...i, modulo: 'seo', url_m: i.url, fecha: i.created_at, errores: 0 })),
-            ...(perf.data || []).map(i => ({ ...i, modulo: 'perf', url_m: i.url, fecha: i.created_at, errores: i.fcp_ms > 3000 ? 1 : 0 })),
-            ...(links.data || []).map(i => ({ ...i, modulo: 'links', url_m: i.url_auditada, fecha: i.created_at, errores: (Array.isArray(i.reporte) ? i.reporte.filter(r=>r.obstruido).length : 0) }))
-        ].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+            globalData = [
+                ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.creado_el })),
+                ...(seo.data || []).map(i => ({ ...i, modulo: 'seo', url_m: i.url, fecha: i.created_at })),
+                ...(perf.data || []).map(i => ({ ...i, modulo: 'perf', url_m: i.url, fecha: i.created_at })),
+                ...(links.data || []).map(i => ({ ...i, modulo: 'links', url_m: i.url_auditada, fecha: i.created_at }))
+            ].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
 
-        renderizarLista();
+            renderizarLista();
+        } catch (e) { console.error(e); }
     }
 
     function renderizarLista() {
         const cont = document.getElementById('lista-masiva');
         cont.innerHTML = globalData.map(item => {
-            const s = M_STYLES[item.modulo];
+            const color = item.modulo === 'vrt' ? 'purple' : item.modulo === 'seo' ? 'blue' : item.modulo === 'perf' ? 'orange' : 'pink';
             return `
-                <div class="flex items-center justify-between p-4 bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl hover:border-zinc-700 transition">
+                <div class="flex items-center justify-between p-4 bg-[#050505] border border-[#111827] rounded-xl hover:border-zinc-700 transition">
                     <div class="flex items-center gap-4">
-                        <div class="w-1.5 h-10 rounded-full ${s.bg.replace('/10','/50')}"></div>
+                        <div class="w-1 h-8 rounded-full bg-${color}-500"></div>
                         <div>
-                            <p class="font-mono text-xs text-gray-300 truncate max-w-[200px]">${item.url_m}</p>
-                            <span class="text-[9px] font-bold ${s.color} uppercase">${item.modulo}</span>
-                            <span class="text-[9px] text-gray-600"> | LOTE: ${item.batch_id.substring(0,8)}</span>
+                            <p class="font-mono text-xs text-white truncate max-w-[250px]">${item.url_m}</p>
+                            <span class="text-[9px] font-black text-${color}-500 uppercase tracking-widest">${item.modulo}</span>
                         </div>
                     </div>
-                    <button onclick="verDetalle('${item.id}', '${item.modulo}')" class="font-mono text-[10px] px-4 py-2 bg-[#1a1a1a] text-white rounded-lg hover:bg-zinc-800">INSPECT</button>
+                    <button onclick="verDetalle('${item.id}', '${item.modulo}')" class="text-[10px] px-4 py-2 bg-zinc-900 text-white rounded font-bold hover:bg-zinc-800">INSPECT</button>
                 </div>
             `;
         }).join('');
@@ -194,54 +187,65 @@
         const item = globalData.find(i => i.id == id && i.modulo === modulo);
         if (!item) return;
 
-        const s = M_STYLES[modulo];
-        
-        // 1. Cabecera dinámica
         document.getElementById('drawer-url').innerText = item.url_m;
         document.getElementById('drawer-time').innerText = new Date(item.fecha).toLocaleString();
-        document.getElementById('drawer-status').innerText = item.errores > 0 ? `${item.errores} ALERTAS` : "PASSED";
-        document.getElementById('drawer-status').className = `font-mono text-xs font-black ${item.errores > 0 ? 'text-red-500' : 'text-green-500'}`;
         
-        // 2. Renderizado Visual Específico
-        let html = "";
-        if (modulo === 'vrt') {
-            html = `<img src="${item.img_diff_url}" class="w-full rounded-lg border border-zinc-800">`;
-        } else if (modulo === 'seo') {
-            html = `
-                <div class="grid grid-cols-2 gap-3 text-white">
-                    <div class="p-3 bg-zinc-900 rounded-lg"><span class="text-[9px] text-gray-400 block">TITLE LEN</span><span class="text-lg font-bold">${item.title_len || 0}</span></div>
-                    <div class="p-3 bg-zinc-900 rounded-lg"><span class="text-[9px] text-gray-400 block">H1 COUNT</span><span class="text-lg font-bold">${item.h1_count || 0}</span></div>
-                    <div class="col-span-2 p-3 bg-zinc-900 rounded-lg"><span class="text-[9px] text-gray-400 block">CANONICAL</span><p class="text-xs font-mono break-all text-blue-400">${item.canonical || 'N/A'}</p></div>
+        const box = document.getElementById('drawer-dynamic-content');
+        
+        // REPLICACIÓN EXACTA DE DASHBOARDS
+        if (modulo === 'seo') {
+            box.innerHTML = `
+                <div class="bg-black border border-[#111827] rounded-lg p-4">
+                    <div class="flex justify-between mb-4 border-b border-[#111827] pb-2">
+                        <span class="text-xs font-bold text-gray-400">Título:</span>
+                        <span class="text-xs text-white">${item.title_len || 0} caracteres</span>
+                    </div>
+                    <p class="text-sm font-bold mb-4">${item.title || 'Sin título'}</p>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between"><span>H1 Count:</span> <span class="font-bold">${item.h1_count || 0}</span></div>
+                        <div class="flex justify-between"><span>Canonical:</span> <span class="text-blue-400 truncate max-w-[150px]">${item.canonical || 'N/A'}</span></div>
+                    </div>
                 </div>`;
-        } else if (modulo === 'perf') {
-            html = `
+        } 
+        else if (modulo === 'perf') {
+            box.innerHTML = `
                 <div class="space-y-3">
-                    <div class="flex justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800"><span class="text-xs text-gray-400">FCP</span><span class="font-mono font-bold text-orange-400">${item.fcp_ms}ms</span></div>
-                    <div class="flex justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800"><span class="text-xs text-gray-400">LCP</span><span class="font-mono font-bold text-orange-400">${item.lcp_ms}ms</span></div>
-                    <div class="flex justify-between p-3 bg-zinc-900 rounded-lg border border-zinc-800"><span class="text-xs text-gray-400">PESO</span><span class="font-mono font-bold text-white">${item.peso_mb} MB</span></div>
+                    <div class="bg-[#050505] p-4 rounded border border-[#111827]">
+                        <span class="text-[9px] text-gray-500 uppercase">FCP</span>
+                        <div class="text-2xl font-black ${item.fcp_ms < 2500 ? 'text-emerald-500' : 'text-amber-500'}">${item.fcp_ms}ms</div>
+                    </div>
+                    <div class="bg-[#050505] p-4 rounded border border-[#111827]">
+                        <span class="text-[9px] text-gray-500 uppercase">LCP</span>
+                        <div class="text-2xl font-black ${item.lcp_ms < 2500 ? 'text-emerald-500' : 'text-amber-500'}">${item.lcp_ms}ms</div>
+                    </div>
                 </div>`;
-        } else if (modulo === 'links') {
-            html = `
-                <div class="bg-zinc-900 rounded-lg overflow-hidden border border-zinc-800">
-                    <div class="p-2 bg-zinc-800 text-[10px] text-gray-400 uppercase font-bold text-center">Auditoría de Enlaces</div>
-                    ${(item.reporte || []).map(r => `
-                        <div class="p-2 border-b border-zinc-800 flex justify-between text-xs">
-                            <span class="truncate w-3/4 text-gray-300 font-mono">${r.url}</span>
-                            <span class="font-bold ${r.obstruido ? 'text-red-500' : 'text-green-500'}">${r.obstruido ? 'FAIL' : 'OK'}</span>
+        }
+        else if (modulo === 'links') {
+            const report = typeof item.reporte === 'string' ? JSON.parse(item.reporte || '[]') : (item.reporte || []);
+            box.innerHTML = `
+                <div class="bg-[#050505] rounded border border-[#111827] overflow-hidden">
+                    ${report.map(r => `
+                        <div class="p-3 border-b border-[#111827] flex justify-between items-center text-xs">
+                            <span class="text-gray-400 truncate w-2/3">${r.url}</span>
+                            <span class="px-2 py-1 rounded font-black text-[9px] ${r.obstruido ? 'text-red-500 bg-red-500/10' : 'text-emerald-500 bg-emerald-500/10'}">
+                                ${r.obstruido ? 'OBSTRUIDO' : 'LIBRE'}
+                            </span>
                         </div>
                     `).join('')}
                 </div>`;
         }
+        else if (modulo === 'vrt') {
+            box.innerHTML = `<img src="${item.img_diff_url}" class="w-full rounded border border-[#111827]">`;
+        }
 
-        document.getElementById('drawer-dynamic-content').innerHTML = html;
         document.getElementById('detail-drawer').classList.remove('translate-x-full');
     }
 
-    // BOTÓN CLOSE GLOBAL
     function cerrarDrawer() {
         document.getElementById('detail-drawer').classList.add('translate-x-full');
     }
 
+    // Inicialización
     init();
 </script>
     
