@@ -326,17 +326,61 @@ function renderPERF(item) {
 
 /* ================= LINKS ================= */
 function renderLINKS(item){
-    return (item.reporte||[]).map(r=>`
-        <div class="flex justify-between border-b border-zinc-800 py-2 text-xs">
-            <div>
-                <div class="font-bold">${r.tipo||'elemento'}</div>
-                <div class="text-gray-500">${r.href||r.url||'-'}</div>
+
+    function getLabel(r){
+        // prioridad: texto visible
+        if(r.texto && r.texto.trim() !== '') return r.texto;
+
+        // fallback: aria-label
+        if(r.aria_label) return `[aria] ${r.aria_label}`;
+
+        // fallback: id
+        if(r.id) return `#${r.id}`;
+
+        // fallback: class
+        if(r.class) return `.${r.class}`;
+
+        // fallback: tag
+        if(r.tag) return `<${r.tag}>`;
+
+        return 'elemento sin identificar';
+    }
+
+    function shortUrl(url){
+        if(!url) return '-';
+        return url.length > 50 ? url.substring(0,50) + '...' : url;
+    }
+
+    return (item.reporte || []).map(r => {
+
+        const label = getLabel(r);
+        const fullUrl = r.href || r.url || '-';
+        const short = shortUrl(fullUrl);
+
+        return `
+        <div class="flex justify-between items-start border-b border-zinc-800 py-3 text-xs">
+
+            <div class="max-w-[75%]">
+                <!-- IDENTIFICADOR -->
+                <div class="font-bold text-gray-200 mb-1">
+                    ${label}
+                </div>
+
+                <!-- URL -->
+                <div class="text-gray-500 truncate"
+                     title="${fullUrl}">
+                    ${short}
+                </div>
             </div>
-            <div class="${r.obstruido?'text-red-500':'text-green-500'}">
+
+            <!-- STATUS -->
+            <div class="ml-3 ${r.obstruido?'text-red-500':'text-green-500'} font-semibold">
                 ${r.obstruido?'OBSTRUIDO':'OK'}
             </div>
+
         </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 /* ================= VRT ================= */
