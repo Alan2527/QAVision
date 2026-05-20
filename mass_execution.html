@@ -135,83 +135,121 @@
     </div>
 
 <script>
-        const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        
-        let globalData = [];
+    const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // DEFINICIÓN DE ESTILOS VISUALES (Logos/Badges)
+    const M_STYLES = {
+        vrt:   { bg: 'bg-purple-500/20', border: 'border-purple-500/30', text: 'text-purple-400', label: 'VRT' },
+        seo:   { bg: 'bg-blue-500/20', border: 'border-blue-500/30', text: 'text-blue-400', label: 'SEO' },
+        perf:  { bg: 'bg-orange-500/20', border: 'border-orange-500/30', text: 'text-orange-400', label: 'PERF' },
+        links: { bg: 'bg-pink-500/20', border: 'border-pink-500/30', text: 'text-pink-400', label: 'LINKS' }
+    };
+    
+    let globalData = [];
 
-        async function init() {
-            const { data: { user } } = await sb.auth.getUser();
-            if (!user) { window.location.href = 'login.html'; return; }
+    async function init() {
+        const { data: { user } } = await sb.auth.getUser();
+        if (!user) { window.location.href = 'login.html'; return; }
 
-            try {
-                // Consultamos las 4 tablas principales
-                const [vrt, seo, perf, links] = await Promise.all([
-                    sb.from('pruebas_qa').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
-                    sb.from('seo_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
-                    sb.from('performance_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
-                    sb.from('auditoria_links').select('*').eq('user_id', user.id).not('batch_id', 'is', null)
-                ]);
+        try {
+            const [vrt, seo, perf, links] = await Promise.all([
+                sb.from('pruebas_qa').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+                sb.from('seo_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+                sb.from('performance_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+                sb.from('auditoria_links').select('*').eq('user_id', user.id).not('batch_id', 'is', null)
+            ]);
 
-                // Normalización inteligente: detectamos campos clave independientemente del nombre de la tabla
-                const vrtData = (vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_mostrada: i.url_a, fecha: i.creado_el, errores: i.diferencias || 0 }));
-                const seoData = (seo.data || []).map(i => ({ ...i, modulo: 'seo', url_mostrada: i.url, fecha: i.created_at, errores: 0 }));
-                const perfData = (perf.data || []).map(i => ({ ...i, modulo: 'perf', url_mostrada: i.url, fecha: i.created_at, errores: i.fcp_ms > 3000 ? 1 : 0 }));
-                const linksData = (links.data || []).map(i => ({ ...i, modulo: 'links', url_mostrada: i.url_auditada, fecha: i.created_at, errores: (Array.isArray(i.reporte) ? i.reporte.filter(r => r.obstruido).length : 0) }));
+            const norm = (data, mod, urlKey, dateKey, errCalc) => (data || []).map(i => ({ 
+                ...i, modulo: mod, url_m: i[urlKey], fecha: i[dateKey], 
+                errores: errCalc(i) 
+            }));
 
-                globalData = [...vrtData, ...seoData, ...perfData, ...linksData]
-                    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+            globalData = [
+                ...norm(vrt.data, 'vrt', 'url_a', 'creado_el', i => i.diferencias),
+                ...norm(seo.data, 'seo', 'url', 'created_at', i => 0),
+                ...norm(perf.data, 'perf', 'url', 'created_at', i => i.fcp_ms > 3000 ? 1 : 0),
+                ...norm(links.data, 'links', 'url_auditada', 'created_at', i => (Array.isArray(i.reporte) ? i.reporte.filter(r => r.obstruido).length : 0))
+            ].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-                actualizarKPIs();
-                renderizarLista();
-            } catch (err) { console.error("Error init:", err); }
-        }
+            renderizarLista();
+        } catch (err) { console.error("Init Error:", err); }
+    }
 
-        function actualizarKPIs() {
-            document.getElementById('kpi-total').innerText = globalData.length;
-            document.getElementById('kpi-success').innerText = globalData.filter(i => i.errores === 0).length;
-            document.getElementById('kpi-fails').innerText = globalData.filter(i => i.errores > 0).length;
-        }
-
-        function renderizarLista() {
-            const contenedor = document.getElementById('lista-masiva');
-            contenedor.innerHTML = globalData.map(item => `
+    function renderizarLista() {
+        const cont = document.getElementById('lista-masiva');
+        cont.innerHTML = globalData.map(item => {
+            const s = M_STYLES[item.modulo];
+            return `
                 <div class="flex items-center justify-between p-4 bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl hover:border-zinc-700 transition">
                     <div class="w-2/3 truncate">
-                        <p class="font-mono text-xs text-gray-300 truncate">${item.url_mostrada}</p>
-                        <span class="px-2 py-0.5 rounded bg-zinc-800 text-[8px] font-mono text-gray-500 uppercase">${item.modulo} | LOTE: ${item.batch_id.substring(0,6)}</span>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 rounded text-[8px] font-bold font-mono border ${s.bg} ${s.border} ${s.text}">${s.label}</span>
+                            <span class="text-[9px] text-gray-600 font-mono">LOTE: ${item.batch_id.substring(0,6)}</span>
+                        </div>
+                        <p class="font-mono text-xs text-gray-300 truncate">${item.url_m}</p>
                     </div>
                     <button onclick="verDetalle('${item.id}', '${item.modulo}')" class="font-mono text-[10px] px-4 py-2 bg-[#1a1a1a] text-white rounded-lg hover:border-[#10b981] border border-transparent">INSPECT</button>
                 </div>
-            `).join('');
-        }
+            `;
+        }).join('');
+    }
 
-        function verDetalle(id, modulo) {
-            const item = globalData.find(i => i.id == id && i.modulo === modulo);
-            if (!item) return;
+    function verDetalle(id, modulo) {
+        const item = globalData.find(i => i.id == id && i.modulo === modulo);
+        if (!item) return;
 
-            document.getElementById('drawer-url').innerText = item.url_mostrada;
-            document.getElementById('drawer-module-badge').innerText = `INSPECTOR // ${modulo.toUpperCase()}`;
-            
-            const contentBox = document.getElementById('drawer-dynamic-content');
-            // Esta función "mágica" barre con TODAS las columnas disponibles
-            contentBox.innerHTML = Object.entries(item).map(([key, val]) => {
-                if (['id', 'user_id', 'batch_id', 'modulo', 'url_mostrada', 'fecha', 'errores'].includes(key)) return '';
-                if (typeof val === 'object') val = JSON.stringify(val, null, 2);
-                return `<div class="p-3 bg-black border border-[#1a1a1a] rounded-lg">
-                    <span class="block text-[8px] text-gray-500 uppercase font-bold">${key.replace(/_/g, ' ')}</span>
-                    <p class="text-[11px] font-mono text-white mt-1 break-words">${val}</p>
+        const s = M_STYLES[modulo];
+        document.getElementById('drawer-url').innerText = item.url_m;
+        document.getElementById('drawer-module-badge').innerText = `INSPECTOR // ${s.label}`;
+        
+        const box = document.getElementById('drawer-dynamic-content');
+        
+        // DISEÑO VISUAL SEGÚN EL TIPO DE PRUEBA
+        if (modulo === 'vrt') {
+            box.innerHTML = `
+                <div class="space-y-4">
+                    <div class="p-4 bg-black rounded-xl border border-[#1a1a1a]">
+                        <p class="text-[9px] text-gray-500 uppercase mb-2">Visual Diff</p>
+                        <img src="${item.img_diff_url}" class="w-full rounded">
+                    </div>
                 </div>`;
-            }).join('');
-
-            document.getElementById('detail-drawer').classList.remove('translate-x-full');
+        } else if (modulo === 'seo') {
+            box.innerHTML = `
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="p-3 bg-black rounded-lg border border-[#1a1a1a]"><p class="text-[8px] text-gray-500 uppercase">Title Len</p><p class="text-white font-mono">${item.title_len}</p></div>
+                    <div class="p-3 bg-black rounded-lg border border-[#1a1a1a]"><p class="text-[8px] text-gray-500 uppercase">H1 Count</p><p class="text-white font-mono">${item.h1_count}</p></div>
+                    <div class="col-span-2 p-3 bg-black rounded-lg border border-[#1a1a1a]"><p class="text-[8px] text-gray-500 uppercase">Canonical</p><p class="text-white font-mono text-[10px] truncate">${item.canonical || 'N/A'}</p></div>
+                </div>`;
+        } else if (modulo === 'perf') {
+            box.innerHTML = `
+                <div class="space-y-3">
+                    <div class="flex justify-between p-3 bg-black rounded-lg border border-[#1a1a1a]"><span class="text-xs text-gray-400">FCP</span><span class="font-bold text-white font-mono">${item.fcp_ms}ms</span></div>
+                    <div class="flex justify-between p-3 bg-black rounded-lg border border-[#1a1a1a]"><span class="text-xs text-gray-400">LCP</span><span class="font-bold text-white font-mono">${item.lcp_ms}ms</span></div>
+                    <div class="flex justify-between p-3 bg-black rounded-lg border border-[#1a1a1a]"><span class="text-xs text-gray-400">Peso</span><span class="font-bold text-white font-mono">${item.peso_mb}MB</span></div>
+                </div>`;
+        } else if (modulo === 'links') {
+            box.innerHTML = `
+                <div class="p-4 bg-black rounded-lg border border-[#1a1a1a]">
+                    <p class="text-[9px] text-gray-500 uppercase mb-2">Reporte de Enlaces</p>
+                    <div class="max-h-60 overflow-y-auto space-y-2">
+                        ${(item.reporte || []).map(r => `
+                            <div class="flex justify-between p-2 bg-zinc-900 rounded border ${r.obstruido ? 'border-red-500/30' : 'border-zinc-800'}">
+                                <span class="text-[10px] text-gray-300 truncate">${r.url}</span>
+                                <span class="text-[9px] ${r.obstruido ? 'text-red-400' : 'text-green-400'}">${r.obstruido ? 'FAIL' : 'OK'}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
         }
 
-        function cerrarDrawer() { document.getElementById('detail-drawer').classList.add('translate-x-full'); }
+        document.getElementById('detail-drawer').classList.remove('translate-x-full');
+    }
 
-        init();
-    </script>
+    function cerrarDrawer() { document.getElementById('detail-drawer').classList.add('translate-x-full'); }
+    init();
+</script>
     
 </body>
 </html>
