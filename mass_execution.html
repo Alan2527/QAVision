@@ -136,7 +136,7 @@
 
 <script>
         // =========================================================
-        // CONFIGURACIÓN DE TABLAS (Reemplazá por tus nombres reales)
+        // CONFIGURACIÓN DE TABLAS
         // =========================================================
         const TABLA_VRT   = 'pruebas_qa';
         const TABLA_SEO   = 'seo_audits';
@@ -154,7 +154,6 @@
             if (!user) { window.location.href = 'login.html'; return; }
 
             try {
-                // El Promise.all ahora usa las variables que configuraste arriba
                 const [vrtRes, seoRes, perfRes, linksRes] = await Promise.all([
                     sb.from(TABLA_VRT).select('*').eq('user_id', user.id).not('batch_id', 'is', null),
                     sb.from(TABLA_SEO).select('*').eq('user_id', user.id).not('batch_id', 'is', null),
@@ -162,13 +161,17 @@
                     sb.from(TABLA_LINKS).select('*').eq('user_id', user.id).not('batch_id', 'is', null)
                 ]);
 
-                const vrtData = (vrtRes.data || []).map(item => ({ ...item, modulo: 'vrt' }));
-                const seoData = (seoRes.data || []).map(item => ({ ...item, modulo: 'seo' }));
-                const perfData = (perfRes.data || []).map(item => ({ ...item, modulo: 'perf' }));
-                const linksData = (linksRes.data || []).map(item => ({ ...item, modulo: 'links' }));
+                // NORMALIZACIÓN DE DATOS: Unificamos nombres de columnas para que la UI no falle
+                const vrtData = (vrtRes.data || []).map(item => ({ ...item, modulo: 'vrt', url_estandar: item.url_a, fecha_estandar: item.creado_el, cantidad_errores: item.diferencias || 0 }));
+                const seoData = (seoRes.data || []).map(item => ({ ...item, modulo: 'seo', url_estandar: item.url, fecha_estandar: item.created_at, cantidad_errores: 0 })); // Asumimos 0 errores duros por ahora
+                const perfData = (perfRes.data || []).map(item => ({ ...item, modulo: 'perf', url_estandar: item.url, fecha_estandar: item.created_at, cantidad_errores: item.fcp_ms > 3000 ? 1 : 0 }));
+                const linksData = (linksRes.data || []).map(item => {
+                    const numErrores = Array.isArray(item.reporte) ? item.reporte.filter(r => r.obstruido).length : 0;
+                    return { ...item, modulo: 'links', url_estandar: item.url_auditada, fecha_estandar: item.created_at, cantidad_errores: numErrores };
+                });
 
                 const combinedData = [...vrtData, ...seoData, ...perfData, ...linksData];
-                globalData = combinedData.sort((a, b) => new Date(b.creado_el) - new Date(a.creado_el));
+                globalData = combinedData.sort((a, b) => new Date(b.fecha_estandar) - new Date(a.fecha_estandar));
 
                 actualizarKPIs();
                 renderizarLista();
@@ -179,7 +182,7 @@
 
         function actualizarKPIs() {
             const total = globalData.length;
-            const fails = globalData.filter(item => item.diferencias > 0).length;
+            const fails = globalData.filter(item => item.cantidad_errores > 0).length;
             document.getElementById('kpi-total').innerText = total;
             document.getElementById('kpi-success').innerText = total - fails;
             document.getElementById('kpi-fails').innerText = fails;
@@ -193,7 +196,7 @@
             }
 
             contenedor.innerHTML = globalData.map(item => {
-                const hasError = item.diferencias > 0;
+                const hasError = item.cantidad_errores > 0;
                 const m = item.modulo.toUpperCase();
                 
                 const modColors = {
@@ -209,16 +212,16 @@
                         <div class="flex items-center gap-4 w-2/3">
                             <span class="w-2 h-2 rounded-full ${hasError ? 'bg-red-500' : 'bg-[#10b981]'} shrink-0"></span>
                             <div class="truncate">
-                                <p class="font-mono text-xs text-gray-300 truncate">${item.url_a}</p>
+                                <p class="font-mono text-xs text-gray-300 truncate">${item.url_estandar}</p>
                                 <div class="flex items-center gap-2 mt-1">
                                     <span class="px-1.5 py-0.5 rounded text-[8px] font-mono border ${modColor}">${m}</span>
                                     ${item.batch_id ? `<span class="text-[#505050] text-[9px] font-mono">LOTE: ${item.batch_id.substring(0,6)}</span>` : ''}
-                                    <span class="font-mono text-[9px] text-gray-600">| ${new Date(item.creado_el).toLocaleTimeString()}</span>
+                                    <span class="font-mono text-[9px] text-gray-600">| ${new Date(item.fecha_estandar).toLocaleTimeString()}</span>
                                 </div>
                             </div>
                         </div>
                         <div class="flex items-center gap-6">
-                            <span class="font-mono text-[10px] font-bold ${hasError ? 'text-red-500' : 'text-[#10b981]'} tracking-widest">${hasError ? item.diferencias + ' ALERTAS' : 'OK'}</span>
+                            <span class="font-mono text-[10px] font-bold ${hasError ? 'text-red-500' : 'text-[#10b981]'} tracking-widest">${hasError ? item.cantidad_errores + ' ALERTAS' : 'OK'}</span>
                             <button onclick="verReporteIndividual('${item.id}', '${item.modulo}')" class="font-mono text-[10px] px-4 py-2 bg-[#1a1a1a] text-white rounded-lg hover:bg-zinc-800 hover:text-[#10b981] transition border border-transparent hover:border-[#10b981]/30">INSPECT</button>
                         </div>
                     </div>
@@ -231,12 +234,12 @@
             if (!test) return;
 
             document.getElementById('drawer-module-badge').innerText = `INSPECTOR // MÓDULO ${modulo.toUpperCase()}`;
-            document.getElementById('drawer-url').innerText = test.url_a;
-            document.getElementById('drawer-time').innerText = new Date(test.creado_el).toLocaleString();
+            document.getElementById('drawer-url').innerText = test.url_estandar;
+            document.getElementById('drawer-time').innerText = new Date(test.fecha_estandar).toLocaleString();
             
             const statusEl = document.getElementById('drawer-status');
-            if (test.diferencias > 0) {
-                statusEl.innerText = `${test.diferencias} ANOMALÍAS DETECTADAS`;
+            if (test.cantidad_errores > 0) {
+                statusEl.innerText = `${test.cantidad_errores} ANOMALÍAS DETECTADAS`;
                 statusEl.className = "font-mono text-xs font-black text-red-500";
             } else {
                 statusEl.innerText = "PASSED / GREEN";
@@ -264,11 +267,23 @@
                         </div>
                     </div>
                 `;
-            } else {
+            } else if (modulo === 'perf') {
                  contentBox.innerHTML = `
                     <div class="p-6 bg-black border border-[#1a1a1a] rounded-xl font-mono text-xs text-gray-400 space-y-3">
-                        <p class="text-[#10b981]">> Ejecución de motor completada.</p>
-                        <p class="text-white">Total Errores: ${test.diferencias || 0}</p>
+                        <p class="text-[#10b981]">> Análisis de Performance completado.</p>
+                        <div class="grid grid-cols-3 gap-4 mt-4">
+                            <div class="bg-zinc-900 p-3 rounded"><span class="block text-[9px] text-gray-500 mb-1">FCP</span><span class="${test.fcp_ms > 3000 ? 'text-red-500' : 'text-white'}">${test.fcp_ms || 0} ms</span></div>
+                            <div class="bg-zinc-900 p-3 rounded"><span class="block text-[9px] text-gray-500 mb-1">LCP</span><span class="text-white">${test.lcp_ms || 0} ms</span></div>
+                            <div class="bg-zinc-900 p-3 rounded"><span class="block text-[9px] text-gray-500 mb-1">PAGE WEIGHT</span><span class="text-white">${test.peso_mb || 0} MB</span></div>
+                        </div>
+                    </div>
+                `;
+            } else if (modulo === 'links') {
+                contentBox.innerHTML = `
+                    <div class="p-6 bg-black border border-[#1a1a1a] rounded-xl font-mono text-xs text-gray-400 space-y-3">
+                        <p class="text-[#10b981]">> Análisis de Interactividad y Enlaces.</p>
+                        <p class="text-white mt-4 border-t border-zinc-800 pt-4">Elementos bloqueados o inalcanzables:</p>
+                        <p class="${test.cantidad_errores > 0 ? 'text-red-500 font-bold' : 'text-[#10b981]'} text-lg">${test.cantidad_errores}</p>
                     </div>
                 `;
             }
