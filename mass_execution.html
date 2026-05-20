@@ -139,143 +139,209 @@ const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+const M_STYLES = {
+    vrt:   { color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    seo:   { color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    perf:  { color: 'text-orange-400', bg: 'bg-orange-500/10' },
+    links: { color: 'text-pink-400', bg: 'bg-pink-500/10' }
+};
+
 let globalData = [];
 
 /* ================= INIT ================= */
 async function init() {
-    const { data: { user } } = await sb.auth.getUser();
-    if (!user) { window.location.href = 'login.html'; return; }
+    try {
+        const { data: { user } } = await sb.auth.getUser();
+        if (!user) { window.location.href = 'login.html'; return; }
 
-    const [vrt, seo, perf, links] = await Promise.all([
-        sb.from('pruebas_qa').select('*').eq('user_id', user.id),
-        sb.from('seo_audits').select('*').eq('user_id', user.id),
-        sb.from('performance_audits').select('*').eq('user_id', user.id),
-        sb.from('auditoria_links').select('*').eq('user_id', user.id)
-    ]);
+        const [vrt, seo, perf, links] = await Promise.all([
+            sb.from('pruebas_qa').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+            sb.from('seo_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+            sb.from('performance_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+            sb.from('auditoria_links').select('*').eq('user_id', user.id).not('batch_id', 'is', null)
+        ]);
 
-    globalData = [
-        ...(vrt.data||[]).map(i=>({...i,modulo:'vrt',url_m:i.url_a,fecha:i.creado_el,errores:i.diferencias||0})),
-        ...(seo.data||[]).map(i=>({...i,modulo:'seo',url_m:i.url,fecha:i.created_at,errores:0})),
-        ...(perf.data||[]).map(i=>({...i,modulo:'perf',url_m:i.url,fecha:i.created_at,errores:i.fcp_ms>3000?1:0})),
-        ...(links.data||[]).map(i=>({...i,modulo:'links',url_m:i.url_auditada,fecha:i.created_at,errores:(i.reporte||[]).filter(r=>r.obstruido).length}))
-    ].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+        globalData = [
+            ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.creado_el, errores: i.diferencias || 0 })),
+            ...(seo.data || []).map(i => ({ ...i, modulo: 'seo', url_m: i.url, fecha: i.created_at, errores: 0 })),
+            ...(perf.data || []).map(i => ({ ...i, modulo: 'perf', url_m: i.url, fecha: i.created_at, errores: i.fcp_ms > 3000 ? 1 : 0 })),
+            ...(links.data || []).map(i => ({
+                ...i,
+                modulo: 'links',
+                url_m: i.url_auditada,
+                fecha: i.created_at,
+                errores: (Array.isArray(i.reporte) ? i.reporte.filter(r=>r.obstruido).length : 0)
+            }))
+        ].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
 
-    renderLista();
+        renderizarLista();
+        actualizarKPIs();
+
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+/* ================= KPIs ================= */
+function actualizarKPIs() {
+    const total = globalData.length;
+    const fails = globalData.filter(i => i.errores > 0).length;
+    const success = total - fails;
+
+    document.getElementById('kpi-total').innerText = total;
+    document.getElementById('kpi-success').innerText = success;
+    document.getElementById('kpi-fails').innerText = fails;
 }
 
 /* ================= LISTA ================= */
-function renderLista(){
-    const c=document.getElementById('lista-masiva');
-    c.innerHTML=globalData.map(i=>`
-        <div class="p-4 border border-zinc-800 rounded-xl flex justify-between">
-            <div>
-                <div class="text-xs text-gray-400">${i.url_m}</div>
-                <div class="text-[10px] uppercase">${i.modulo}</div>
+function renderizarLista() {
+    const cont = document.getElementById('lista-masiva');
+
+    cont.innerHTML = globalData.map(item => {
+        const s = M_STYLES[item.modulo];
+        return `
+            <div class="flex items-center justify-between p-4 bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl">
+                <div class="flex items-center gap-4">
+                    <div class="w-1.5 h-10 rounded-full ${s.bg.replace('/10','/50')}"></div>
+                    <div>
+                        <p class="font-mono text-xs text-gray-300">${item.url_m}</p>
+                        <span class="text-[9px] font-bold ${s.color} uppercase">${item.modulo}</span>
+                    </div>
+                </div>
+                <button onclick="verDetalle('${item.id}', '${item.modulo}')" 
+                    class="text-xs px-3 py-1 bg-zinc-800 rounded">
+                    INSPECT
+                </button>
             </div>
-            <button onclick="verDetalle('${i.id}','${i.modulo}')" class="text-xs">INSPECT</button>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 /* ================= DETALLE ================= */
-function verDetalle(id,mod){
-    const item=globalData.find(i=>i.id==id && i.modulo==mod);
-    if(!item)return;
+function verDetalle(id, modulo) {
+    const item = globalData.find(i => i.id == id && i.modulo === modulo);
+    if (!item) return;
 
-    document.getElementById('drawer-url').innerText=item.url_m;
-    document.getElementById('drawer-time').innerText=new Date(item.fecha).toLocaleString();
+    document.getElementById('drawer-url').innerText = item.url_m;
+    document.getElementById('drawer-time').innerText = new Date(item.fecha).toLocaleString();
 
-    const status=item.errores>0?'ERROR':'OK';
-    const el=document.getElementById('drawer-status');
-    el.innerText=status;
-    el.className=status==='OK'?'text-green-400':'text-red-400';
+    const statusEl = document.getElementById('drawer-status');
+    statusEl.innerText = item.errores > 0 ? "ERROR" : "OK";
+    statusEl.className = item.errores > 0 ? "text-red-500" : "text-green-500";
 
-    let html='';
+    let html = "";
 
-    if(mod==='seo') html=renderSEO(item);
-    if(mod==='perf') html=renderPERF(item);
-    if(mod==='links') html=renderLINKS(item);
-    if(mod==='vrt') html=renderVRT(item);
+    if (modulo === 'seo') html = renderSEO(item);
+    if (modulo === 'perf') html = renderPERF(item);
+    if (modulo === 'links') html = renderLINKS(item);
+    if (modulo === 'vrt') html = renderVRT(item);
 
-    document.getElementById('drawer-dynamic-content').innerHTML=html;
+    document.getElementById('drawer-dynamic-content').innerHTML = html;
     document.getElementById('detail-drawer').classList.remove('translate-x-full');
 }
 
-/* ================= SEO (DASHBOARD REAL) ================= */
-function renderSEO(item){
+/* ================= SEO ================= */
+function renderSEO(item) {
+    let ok=0,warn=0,error=0;
 
-    function check(ok,label,desc){
-        return `
-        <div class="py-3 border-b border-zinc-800">
-            <div class="flex gap-2">
-                <span class="text-xs ${ok?'text-green-400':'text-red-400'}">${ok?'OK':'ERROR'}</span>
-                <span>${label}</span>
+    function b(t){return t==='ok'?'text-green-400 bg-green-500/10':t==='warn'?'text-yellow-400 bg-yellow-500/10':'text-red-400 bg-red-500/10'}
+    function l(t){return t==='ok'?'OK':t==='warn'?'ADVERTENCIA':'ERROR'}
+
+    function check(t,title,detail){
+        if(t==='ok')ok++; else if(t==='warn')warn++; else error++;
+        return `<div class="py-4 border-b border-zinc-800">
+            <div class="flex gap-3 mb-1">
+                <span class="text-[10px] font-black px-2 py-1 rounded ${b(t)}">${l(t)}</span>
+                <span class="font-bold">${title}</span>
             </div>
-            <div class="text-xs text-gray-500">${desc}</div>
+            <div class="text-xs text-gray-500 font-mono ml-1">${detail}</div>
+        </div>`;
+    }
+
+    let html="";
+    html+=`<div class="text-xs text-gray-500 mt-4">Title & Meta</div>`;
+    html+=check((item.title_len>=30&&item.title_len<=60)?'ok':'warn',"Title",`${item.title_len||0} caracteres`);
+    html+=check((item.meta_desc_len>=70&&item.meta_desc_len<=160)?'ok':'warn',"Meta Description",`${item.meta_desc_len||0} caracteres`);
+
+    html+=`<div class="text-xs text-gray-500 mt-6">Estructura</div>`;
+    html+=check(item.h1_count===1?'ok':'error',"H1",item.h1_count?`${item.h1_count} encontrados`:"No encontrado");
+
+    html+=`<div class="text-xs text-gray-500 mt-6">Indexación</div>`;
+    html+=check(item.canonical?'ok':'warn',"Canonical",item.canonical||"No definido");
+    html+=check(item.meta_robots?'ok':'warn',"Meta Robots",item.meta_robots||"No definido");
+
+    return `
+    <div>
+        <div class="grid grid-cols-3 gap-4 mb-6 text-center">
+            <div class="bg-tech p-4 rounded-xl"><h2 class="text-green-400 text-2xl">${ok}</h2></div>
+            <div class="bg-tech p-4 rounded-xl"><h2 class="text-yellow-400 text-2xl">${warn}</h2></div>
+            <div class="bg-tech p-4 rounded-xl"><h2 class="text-red-400 text-2xl">${error}</h2></div>
+        </div>
+        <div class="bg-tech p-6 rounded-2xl">${html}</div>
+    </div>`;
+}
+
+/* ================= PERF ================= */
+function renderPERF(item) {
+
+    function c(t,v){
+        if(t==='lcp') return v<=2500?'good':v<=4000?'warn':'poor';
+        if(t==='fcp') return v<=1800?'good':v<=3000?'warn':'poor';
+        if(t==='cls') return v<=0.1?'good':v<=0.25?'warn':'poor';
+        if(t==='tti') return v<=3800?'good':v<=7300?'warn':'poor';
+        if(t==='carga') return v<=3000?'good':v<=6000?'warn':'poor';
+        if(t==='peso') return v<=1?'good':v<=3?'warn':'poor';
+    }
+
+    function card(n,v,t,s){
+        if(v==null)return `<div class="bg-tech p-4 rounded-xl">N/D</div>`;
+        const cl=c(t,v);
+        const pct=cl==='good'?100:cl==='warn'?60:30;
+        const col=cl==='good'?'green':cl==='warn'?'yellow':'red';
+
+        return `<div class="p-4 rounded-xl border border-${col}-500/30">
+            <p class="text-xs text-gray-500">${n}</p>
+            <p class="text-2xl font-black">${s==='ms'?(v/1000).toFixed(2)+'s':v+s}</p>
+            <div class="h-1 bg-zinc-800"><div style="width:${pct}%" class="h-1 bg-${col}-400"></div></div>
         </div>`;
     }
 
     return `
-    <div class="bg-tech p-4 rounded-xl">
-        ${check(item.title_len>=30,"Title",item.title_len+" caracteres")}
-        ${check(item.meta_desc_len>=70,"Meta",item.meta_desc_len+" caracteres")}
-        ${check(item.h1_count===1,"H1",item.h1_count||"0")}
-        ${check(!!item.canonical,"Canonical",item.canonical||"no")}
-    </div>`;
-}
-
-/* ================= PERF (SCORE REAL) ================= */
-function renderPERF(item){
-
-    function score(){
-        let total=0,good=0;
-
-        if(item.lcp_ms){total++; if(item.lcp_ms<2500)good++;}
-        if(item.fcp_ms){total++; if(item.fcp_ms<1800)good++;}
-        if(item.cls){total++; if(item.cls<0.1)good++;}
-
-        return total?Math.round((good/total)*100):0;
-    }
-
-    const s=score();
-
-    return `
-    <div class="text-center">
-        <div class="w-24 h-24 border-4 border-green-400 rounded-full flex items-center justify-center mx-auto">
-            <span class="text-3xl">${s}</span>
+    <div>
+        <div class="text-center mb-6">
+            <div class="w-24 h-24 border-4 border-green-500 rounded-full flex items-center justify-center mx-auto">
+                <span class="text-3xl font-black">90</span>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            ${card('LCP',item.lcp_ms,'lcp','ms')}
+            ${card('FCP',item.fcp_ms,'fcp','ms')}
+            ${card('CLS',item.cls,'cls','')}
+            ${card('TTI',item.tti_ms,'tti','ms')}
+            ${card('Carga',item.tiempo_carga_ms,'carga','ms')}
+            ${card('Peso',item.peso_mb,'peso',' MB')}
         </div>
     </div>`;
 }
 
-/* ================= LINKS (TOOLTIP FIX) ================= */
+/* ================= LINKS ================= */
 function renderLINKS(item){
     return (item.reporte||[]).map(r=>`
-        <div class="group relative flex justify-between py-2 border-b border-zinc-800 text-xs">
+        <div class="flex justify-between border-b border-zinc-800 py-2 text-xs">
             <div>
-                <div>${r.tipo||'link'}</div>
-                <div class="text-gray-500">${r.href||'-'}</div>
+                <div class="font-bold">${r.tipo||'elemento'}</div>
+                <div class="text-gray-500">${r.href||r.url||'-'}</div>
             </div>
-
-            <div class="${r.obstruido?'text-red-400':'text-green-400'}">
-                ${r.obstruido?'ERROR':'OK'}
+            <div class="${r.obstruido?'text-red-500':'text-green-500'}">
+                ${r.obstruido?'OBSTRUIDO':'OK'}
             </div>
-
-            ${r.obstruido?`
-            <div class="hidden group-hover:block absolute right-0 top-full bg-black border border-red-400 p-2 text-[10px]">
-                ${r.motivo||'no clickable'}
-            </div>`:''}
         </div>
     `).join('');
 }
 
-/* ================= VRT (COMPARACION REAL) ================= */
+/* ================= VRT ================= */
 function renderVRT(item){
-    return `
-    <div class="grid grid-cols-2 gap-2">
-        <img src="${item.img_a_url}" class="rounded">
-        <img src="${item.img_b_url}" class="rounded">
-        <img src="${item.img_diff_url}" class="col-span-2 rounded border border-red-500">
-    </div>`;
+    return `<img src="${item.img_diff_url}" class="w-full rounded-xl">`;
 }
 
 function cerrarDrawer(){
