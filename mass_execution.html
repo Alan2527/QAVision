@@ -360,34 +360,38 @@ function renderLINKS(item){
             </div>
         </div>
 
-        <!-- LISTADO -->
-        ${(item.reporte || []).map(r => {
+        <!-- SCROLL -->
+        <div class="max-h-[400px] overflow-y-auto pr-1">
 
-            const label = getLabel(r);
-            const fullUrl = r.href || r.url || '-';
-            const short = shortUrl(fullUrl);
+            ${(item.reporte || []).map(r => {
 
-            return `
-            <div class="flex justify-between items-start border-b border-zinc-800 py-3 text-xs">
+                const label = getLabel(r);
+                const fullUrl = r.href || r.url || '-';
+                const short = shortUrl(fullUrl);
 
-                <div class="max-w-[75%]">
-                    <div class="font-bold text-gray-200 mb-1">
-                        ${label}
+                return `
+                <div class="flex justify-between items-start border-b border-zinc-800 py-3 text-xs">
+
+                    <div class="max-w-[75%]">
+                        <div class="font-bold text-gray-200 mb-1">
+                            ${label}
+                        </div>
+
+                        <div class="text-gray-500 truncate"
+                             title="${fullUrl}">
+                            ${short}
+                        </div>
                     </div>
 
-                    <div class="text-gray-500 truncate"
-                         title="${fullUrl}">
-                        ${short}
+                    <div class="ml-3 ${r.obstruido?'text-red-500':'text-green-500'} font-semibold">
+                        ${r.obstruido?'OBSTRUIDO':'OK'}
                     </div>
-                </div>
 
-                <div class="ml-3 ${r.obstruido?'text-red-500':'text-green-500'} font-semibold">
-                    ${r.obstruido?'OBSTRUIDO':'OK'}
                 </div>
+                `;
+            }).join('')}
 
-            </div>
-            `;
-        }).join('')}
+        </div>
 
     </div>
     `;
@@ -400,7 +404,7 @@ function renderVRT(item){
     const id = "vrt-" + Math.random().toString(36).substring(2,7);
 
     return `
-    <div class="space-y-4">
+    <div class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
 
         <!-- RESUMEN -->
         <div class="flex justify-between items-center p-3 border border-zinc-800 rounded-xl">
@@ -440,17 +444,15 @@ function renderVRT(item){
             </div>
         </div>
 
-        <!-- COMPARADOR (COLAPSADO) -->
+        <!-- COMPARADOR COLAPSADO -->
         <div class="border border-zinc-800 rounded-xl overflow-hidden">
             
-            <!-- HEADER CLICK -->
             <div onclick="toggleVRT('${id}')"
                  class="cursor-pointer flex justify-between items-center p-3 bg-zinc-900 hover:bg-zinc-800 transition">
                 <span class="text-xs text-gray-300">Comparador interactivo</span>
                 <span id="${id}-icon" class="text-xs text-gray-500">▼</span>
             </div>
 
-            <!-- CONTENIDO -->
             <div id="${id}" class="hidden p-3">
 
                 <div class="relative w-full overflow-hidden rounded-xl border border-zinc-800">
