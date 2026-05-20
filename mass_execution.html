@@ -135,13 +135,22 @@
     </div>
 
 <script>
-    const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
-    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let globalData = [];
+const M_STYLES = {
+    vrt:   { color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    seo:   { color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    perf:  { color: 'text-orange-400', bg: 'bg-orange-500/10' },
+    links: { color: 'text-pink-400', bg: 'bg-pink-500/10' }
+};
 
-    async function init() {
+let globalData = [];
+
+/* ================= INIT ================= */
+async function init() {
+    try {
         const { data: { user } } = await sb.auth.getUser();
         if (!user) { window.location.href = 'login.html'; return; }
 
@@ -153,107 +162,168 @@
         ]);
 
         globalData = [
-            ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.creado_el })),
-            ...(seo.data || []).map(i => ({ ...i, modulo: 'seo', url_m: i.url, fecha: i.created_at })),
-            ...(perf.data || []).map(i => ({ ...i, modulo: 'perf', url_m: i.url, fecha: i.created_at })),
-            ...(links.data || []).map(i => ({ ...i, modulo: 'links', url_m: i.url_auditada, fecha: i.created_at }))
+            ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.creado_el, errores: i.diferencias || 0 })),
+            ...(seo.data || []).map(i => ({ ...i, modulo: 'seo', url_m: i.url, fecha: i.created_at, errores: 0 })),
+            ...(perf.data || []).map(i => ({ ...i, modulo: 'perf', url_m: i.url, fecha: i.created_at, errores: i.fcp_ms > 3000 ? 1 : 0 })),
+            ...(links.data || []).map(i => ({ ...i, modulo: 'links', url_m: i.url_auditada, fecha: i.created_at, errores: (Array.isArray(i.reporte) ? i.reporte.filter(r=>r.obstruido).length : 0) }))
         ].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
 
         renderizarLista();
+        actualizarKPIs();
+
+    } catch (e) {
+        console.error(e);
+        document.getElementById('lista-masiva').innerHTML =
+            '<p class="text-red-500 text-xs font-mono text-center py-10">Error cargando datos</p>';
+    }
+}
+
+/* ================= KPIs ================= */
+function actualizarKPIs() {
+    const total = globalData.length;
+    const fails = globalData.filter(i => i.errores > 0).length;
+    const success = total - fails;
+
+    document.getElementById('kpi-total').innerText = total;
+    document.getElementById('kpi-success').innerText = success;
+    document.getElementById('kpi-fails').innerText = fails;
+}
+
+/* ================= LISTA ================= */
+function renderizarLista() {
+    const cont = document.getElementById('lista-masiva');
+
+    if (!globalData.length) {
+        cont.innerHTML = '<p class="text-xs text-gray-500 font-mono text-center py-10">Sin datos</p>';
+        return;
     }
 
-    function renderizarLista() {
-        document.getElementById('lista-masiva').innerHTML = globalData.map(item => `
-            <div onclick="verDetalle('${item.id}', '${item.modulo}')" class="bg-tech p-4 rounded-xl border border-[#1a1a1a] cursor-pointer hover:border-emerald-500/30 transition-all">
-                <div class="flex justify-between items-center">
+    cont.innerHTML = globalData.map(item => {
+        const s = M_STYLES[item.modulo];
+        return `
+            <div class="flex items-center justify-between p-4 bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl hover:border-zinc-700 transition">
+                <div class="flex items-center gap-4">
+                    <div class="w-1.5 h-10 rounded-full ${s.bg.replace('/10','/50')}"></div>
                     <div>
-                        <p class="font-mono text-xs text-gray-300 truncate w-48">${item.url_m}</p>
-                        <span class="text-[9px] font-black uppercase text-gray-600">${item.modulo}</span>
+                        <p class="font-mono text-xs text-gray-300 truncate max-w-[200px]">${item.url_m}</p>
+                        <span class="text-[9px] font-bold ${s.color} uppercase">${item.modulo}</span>
+                        <span class="text-[9px] text-gray-600">
+                            | LOTE: ${(item.batch_id ? item.batch_id.substring(0,8) : 'N/A')}
+                        </span>
                     </div>
-                    <span class="text-[10px] font-mono text-emerald-500">${new Date(item.fecha).toLocaleDateString()}</span>
+                </div>
+                <button onclick="verDetalle('${item.id}', '${item.modulo}')" 
+                    class="font-mono text-[10px] px-4 py-2 bg-[#1a1a1a] text-white rounded-lg hover:bg-zinc-800">
+                    INSPECT
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+/* ================= DETALLE ================= */
+function verDetalle(id, modulo) {
+    const item = globalData.find(i => i.id == id && i.modulo === modulo);
+    if (!item) return;
+
+    document.getElementById('drawer-url').innerText = item.url_m;
+    document.getElementById('drawer-time').innerText = new Date(item.fecha).toLocaleString();
+
+    let html = "";
+
+    switch(modulo) {
+        case 'vrt':
+            html = renderVRT(item);
+            break;
+        case 'seo':
+            html = renderSEO(item);
+            break;
+        case 'perf':
+            html = renderPERF(item);
+            break;
+        case 'links':
+            html = renderLINKS(item);
+            break;
+    }
+
+    document.getElementById('drawer-dynamic-content').innerHTML = html;
+    document.getElementById('detail-drawer').classList.remove('translate-x-full');
+}
+
+/* ================= RENDERERS ================= */
+
+function renderVRT(item) {
+    return `
+        <div class="space-y-6">
+            <div class="bg-tech rounded-2xl p-4">
+                <p class="text-xs text-gray-500 mb-2">Master Diff</p>
+                <img src="${item.img_diff_url}" class="w-full rounded-lg border border-zinc-800">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-tech p-4 rounded-xl">
+                    <p class="text-xs text-gray-500 mb-2">Expected</p>
+                    <img src="${item.img_a_url}" class="w-full rounded-lg">
+                </div>
+                <div class="bg-tech p-4 rounded-xl">
+                    <p class="text-xs text-gray-500 mb-2">Actual</p>
+                    <img src="${item.img_b_url}" class="w-full rounded-lg">
                 </div>
             </div>
-        `).join('');
-    }
+        </div>
+    `;
+}
 
-    function verDetalle(id, modulo) {
-        const item = globalData.find(i => i.id == id && i.modulo === modulo);
-        if (!item) return;
+function renderSEO(item) {
+    return `
+        <div class="space-y-3">
+            <div class="bg-tech p-4 rounded-xl">
+                <p class="text-xs text-gray-500">Title length</p>
+                <p class="text-lg">${item.title_len || 0}</p>
+            </div>
+            <div class="bg-tech p-4 rounded-xl">
+                <p class="text-xs text-gray-500">H1 count</p>
+                <p class="text-lg">${item.h1_count || 0}</p>
+            </div>
+            <div class="bg-tech p-4 rounded-xl">
+                <p class="text-xs text-gray-500">Canonical</p>
+                <p class="text-xs break-all">${item.canonical || 'N/A'}</p>
+            </div>
+        </div>
+    `;
+}
 
-        const contentBox = document.getElementById('drawer-dynamic-content');
-        document.getElementById('drawer-url').innerText = item.url_m;
+function renderPERF(item) {
+    return `
+        <div class="space-y-3">
+            <div class="bg-tech p-4 rounded-xl">FCP: ${item.fcp_ms}ms</div>
+            <div class="bg-tech p-4 rounded-xl">LCP: ${item.lcp_ms}ms</div>
+            <div class="bg-tech p-4 rounded-xl">Peso: ${item.peso_mb}MB</div>
+        </div>
+    `;
+}
 
-        // ESTRUCTURA SEGÚN CADA DASHBOARD ORIGINAL
-        if (modulo === 'seo') {
-            contentBox.innerHTML = `
-                <div class="bg-tech p-6 rounded-lg">
-                    <h3 class="text-lg font-bold mb-4">SEO Checklist</h3>
-                    <div id="checklist">
-                        ${renderRow('Imágenes Alt', item.imgs_sin_alt > 0 ? 'Error' : 'OK', item.imgs_sin_alt > 0 ? 'error' : 'ok')}
-                        ${renderRow('Inputs sin Label', item.inputs_sin_label > 0 ? 'Error' : 'OK', item.inputs_sin_label > 0 ? 'error' : 'ok')}
-                        ${renderRow('Botones sin etiqueta', item.botones_sin_etiqueta > 0 ? 'Warn' : 'OK', item.botones_sin_etiqueta > 0 ? 'warn' : 'ok')}
-                    </div>
-                </div>`;
-        } 
-        else if (modulo === 'perf') {
-            const score = (item.fcp_ms < 2500 && item.lcp_ms < 2500) ? 90 : 40;
-            contentBox.innerHTML = `
-                <div class="bg-tech p-6 rounded-lg text-center">
-                    <div id="score-circle" class="w-32 h-32 rounded-full border-4 mx-auto flex flex-col items-center justify-center ${score >= 80 ? 'border-emerald-500' : 'border-red-500'}">
-                        <span class="text-4xl font-black">${score}</span>
-                    </div>
-                    <p class="mt-4 font-black uppercase tracking-widest ${score >= 80 ? 'good' : 'poor'}">
-                        ${score >= 80 ? 'Rendimiento Óptimo' : 'Rendimiento Pobre'}
-                    </p>
-                    <div class="mt-6 text-left space-y-2">
-                        <div class="flex justify-between"><span>FCP</span><span class="font-mono ${item.fcp_ms > 2500 ? 'poor' : 'good'}">${item.fcp_ms}ms</span></div>
-                        <div class="flex justify-between"><span>LCP</span><span class="font-mono ${item.lcp_ms > 2500 ? 'poor' : 'good'}">${item.lcp_ms}ms</span></div>
-                    </div>
-                </div>`;
-        }
-        else if (modulo === 'links') {
-            const report = typeof item.reporte === 'string' ? JSON.parse(item.reporte || '[]') : (item.reporte || []);
-            contentBox.innerHTML = `
-                <table class="w-full text-left border-collapse">
-                    ${report.map(r => `
-                        <tr class="border-b border-[#111827]">
-                            <td class="p-3 text-xs truncate max-w-[150px]">${r.url}</td>
-                            <td class="p-3"><span class="px-2 py-1 rounded text-[9px] font-black ${r.obstruido ? 'status-error' : 'status-ok'}">${r.obstruido ? 'OBSTRUIDO' : 'LIBRE'}</span></td>
-                        </tr>
-                    `).join('')}
-                </table>`;
-        }
-        else if (modulo === 'vrt') {
-            contentBox.innerHTML = `
-                <div class="bg-tech p-4 rounded-lg">
-                    <p class="text-xs text-gray-500 mb-2">Visual Diff Report</p>
-                    <img src="${item.img_diff_url}" class="w-full rounded border border-[#1a1a1a]">
-                    <div class="mt-4 flex justify-between font-black text-sm">
-                        <span>Diferencias:</span>
-                        <span class="${item.diferencias > 0 ? 'text-red-500' : 'text-emerald-500'}">${item.diferencias || 0}</span>
-                    </div>
-                </div>`;
-        }
+function renderLINKS(item) {
+    return `
+        <div class="space-y-2">
+            ${(item.reporte || []).map(r => `
+                <div class="flex justify-between border-b border-zinc-800 py-2">
+                    <span class="truncate w-2/3">${r.url}</span>
+                    <span class="${r.obstruido ? 'text-red-500' : 'text-green-500'}">
+                        ${r.obstruido ? 'OBSTRUIDO' : 'OK'}
+                    </span>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
 
-        document.getElementById('detail-drawer').classList.remove('translate-x-full');
-    }
+/* ================= UI ================= */
+function cerrarDrawer() {
+    document.getElementById('detail-drawer').classList.add('translate-x-full');
+}
 
-    // Funciones auxiliares para replicar clases CSS exactas
-    function renderRow(label, desc, type) {
-        return `<div class="check-row flex gap-4 py-3 border-b border-[#111827]">
-                    <span class="badge ${type}">${type.toUpperCase()}</span>
-                    <div>
-                        <p class="text-sm font-bold">${label}</p>
-                        <p class="text-[10px] text-gray-500">${desc}</p>
-                    </div>
-                </div>`;
-    }
-
-    function cerrarDrawer() {
-        document.getElementById('detail-drawer').classList.add('translate-x-full');
-    }
-
-    init();
+/* ================= START ================= */
+init();
 </script>
     
 </body>
