@@ -139,204 +139,143 @@ const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
 const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const M_STYLES = {
-    vrt:   { color: 'text-purple-400', bg: 'bg-purple-500/10' },
-    seo:   { color: 'text-blue-400', bg: 'bg-blue-500/10' },
-    perf:  { color: 'text-orange-400', bg: 'bg-orange-500/10' },
-    links: { color: 'text-pink-400', bg: 'bg-pink-500/10' }
-};
-
 let globalData = [];
-let currentItem = null;
 
 /* ================= INIT ================= */
 async function init() {
-    try {
-        const { data: { user } } = await sb.auth.getUser();
-        if (!user) { window.location.href = 'login.html'; return; }
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) { window.location.href = 'login.html'; return; }
 
-        const [vrt, seo, perf, links] = await Promise.all([
-            sb.from('pruebas_qa').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
-            sb.from('seo_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
-            sb.from('performance_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
-            sb.from('auditoria_links').select('*').eq('user_id', user.id).not('batch_id', 'is', null)
-        ]);
+    const [vrt, seo, perf, links] = await Promise.all([
+        sb.from('pruebas_qa').select('*').eq('user_id', user.id),
+        sb.from('seo_audits').select('*').eq('user_id', user.id),
+        sb.from('performance_audits').select('*').eq('user_id', user.id),
+        sb.from('auditoria_links').select('*').eq('user_id', user.id)
+    ]);
 
-        globalData = [
-            ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.creado_el, errores: i.diferencias || 0 })),
-            ...(seo.data || []).map(i => ({ ...i, modulo: 'seo', url_m: i.url, fecha: i.created_at, errores: 0 })),
-            ...(perf.data || []).map(i => ({ ...i, modulo: 'perf', url_m: i.url, fecha: i.created_at, errores: i.fcp_ms > 3000 ? 1 : 0 })),
-            ...(links.data || []).map(i => ({
-                ...i,
-                modulo: 'links',
-                url_m: i.url_auditada,
-                fecha: i.created_at,
-                errores: (Array.isArray(i.reporte) ? i.reporte.filter(r=>r.obstruido).length : 0)
-            }))
-        ].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+    globalData = [
+        ...(vrt.data||[]).map(i=>({...i,modulo:'vrt',url_m:i.url_a,fecha:i.creado_el,errores:i.diferencias||0})),
+        ...(seo.data||[]).map(i=>({...i,modulo:'seo',url_m:i.url,fecha:i.created_at,errores:0})),
+        ...(perf.data||[]).map(i=>({...i,modulo:'perf',url_m:i.url,fecha:i.created_at,errores:i.fcp_ms>3000?1:0})),
+        ...(links.data||[]).map(i=>({...i,modulo:'links',url_m:i.url_auditada,fecha:i.created_at,errores:(i.reporte||[]).filter(r=>r.obstruido).length}))
+    ].sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
 
-        renderizarLista();
-        actualizarKPIs();
-
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-/* ================= KPIs ================= */
-function actualizarKPIs() {
-    const total = globalData.length;
-    const fails = globalData.filter(i => i.errores > 0).length;
-    const success = total - fails;
-
-    document.getElementById('kpi-total').innerText = total;
-    document.getElementById('kpi-success').innerText = success;
-    document.getElementById('kpi-fails').innerText = fails;
+    renderLista();
 }
 
 /* ================= LISTA ================= */
-function renderizarLista() {
-    const cont = document.getElementById('lista-masiva');
-
-    cont.innerHTML = globalData.map(item => {
-        const s = M_STYLES[item.modulo];
-        return `
-            <div class="flex items-center justify-between p-4 bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl">
-                <div class="flex items-center gap-4">
-                    <div class="w-1.5 h-10 rounded-full ${s.bg.replace('/10','/50')}"></div>
-                    <div>
-                        <p class="font-mono text-xs text-gray-300">${item.url_m}</p>
-                        <span class="text-[9px] font-bold ${s.color} uppercase">${item.modulo}</span>
-                    </div>
-                </div>
-                <button onclick="verDetalle('${item.id}', '${item.modulo}')" 
-                    class="text-xs px-3 py-1 bg-zinc-800 rounded">
-                    INSPECT
-                </button>
-            </div>
-        `;
-    }).join('');
-}
-
-/* ================= DETALLE ================= */
-function verDetalle(id, modulo) {
-    const item = globalData.find(i => i.id == id && i.modulo === modulo);
-    if (!item) return;
-
-    currentItem = item;
-
-    document.getElementById('drawer-url').innerText = item.url_m;
-    document.getElementById('drawer-time').innerText = new Date(item.fecha).toLocaleString();
-
-    const statusEl = document.getElementById('drawer-status');
-    statusEl.innerText = item.errores > 0 ? "ERROR" : "OK";
-    statusEl.className = item.errores > 0 ? "text-red-500" : "text-green-500";
-
-    renderTabs(item);
-
-    document.getElementById('detail-drawer').classList.remove('translate-x-full');
-}
-
-/* ================= TABS ================= */
-function renderTabs(item){
-    const tabs = document.getElementById('drawer-dynamic-content');
-
-    tabs.innerHTML = `
-        <div class="flex gap-2 mb-4">
-            <button onclick="switchTab('resumen')" class="tab-btn">Resumen</button>
-            <button onclick="switchTab('detalle')" class="tab-btn">Detalle</button>
-        </div>
-        <div id="tab-content"></div>
-    `;
-
-    switchTab('resumen');
-}
-
-function switchTab(tab){
-    const c = document.getElementById('tab-content');
-
-    if(tab === 'resumen'){
-        if(currentItem.modulo === 'perf') c.innerHTML = renderPERF(currentItem);
-        if(currentItem.modulo === 'seo') c.innerHTML = renderSEO(currentItem);
-        if(currentItem.modulo === 'links') c.innerHTML = renderLINKSResumen(currentItem);
-        if(currentItem.modulo === 'vrt') c.innerHTML = renderVRTResumen(currentItem);
-    }
-
-    if(tab === 'detalle'){
-        if(currentItem.modulo === 'links') c.innerHTML = renderLINKS(currentItem);
-        else if(currentItem.modulo === 'vrt') c.innerHTML = renderVRT(currentItem);
-        else c.innerHTML = `<div class="text-xs text-gray-500">Sin detalle adicional</div>`;
-    }
-}
-
-/* ================= PERF ================= */
-function renderPERF(item){
-
-    function c(v,g,w){return v<=g?'good':v<=w?'warn':'poor'}
-
-    const results = [
-        c(item.lcp_ms||9999,2500,4000),
-        c(item.fcp_ms||9999,1800,3000),
-        c(item.cls||1,0.1,0.25)
-    ];
-
-    const score = Math.round((results.filter(r=>r==='good').length/results.length)*100);
-
-    return `
-    <div class="text-center mb-6">
-        <div class="w-24 h-24 border-4 border-green-500 rounded-full flex items-center justify-center mx-auto">
-            <span class="text-3xl font-black">${score}</span>
-        </div>
-    </div>`;
-}
-
-/* ================= LINKS ================= */
-function renderLINKSResumen(item){
-    const total = item.reporte?.length || 0;
-    const bad = item.reporte?.filter(r=>r.obstruido).length || 0;
-
-    return `
-    <div class="text-center">
-        <h2 class="text-3xl">${total-bad} OK</h2>
-        <h2 class="text-red-400">${bad} errores</h2>
-    </div>`;
-}
-
-function renderLINKS(item){
-    return (item.reporte||[]).map(r=>`
-        <div class="group flex justify-between border-b border-zinc-800 py-2 text-xs relative">
+function renderLista(){
+    const c=document.getElementById('lista-masiva');
+    c.innerHTML=globalData.map(i=>`
+        <div class="p-4 border border-zinc-800 rounded-xl flex justify-between">
             <div>
-                <div class="font-bold">${r.tipo||'elemento'}</div>
-                <div class="text-gray-500">${r.href||r.url||'-'}</div>
+                <div class="text-xs text-gray-400">${i.url_m}</div>
+                <div class="text-[10px] uppercase">${i.modulo}</div>
             </div>
-            <div class="${r.obstruido?'text-red-500':'text-green-500'}">
-                ${r.obstruido?'OBSTRUIDO':'OK'}
-            </div>
-
-            ${r.obstruido ? `
-            <div class="absolute right-0 top-full mt-1 hidden group-hover:block bg-black text-xs text-red-400 p-2 rounded border border-red-500">
-                ${r.motivo || 'Elemento tapado / no clickable'}
-            </div>` : ''}
+            <button onclick="verDetalle('${i.id}','${i.modulo}')" class="text-xs">INSPECT</button>
         </div>
     `).join('');
 }
 
-/* ================= VRT ================= */
-function renderVRTResumen(item){
-    return `<img src="${item.img_diff_url}" class="w-full opacity-80">`;
+/* ================= DETALLE ================= */
+function verDetalle(id,mod){
+    const item=globalData.find(i=>i.id==id && i.modulo==mod);
+    if(!item)return;
+
+    document.getElementById('drawer-url').innerText=item.url_m;
+    document.getElementById('drawer-time').innerText=new Date(item.fecha).toLocaleString();
+
+    const status=item.errores>0?'ERROR':'OK';
+    const el=document.getElementById('drawer-status');
+    el.innerText=status;
+    el.className=status==='OK'?'text-green-400':'text-red-400';
+
+    let html='';
+
+    if(mod==='seo') html=renderSEO(item);
+    if(mod==='perf') html=renderPERF(item);
+    if(mod==='links') html=renderLINKS(item);
+    if(mod==='vrt') html=renderVRT(item);
+
+    document.getElementById('drawer-dynamic-content').innerHTML=html;
+    document.getElementById('detail-drawer').classList.remove('translate-x-full');
 }
 
-function renderVRT(item){
+/* ================= SEO (DASHBOARD REAL) ================= */
+function renderSEO(item){
+
+    function check(ok,label,desc){
+        return `
+        <div class="py-3 border-b border-zinc-800">
+            <div class="flex gap-2">
+                <span class="text-xs ${ok?'text-green-400':'text-red-400'}">${ok?'OK':'ERROR'}</span>
+                <span>${label}</span>
+            </div>
+            <div class="text-xs text-gray-500">${desc}</div>
+        </div>`;
+    }
+
     return `
-    <div class="grid grid-cols-2 gap-4">
-        <img src="${item.img_a_url}" class="rounded">
-        <img src="${item.img_b_url}" class="rounded">
+    <div class="bg-tech p-4 rounded-xl">
+        ${check(item.title_len>=30,"Title",item.title_len+" caracteres")}
+        ${check(item.meta_desc_len>=70,"Meta",item.meta_desc_len+" caracteres")}
+        ${check(item.h1_count===1,"H1",item.h1_count||"0")}
+        ${check(!!item.canonical,"Canonical",item.canonical||"no")}
     </div>`;
 }
 
-/* ================= SEO ================= */
-function renderSEO(item){
-    return `<div class="text-xs">SEO OK</div>`;
+/* ================= PERF (SCORE REAL) ================= */
+function renderPERF(item){
+
+    function score(){
+        let total=0,good=0;
+
+        if(item.lcp_ms){total++; if(item.lcp_ms<2500)good++;}
+        if(item.fcp_ms){total++; if(item.fcp_ms<1800)good++;}
+        if(item.cls){total++; if(item.cls<0.1)good++;}
+
+        return total?Math.round((good/total)*100):0;
+    }
+
+    const s=score();
+
+    return `
+    <div class="text-center">
+        <div class="w-24 h-24 border-4 border-green-400 rounded-full flex items-center justify-center mx-auto">
+            <span class="text-3xl">${s}</span>
+        </div>
+    </div>`;
+}
+
+/* ================= LINKS (TOOLTIP FIX) ================= */
+function renderLINKS(item){
+    return (item.reporte||[]).map(r=>`
+        <div class="group relative flex justify-between py-2 border-b border-zinc-800 text-xs">
+            <div>
+                <div>${r.tipo||'link'}</div>
+                <div class="text-gray-500">${r.href||'-'}</div>
+            </div>
+
+            <div class="${r.obstruido?'text-red-400':'text-green-400'}">
+                ${r.obstruido?'ERROR':'OK'}
+            </div>
+
+            ${r.obstruido?`
+            <div class="hidden group-hover:block absolute right-0 top-full bg-black border border-red-400 p-2 text-[10px]">
+                ${r.motivo||'no clickable'}
+            </div>`:''}
+        </div>
+    `).join('');
+}
+
+/* ================= VRT (COMPARACION REAL) ================= */
+function renderVRT(item){
+    return `
+    <div class="grid grid-cols-2 gap-2">
+        <img src="${item.img_a_url}" class="rounded">
+        <img src="${item.img_b_url}" class="rounded">
+        <img src="${item.img_diff_url}" class="col-span-2 rounded border border-red-500">
+    </div>`;
 }
 
 function cerrarDrawer(){
