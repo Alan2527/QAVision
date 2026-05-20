@@ -99,30 +99,29 @@
             </div>
 
             <div class="bg-tech p-6 rounded-2xl flex flex-col justify-between border border-[#1a1a1a]">
-                <div>
-                    <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Quick Actions</h2>
-                    <p class="text-xs text-[#505050] mb-4">Re-ejecutar de inmediato los últimos análisis individuales registrados.</p>
-                </div>
-                <div class="grid grid-cols-2 gap-3 p-1">
-                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
-                        <span class="text-xs font-bold text-white mb-1">VRT</span>
-                        <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
-                    </button>
-                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
-                        <span class="text-xs font-bold text-white mb-1">SEO</span>
-                        <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
-                    </button>
-                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
-                        <span class="text-xs font-bold text-white mb-1">PERF</span>
-                        <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
-                    </button>
-                    <button class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
-                        <span class="text-xs font-bold text-white mb-1">LINKS</span>
-                        <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
-                    </button>
-                </div>
-            </div>
-        </div>
+    <div>
+        <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Quick Actions</h2>
+        <p class="text-xs text-[#505050] mb-4">Re-ejecutar de inmediato los últimos análisis individuales registrados.</p>
+    </div>
+    <div class="grid grid-cols-2 gap-3 p-1">
+        <button data-rerun="vrt" class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
+            <span class="text-xs font-bold text-white mb-1">VRT</span>
+            <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
+        </button>
+        <button data-rerun="seo" class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
+            <span class="text-xs font-bold text-white mb-1">SEO</span>
+            <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
+        </button>
+        <button data-rerun="perf" class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
+            <span class="text-xs font-bold text-white mb-1">PERF</span>
+            <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
+        </button>
+        <button data-rerun="links" class="flex flex-col items-center justify-center p-3 bg-black rounded-xl border border-[#1a1a1a] hover:border-[#10b981] transition group">
+            <span class="text-xs font-bold text-white mb-1">LINKS</span>
+            <span class="text-[9px] font-mono text-[#505050] group-hover:text-[#10b981]">RERUN</span>
+        </button>
+    </div>
+</div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
@@ -212,8 +211,7 @@
                     <h2 class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-1">Salud del Entorno</h2>
                     <p class="text-xs text-[#505050] mb-4">Volumen de cobertura de regresión procesada en la semana.</p>
                     <div class="flex items-baseline gap-2">
-                        <span class="font-title text-5xl font-extrabold text-white tracking-tight">148</span>
-                        <span class="text-xs font-mono text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded">Páginas Verificadas</span>
+                    <span id="salud-total" class="font-title text-5xl font-extrabold text-white tracking-tight">-</span>                        <span class="text-xs font-mono text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded">Páginas Verificadas</span>
                     </div>
                 </div>
 
@@ -246,40 +244,31 @@
     const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
     let dashClient = null;
     let currentActiveTab = 'vrt';
-    
-    let suiteStorage = {
-        vrt: [],
-        seo: [],
-        perf: [],
-        links: []
-    };
+    let currentUser = null;
+
+    let suiteStorage = { vrt: [], seo: [], perf: [], links: [] };
 
     function inicializarPlataforma() {
         try {
             if (typeof supabase === 'undefined') {
-                console.error("Critical: El CDN de Supabase no se cargó correctamente.");
                 document.getElementById('user-email').innerText = "Offline Console";
                 configurarListenersBasicos();
                 return;
             }
-
             dashClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             verificarAccesoSaaS();
             configurarListenersCompletos();
-
             if (typeof Chart !== 'undefined') {
                 renderTrendChart();
-            } else {
-                console.warn("Chart.js no disponible. Omitiendo renderizado de gráfico.");
             }
-
         } catch (err) {
             console.error("Error general en inicialización:", err);
         }
     }
 
     function configurarListenersBasicos() {
-        document.getElementById('btn-logout').addEventListener('click', () => {
+        document.getElementById('btn-logout').addEventListener('click', async () => {
+            await dashClient.auth.signOut();
             window.location.replace('login.html');
         });
     }
@@ -288,32 +277,121 @@
         if (!dashClient) return;
         try {
             const { data: { session }, error } = await dashClient.auth.getSession();
-            if (error || !session) {
-                window.location.replace('login.html');
-                return;
-            }
+            if (error || !session) { window.location.replace('login.html'); return; }
+            currentUser = session.user;
             document.getElementById('user-email').innerText = session.user.email;
             loadSuiteFromLocalStorage();
+            await cargarAuditoriasRecientes();
+            await cargarSaludEntorno();
         } catch (e) {
             console.error("Error verificando credenciales:", e);
         }
     }
 
+    // --- AUDITORÍAS RECIENTES (datos reales de Supabase) ---
+    async function cargarAuditoriasRecientes() {
+        if (!currentUser) return;
+
+        // Traer últimas 5 de cada tabla
+        const [vrt, seo, perf, links] = await Promise.all([
+            dashClient.from('pruebas_qa').select('creado_el, url_a, diferencias').eq('user_id', currentUser.id).order('creado_el', { ascending: false }).limit(5),
+            dashClient.from('seo_audits').select('created_at, url').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(5),
+            dashClient.from('performance_audits').select('created_at, url, fcp_ms').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(5),
+            dashClient.from('auditoria_links').select('created_at, url_auditada, reporte').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(5),
+        ]);
+
+        const rows = [
+            ...(vrt.data || []).map(r => ({ fecha: r.creado_el, url: r.url_a, tipo: 'VISUAL_VRT', fail: r.diferencias > 0 })),
+            ...(seo.data || []).map(r => ({ fecha: r.created_at, url: r.url, tipo: 'SEO_AUDIT', fail: false })),
+            ...(perf.data || []).map(r => ({ fecha: r.created_at, url: r.url, tipo: 'PERF_CWV', fail: r.fcp_ms > 3000 })),
+            ...(links.data || []).map(r => ({ fecha: r.created_at, url: r.url_auditada, tipo: 'LINK_SCAN', fail: (r.reporte || []).some(i => i.obstruido) })),
+        ].sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).slice(0, 5);
+
+        const tbody = document.querySelector('#tabla-auditorias tbody');
+        if (!tbody) return;
+
+        if (rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-[#505050] font-mono text-xs">Sin auditorías registradas.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = rows.map(r => `
+            <tr class="hover:bg-zinc-900/40 transition">
+                <td class="p-4 font-mono text-gray-500">${new Date(r.fecha).toLocaleDateString()}</td>
+                <td class="p-4 truncate max-w-[200px] font-mono text-white">${r.url.replace('https://', '').replace('http://', '')}</td>
+                <td class="p-4"><span class="bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 text-[10px] font-mono">${r.tipo}</span></td>
+                <td class="p-4 text-right">
+                    ${r.fail
+                        ? `<span class="bg-red-500/10 text-red-400 px-2 py-0.5 rounded text-[10px] font-black border border-red-500/20">FAIL</span>`
+                        : `<span class="bg-[#10b981]/10 text-[#10b981] px-2 py-0.5 rounded text-[10px] font-black border border-[#10b981]/20">PASS</span>`
+                    }
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // --- SALUD DEL ENTORNO (total real de pruebas) ---
+    async function cargarSaludEntorno() {
+        if (!currentUser) return;
+
+        const [vrt, seo, perf, links] = await Promise.all([
+            dashClient.from('pruebas_qa').select('id', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+            dashClient.from('seo_audits').select('id', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+            dashClient.from('performance_audits').select('id', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+            dashClient.from('auditoria_links').select('id', { count: 'exact', head: true }).eq('user_id', currentUser.id),
+        ]);
+
+        const total = (vrt.count || 0) + (seo.count || 0) + (perf.count || 0) + (links.count || 0);
+        const el = document.getElementById('salud-total');
+        if (el) el.innerText = total;
+    }
+
+    // --- QUICK ACTIONS (re-ejecutar último test de cada tipo) ---
+    async function reejecutarUltimo(tipo) {
+        if (!currentUser) return;
+
+        let url = null, urlStage = null, destino = null;
+
+        if (tipo === 'vrt') {
+            const { data } = await dashClient.from('pruebas_qa').select('url_a, url_b').eq('user_id', currentUser.id).order('creado_el', { ascending: false }).limit(1);
+            if (!data?.length) { alert('No hay pruebas VRT anteriores.'); return; }
+            url = data[0].url_b; urlStage = data[0].url_a; destino = 'visual_regression.html';
+        } else if (tipo === 'seo') {
+            const { data } = await dashClient.from('seo_audits').select('url').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1);
+            if (!data?.length) { alert('No hay auditorías SEO anteriores.'); return; }
+            url = data[0].url; destino = 'seo.html';
+        } else if (tipo === 'perf') {
+            const { data } = await dashClient.from('performance_audits').select('url').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1);
+            if (!data?.length) { alert('No hay auditorías de performance anteriores.'); return; }
+            url = data[0].url; destino = 'performance.html';
+        } else if (tipo === 'links') {
+            const { data } = await dashClient.from('auditoria_links').select('url_auditada').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1);
+            if (!data?.length) { alert('No hay auditorías de links anteriores.'); return; }
+            url = data[0].url_auditada; destino = 'interaction_audit.html';
+        }
+
+        sessionStorage.setItem('qavision_user_id', currentUser.id);
+        sessionStorage.setItem('qavision_last_prod', url);
+        sessionStorage.setItem('qavision_last_stage', urlStage || '');
+        sessionStorage.setItem('qavision_trigger_test', 'true');
+        window.location.href = destino;
+    }
+
     function configurarListenersCompletos() {
         configurarListenersBasicos();
+
+        // Quick Actions
+        document.querySelectorAll('[data-rerun]').forEach(btn => {
+            btn.addEventListener('click', () => reejecutarUltimo(btn.dataset.rerun));
+        });
 
         const suiteSelector = document.getElementById('new-test-type');
         const stagingContainer = document.getElementById('container-url-staging');
         const labelProd = document.getElementById('label-url-prod');
         const inputProd = document.getElementById('new-test-url-prod');
 
-        // FIX: aplicar estado inicial correcto al cargar la página
         if (suiteSelector && suiteSelector.value !== 'visual_regression.html') {
-            if (stagingContainer) {
-                stagingContainer.style.opacity = '0';
-                stagingContainer.style.pointerEvents = 'none';
-                stagingContainer.style.transform = 'translateY(-10px)';
-            }
+            if (stagingContainer) { stagingContainer.style.opacity = '0'; stagingContainer.style.pointerEvents = 'none'; stagingContainer.style.transform = 'translateY(-10px)'; }
             if (labelProd) labelProd.innerText = 'Target URL Analysis';
             if (inputProd) inputProd.placeholder = 'https://ejemplo.com/pagina-a-auditar';
         }
@@ -321,65 +399,61 @@
         if (suiteSelector) {
             suiteSelector.addEventListener('change', (e) => {
                 if (e.target.value === "visual_regression.html") {
-                    if (stagingContainer) {
-                        stagingContainer.style.opacity = "1";
-                        stagingContainer.style.pointerEvents = "auto";
-                        stagingContainer.style.transform = "translateY(0)";
-                    }
+                    if (stagingContainer) { stagingContainer.style.opacity = "1"; stagingContainer.style.pointerEvents = "auto"; stagingContainer.style.transform = "translateY(0)"; }
                     if (labelProd) labelProd.innerText = "URL de Producción";
                     if (inputProd) inputProd.placeholder = "https://ejemplo.com";
                 } else {
-                    if (stagingContainer) {
-                        stagingContainer.style.opacity = "0";
-                        stagingContainer.style.pointerEvents = "none";
-                        stagingContainer.style.transform = "translateY(-10px)";
-                    }
+                    if (stagingContainer) { stagingContainer.style.opacity = "0"; stagingContainer.style.pointerEvents = "none"; stagingContainer.style.transform = "translateY(-10px)"; }
                     if (labelProd) labelProd.innerText = "Target URL Analysis";
                     if (inputProd) inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
                 }
             });
         }
 
-        // FIX: guardar user_id en sessionStorage antes de redirigir
         document.getElementById('btn-launch-test').addEventListener('click', async function () {
             const testType = document.getElementById('new-test-type').value;
             const urlProd = document.getElementById('new-test-url-prod').value.trim();
             const urlStage = document.getElementById('new-test-url-stage').value.trim();
-
-            if (!urlProd) {
-                alert('La URL de producción es obligatoria.');
-                return;
-            }
-
+            if (!urlProd) { alert('La URL de producción es obligatoria.'); return; }
             const { data: { session } } = await dashClient.auth.getSession();
             const userId = session?.user?.id || null;
-
             sessionStorage.setItem('qavision_user_id', userId);
             sessionStorage.setItem('qavision_last_prod', urlProd);
             sessionStorage.setItem('qavision_last_stage', urlStage);
             sessionStorage.setItem('qavision_trigger_test', 'true');
-
             window.location.href = testType;
         });
 
-        document.getElementById('btn-trigger-mass-run').addEventListener('click', () => {
-            const totalTests = suiteStorage.vrt.length + suiteStorage.seo.length + suiteStorage.perf.length + suiteStorage.links.length;
-            if (totalTests === 0) {
-                alert("El Suite Manager está vacío.");
-                return;
-            }
-            
+        // Mass Execution — ejecuta el primero de cada lista del suite
+        document.getElementById('btn-trigger-mass-run').addEventListener('click', async () => {
+            const total = suiteStorage.vrt.length + suiteStorage.seo.length + suiteStorage.perf.length + suiteStorage.links.length;
+            if (total === 0) { alert("El Suite Manager está vacío. Agregá URLs primero."); return; }
+
             const btn = document.getElementById('btn-trigger-mass-run');
             btn.disabled = true;
             btn.className = "w-full bg-zinc-800 text-zinc-500 font-black py-3.5 rounded-xl text-xs tracking-wider uppercase cursor-not-allowed mt-4 animate-pulse";
-            btn.innerText = `Procesando ${totalTests} análisis en batch...`;
-            
-            setTimeout(() => {
-                alert(`Batch inyectado con éxito al motor automatizado. Se dispararon ${totalTests} instancias de Playwright en paralelo.`);
-                btn.disabled = false;
-                btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
-                updateCountersPanel();
-            }, 2500);
+            btn.innerText = `Disparando ${total} análisis...`;
+
+            const { data: { session } } = await dashClient.auth.getSession();
+            const userId = session?.user?.id || null;
+
+            const llamadas = [
+                ...suiteStorage.vrt.map(r => fetch('https://qavision-qavision-engine.hf.space/api/comparar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url_a: r.stage, url_b: r.prod, user_id: userId }) })),
+                ...suiteStorage.seo.map(r => fetch('https://qavision-qavision-engine.hf.space/api/seo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId }) })),
+                ...suiteStorage.perf.map(r => fetch('https://qavision-qavision-engine.hf.space/api/performance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId }) })),
+                ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId }) })),
+            ];
+
+            const resultados = await Promise.allSettled(llamadas);
+            const exitosos = resultados.filter(r => r.status === 'fulfilled').length;
+            const fallidos = resultados.filter(r => r.status === 'rejected').length;
+
+            btn.disabled = false;
+            btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
+            btn.innerText = "Ejecutar Suite Completa";
+            alert(`Batch completado: ${exitosos} exitosos, ${fallidos} fallidos.`);
+            await cargarAuditoriasRecientes();
+            await cargarSaludEntorno();
         });
     }
 
@@ -388,7 +462,7 @@
         ['vrt', 'seo', 'perf', 'links'].forEach(t => {
             const el = document.getElementById(`tab-${t}`);
             if (el) {
-                el.className = t === tabId 
+                el.className = t === tabId
                     ? "text-xs font-mono px-4 py-2 rounded-lg bg-black text-white border border-[#10b981]/30 font-bold transition"
                     : "text-xs font-mono px-4 py-2 rounded-lg text-[#505050] hover:text-white transition";
             }
@@ -400,15 +474,12 @@
         const container = document.getElementById('suite-inputs-container');
         if (!container) return;
         const list = suiteStorage[currentActiveTab];
-        
         const limitEl = document.getElementById('tab-row-limit');
         if (limitEl) limitEl.innerText = `(${list.length}/20)`;
-        
         if (list.length === 0) {
             container.innerHTML = `<p class="text-xs text-[#505050] font-mono p-4 text-center border border-dashed border-[#1a1a1a] rounded-xl">No hay URLs configuradas para este módulo.</p>`;
             return;
         }
-
         container.innerHTML = list.map((item, index) => {
             if (currentActiveTab === 'vrt') {
                 return `
@@ -437,24 +508,14 @@
     };
 
     function generateSafeID() {
-        try {
-            return crypto.randomUUID();
-        } catch (e) {
-            return 'f_xxxxxx'.replace(/[x]/g, () => (Math.random() * 16 | 0).toString(16));
-        }
+        try { return crypto.randomUUID(); } catch (e) { return 'f_xxxxxx'.replace(/[x]/g, () => (Math.random() * 16 | 0).toString(16)); }
     }
 
     window.addSuiteRow = function() {
-        if (suiteStorage[currentActiveTab].length >= 20) {
-            alert("Límite alcanzado: Máximo 20 configuraciones por módulo.");
-            return;
-        }
+        if (suiteStorage[currentActiveTab].length >= 20) { alert("Límite alcanzado: Máximo 20 configuraciones por módulo."); return; }
         const newId = generateSafeID();
-        if (currentActiveTab === 'vrt') {
-            suiteStorage.vrt.push({ id: newId, stage: '', prod: '' });
-        } else {
-            suiteStorage[currentActiveTab].push({ id: newId, url: '' });
-        }
+        if (currentActiveTab === 'vrt') { suiteStorage.vrt.push({ id: newId, stage: '', prod: '' }); }
+        else { suiteStorage[currentActiveTab].push({ id: newId, url: '' }); }
         renderSuiteRows();
         updateCountersPanel();
     };
@@ -473,49 +534,52 @@
     window.saveCurrentSuite = function() {
         localStorage.setItem('qavision_suite_storage', JSON.stringify(suiteStorage));
         updateCountersPanel();
-        alert("Configuración de suite guardada.");
+        alert("Configuración guardada en este navegador.");
     };
 
     function loadSuiteFromLocalStorage() {
         const raw = localStorage.getItem('qavision_suite_storage');
-        if (raw) {
-            try { suiteStorage = JSON.parse(raw); } catch(e) {}
-        }
+        if (raw) { try { suiteStorage = JSON.parse(raw); } catch(e) {} }
         renderSuiteRows();
         updateCountersPanel();
     }
 
     function updateCountersPanel() {
-        const v = suiteStorage.vrt.length;
-        const s = suiteStorage.seo.length;
-        const p = suiteStorage.perf.length;
-        const l = suiteStorage.links.length;
-        
+        const v = suiteStorage.vrt.length, s = suiteStorage.seo.length, p = suiteStorage.perf.length, l = suiteStorage.links.length;
         const globalCount = document.getElementById('suite-global-counter');
         if (globalCount) globalCount.innerText = `Guardadas: ${v+s+p+l} / 80`;
-        
         if (document.getElementById('mass-count-vrt')) document.getElementById('mass-count-vrt').innerText = `${v} / 20`;
         if (document.getElementById('mass-count-seo')) document.getElementById('mass-count-seo').innerText = `${s} / 20`;
         if (document.getElementById('mass-count-perf')) document.getElementById('mass-count-perf').innerText = `${p} / 20`;
         if (document.getElementById('mass-count-links')) document.getElementById('mass-count-links').innerText = `${l} / 20`;
-        
         const btnMass = document.getElementById('btn-trigger-mass-run');
-        if (btnMass) {
-            const total = v + s + p + l;
-            btnMass.innerText = total > 0 ? `Ejecutar Suite Completa (${total} Tests)` : "Ejecutar Suite Completa";
-        }
+        if (btnMass) { const total = v+s+p+l; btnMass.innerText = total > 0 ? `Ejecutar Suite Completa (${total} Tests)` : "Ejecutar Suite Completa"; }
     }
 
-    function renderTrendChart() {
+    async function renderTrendChart() {
+        if (!currentUser) { setTimeout(renderTrendChart, 500); return; }
+
+        const { data } = await dashClient.from('pruebas_qa').select('creado_el, diferencias').eq('user_id', currentUser.id).order('creado_el', { ascending: false }).limit(14);
+
+        // Agrupar por día
+        const porDia = {};
+        (data || []).forEach(r => {
+            const dia = new Date(r.creado_el).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric' });
+            porDia[dia] = (porDia[dia] || 0) + (r.diferencias || 0);
+        });
+
+        const labels = Object.keys(porDia).reverse();
+        const valores = labels.map(d => porDia[d]);
+
         const ctx = document.getElementById('trendChart').getContext('2d');
         if (!ctx) return;
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
+                labels: labels.length ? labels : ['Sin datos'],
                 datasets: [{
                     label: 'Errores',
-                    data: [32, 28, 19, 24, 12, 7, 3],
+                    data: valores.length ? valores : [0],
                     borderColor: '#ef4444',
                     borderWidth: 3,
                     pointBackgroundColor: '#070707',
@@ -539,7 +603,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', inicializarPlataforma);
-</script>
+</script>    
     
 </body>
 </html>
