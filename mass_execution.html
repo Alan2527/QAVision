@@ -343,7 +343,6 @@ function renderLINKS(item){
 function renderVRT(item){
 
     const errores = item.diferencias || 0;
-
     const id = "vrt-" + Math.random().toString(36).substring(2,7);
 
     return `
@@ -360,23 +359,6 @@ function renderVRT(item){
             <div class="text-lg font-bold ${errores>0?'text-red-400':'text-green-400'}">
                 ${errores}
             </div>
-        </div>
-
-        <!-- SLIDER COMPARACIÓN -->
-        <div class="relative w-full overflow-hidden rounded-xl border border-zinc-800">
-            
-            <img src="${item.img_a_url || ''}" class="w-full block">
-
-            <div id="${id}-overlay" class="absolute top-0 left-0 h-full overflow-hidden" style="width:50%">
-                <img src="${item.img_b_url || ''}" class="w-full block">
-            </div>
-
-            <input type="range" min="0" max="100" value="50"
-                class="absolute bottom-2 left-1/2 -translate-x-1/2 w-2/3"
-                oninput="
-                    document.getElementById('${id}-overlay').style.width = this.value + '%'
-                "
-            >
         </div>
 
         <!-- DIFF -->
@@ -404,6 +386,38 @@ function renderVRT(item){
             </div>
         </div>
 
+        <!-- COMPARADOR (COLAPSADO) -->
+        <div class="border border-zinc-800 rounded-xl overflow-hidden">
+            
+            <!-- HEADER CLICK -->
+            <div onclick="toggleVRT('${id}')"
+                 class="cursor-pointer flex justify-between items-center p-3 bg-zinc-900 hover:bg-zinc-800 transition">
+                <span class="text-xs text-gray-300">Comparador interactivo</span>
+                <span id="${id}-icon" class="text-xs text-gray-500">▼</span>
+            </div>
+
+            <!-- CONTENIDO -->
+            <div id="${id}" class="hidden p-3">
+
+                <div class="relative w-full overflow-hidden rounded-xl border border-zinc-800">
+                    
+                    <img src="${item.img_a_url || ''}" class="w-full block">
+
+                    <div id="${id}-overlay" 
+                         class="absolute top-0 left-0 h-full overflow-hidden" 
+                         style="width:50%">
+                        <img src="${item.img_b_url || ''}" class="w-full block">
+                    </div>
+
+                    <input type="range" min="0" max="100" value="50"
+                        class="absolute bottom-2 left-1/2 -translate-x-1/2 w-2/3"
+                        oninput="document.getElementById('${id}-overlay').style.width = this.value + '%'"
+                    >
+                </div>
+
+            </div>
+        </div>
+
     </div>`;
 }
 function openImageModal(src){
@@ -425,6 +439,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+function toggleVRT(id){
+    const el = document.getElementById(id);
+    const icon = document.getElementById(id + '-icon');
+
+    if(el.classList.contains('hidden')){
+        el.classList.remove('hidden');
+        icon.innerText = '▲';
+    } else {
+        el.classList.add('hidden');
+        icon.innerText = '▼';
+    }
+}
 function cerrarDrawer(){
     document.getElementById('detail-drawer').classList.add('translate-x-full');
 }
