@@ -273,11 +273,10 @@
         }
     }
 
-    // --- AUDITORÍAS RECIENTES (datos reales de Supabase) ---
+    // --- AUDITORÍAS RECIENTES ---
     async function cargarAuditoriasRecientes() {
         if (!currentUser) return;
 
-        // Traer últimas 5 de cada tabla
         const [vrt, seo, perf, links] = await Promise.all([
             dashClient.from('pruebas_qa').select('creado_el, url_a, diferencias').eq('user_id', currentUser.id).order('creado_el', { ascending: false }).limit(5),
             dashClient.from('seo_audits').select('created_at, url').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(5),
@@ -315,7 +314,7 @@
         `).join('');
     }
 
-    // --- SALUD DEL ENTORNO (total real de pruebas) ---
+    // --- SALUD DEL ENTORNO ---
     async function cargarSaludEntorno() {
         if (!currentUser) return;
 
@@ -331,10 +330,9 @@
         if (el) el.innerText = total;
     }
 
-    // --- QUICK ACTIONS (re-ejecutar último test de cada tipo) ---
+    // --- QUICK ACTIONS ---
     async function reejecutarUltimo(tipo) {
         if (!currentUser) return;
-
         let url = null, urlStage = null, destino = null;
 
         if (tipo === 'vrt') {
@@ -365,7 +363,6 @@
     function configurarListenersCompletos() {
         configurarListenersBasicos();
 
-        // Quick Actions
         document.querySelectorAll('[data-rerun]').forEach(btn => {
             btn.addEventListener('click', () => reejecutarUltimo(btn.dataset.rerun));
         });
@@ -409,50 +406,45 @@
             window.location.href = testType;
         });
 
-        // Mass Execution — ejecuta el primero de cada lista del suite
-// BUSCÁ ESTO EN TU SCRIPT Y REEMPLAZALO SÓLO A ÉL:
-      document.getElementById('btn-trigger-mass-run').addEventListener('click', () => {
-        const totalTests = suiteStorage.vrt.length + suiteStorage.seo.length + suiteStorage.perf.length + suiteStorage.links.length;
-        if (totalTests === 0) {
-        alert("El Suite Manager está vacío.");
-        return;
-    }
-    
-    const btn = document.getElementById('btn-trigger-mass-run');
-    btn.disabled = true;
-    btn.className = "w-full bg-zinc-800 text-zinc-500 font-black py-3.5 rounded-xl text-xs tracking-wider uppercase cursor-not-allowed mt-4 animate-pulse";
-    btn.innerText = `Procesando ${totalTests} análisis en batch...`;
-    
-    setTimeout(() => {
-        btn.disabled = false;
-        btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
-        updateCountersPanel();
-        
-        // Redirección directa al panel de ejecuciones masivas
-        window.location.href = 'mass_execution.html';
-    }, 2500);
-});
+        // --- LÓGICA DE EJECUCIÓN MASIVA INTEGRADA Y CORREGIDA ---
+        document.getElementById('btn-trigger-mass-run').addEventListener('click', async () => {
+            const totalTests = suiteStorage.vrt.length + suiteStorage.seo.length + suiteStorage.perf.length + suiteStorage.links.length;
+            if (totalTests === 0) {
+                alert("El Suite Manager está vacío.");
+                return;
+            }
+            
+            const btn = document.getElementById('btn-trigger-mass-run');
+            btn.disabled = true;
+            btn.className = "w-full bg-zinc-800 text-zinc-500 font-black py-3.5 rounded-xl text-xs tracking-wider uppercase cursor-not-allowed mt-4 animate-pulse";
+            btn.innerText = `Procesando ${totalTests} análisis en batch...`;
+            
+            try {
+                // Recuperamos el ID del usuario para mandarlo al backend
+                const { data: { session } } = await dashClient.auth.getSession();
+                const userId = session?.user?.id || null;
 
-            const { data: { session } } = await dashClient.auth.getSession();
-            const userId = session?.user?.id || null;
+                // Armamos el array de peticiones reales al motor QA
+                const llamadas = [
+                    ...suiteStorage.vrt.map(r => fetch('https://qavision-qavision-engine.hf.space/api/comparar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url_a: r.stage, url_b: r.prod, user_id: userId }) })),
+                    ...suiteStorage.seo.map(r => fetch('https://qavision-qavision-engine.hf.space/api/seo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId }) })),
+                    ...suiteStorage.perf.map(r => fetch('https://qavision-qavision-engine.hf.space/api/performance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId }) })),
+                    ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId }) })),
+                ];
 
-            const llamadas = [
-                ...suiteStorage.vrt.map(r => fetch('https://qavision-qavision-engine.hf.space/api/comparar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url_a: r.stage, url_b: r.prod, user_id: userId }) })),
-                ...suiteStorage.seo.map(r => fetch('https://qavision-qavision-engine.hf.space/api/seo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId }) })),
-                ...suiteStorage.perf.map(r => fetch('https://qavision-qavision-engine.hf.space/api/performance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId }) })),
-                ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId }) })),
-            ];
+                // Esperamos a que los hilos concurrentes terminen
+                await Promise.allSettled(llamadas);
 
-            const resultados = await Promise.allSettled(llamadas);
-            const exitosos = resultados.filter(r => r.status === 'fulfilled').length;
-            const fallidos = resultados.filter(r => r.status === 'rejected').length;
+                // Una vez procesados, redirigimos al visor
+                window.location.href = 'mass_execution.html';
 
-            btn.disabled = false;
-            btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
-            btn.innerText = "Ejecutar Suite Completa";
-            alert(`Batch completado: ${exitosos} exitosos, ${fallidos} fallidos.`);
-            await cargarAuditoriasRecientes();
-            await cargarSaludEntorno();
+            } catch (error) {
+                console.error("Error disparando el batch:", error);
+                btn.disabled = false;
+                btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
+                btn.innerText = "Ejecutar Suite Completa";
+                alert("Ocurrió un error al enviar las pruebas al motor.");
+            }
         });
     }
 
@@ -560,7 +552,6 @@
 
         const { data } = await dashClient.from('pruebas_qa').select('creado_el, diferencias').eq('user_id', currentUser.id).order('creado_el', { ascending: false }).limit(14);
 
-        // Agrupar por día
         const porDia = {};
         (data || []).forEach(r => {
             const dia = new Date(r.creado_el).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric' });
@@ -602,7 +593,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', inicializarPlataforma);
-</script>    
+</script> 
     
 </body>
 </html>
