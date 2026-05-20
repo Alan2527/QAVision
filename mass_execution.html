@@ -331,7 +331,27 @@ function renderPERF(item) {
     <div>
         <div class="text-center mb-6">
             <div class="w-24 h-24 border-4 border-green-500 rounded-full flex items-center justify-center mx-auto">
-                <span class="text-3xl font-black">90</span>
+                function calcularScore(item){
+    let total = 0;
+    let puntos = 0;
+
+    function evaluar(valor, good, mid){
+        if(valor == null) return null;
+        total++;
+        if(valor <= good) puntos += 100;
+        else if(valor <= mid) puntos += 50;
+        else puntos += 0;
+    }
+
+    evaluar(item.lcp_ms, 2500, 4000);
+    evaluar(item.fcp_ms, 1800, 3000);
+    evaluar(item.cls, 0.1, 0.25);
+    evaluar(item.tti_ms, 3800, 7300);
+
+    if(total === 0) return 0;
+
+    return Math.round(puntos / total);
+}
             </div>
         </div>
         <div class="grid grid-cols-2 gap-4">
