@@ -6,7 +6,7 @@
     <title>QAVision — Interaction Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">\
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --green: #10b981;
@@ -24,6 +24,7 @@
             background: #000;
             color: var(--text);
             overflow-x: hidden;
+            height: 100vh;
         }
 
         /* Capa de grano de fondo idéntica a mass_execution.html */
@@ -33,46 +34,25 @@
             inset: 0;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.015'/%3E%3C/svg%3E");
             pointer-events: none;
-            z-index: 50;
+            z-index: 40;
         }
 
         .font-title { font-family: 'Syne', sans-serif; }
         .bg-tech { background-color: var(--surface-2); border: 1px solid var(--border); }
         
-        /* Custom Scrollbar minimalista */
+        /* Custom Scrollbar unificado para todo el sitio web */
         ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: #000; }
         ::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 9px; }
-        ::-webkit-scrollbar-thumb:hover { background: #222; }
+        ::-webkit-scrollbar-thumb:hover { background: #262626; }
 
         .status-ok { color: var(--green); background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.15); }
         .status-error { color: #ef4444; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); }
-
-        /* Tooltip motivo de obstrucción refinado */
-        .motivo-tooltip {
-            display: none;
-            position: absolute;
-            bottom: calc(100% + 6px);
-            left: 50%;
-            transform: translateX(-50%);
-            background: #0d0d0d;
-            border: 1px solid #1a1a1a;
-            color: #a0a0a0;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 10px;
-            width: 220px;
-            z-index: 100;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            font-family: 'DM Sans', sans-serif;
-            text-align: left;
-        }
-        .relative:hover .motivo-tooltip { display: block; }
     </style>
 </head>
-<body class="min-h-screen relative pb-24">
+<body class="flex flex-col relative pb-6">
 
-    <nav class="w-full bg-[#030303]/80 backdrop-blur-md border-b border-[#1a1a1a] sticky top-0 z-40 px-6 py-4">
+    <nav class="w-full bg-[#030303]/80 backdrop-blur-md border-b border-[#1a1a1a] sticky top-0 z-30 px-6 py-4 shrink-0">
         <div class="max-w-7xl mx-auto flex justify-between items-center">
             <div class="flex items-center gap-6">
                 <a href="dashboard.html" class="font-title text-sm font-black tracking-widest text-white hover:text-zinc-400 transition-colors">QAVISION</a>
@@ -85,16 +65,15 @@
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-6 mt-10">
-        <div class="mb-8">
+    <main class="max-w-7xl w-full mx-auto px-6 mt-8 flex-1 flex flex-col min-h-0">
+        <div class="mb-6 shrink-0">
             <h1 class="font-title text-xl font-black text-white uppercase tracking-tight">Análisis de Interactividad</h1>
             <p id="sub-header" class="text-xs font-mono text-zinc-500 mt-1">Cargando último reporte disponible desde Supabase...</p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start flex-1 min-h-0 mb-4">
             
-            <div class="space-y-6 lg:col-span-1">
-                
+            <div class="space-y-6 lg:col-span-1 shrink-0">
                 <div class="bg-tech p-5 rounded-xl shadow-xl">
                     <span class="font-mono text-[9px] font-black text-zinc-500 tracking-widest block mb-3 uppercase">Nueva Auditoría</span>
                     <div class="space-y-3">
@@ -109,7 +88,6 @@
 
                 <div class="bg-tech p-5 rounded-xl shadow-xl space-y-4">
                     <span class="font-mono text-[9px] font-black text-zinc-500 tracking-widest block uppercase">Métricas Base</span>
-                    
                     <div class="flex items-center justify-between border-b border-zinc-900 pb-3">
                         <span class="text-xs font-mono text-zinc-400">Total Enlaces</span>
                         <span id="stat-total" class="font-mono font-bold text-sm text-white">-</span>
@@ -123,22 +101,21 @@
                         <span id="stat-obstruidos" class="font-mono font-bold text-sm text-red-500">-</span>
                     </div>
                 </div>
-
             </div>
 
-            <div class="lg:col-span-3">
-                <div class="bg-tech rounded-xl shadow-xl overflow-hidden">
-                    <div class="p-4 border-b border-[#1a1a1a] bg-[#0b0b0b] flex justify-between items-center">
+            <div class="lg:col-span-3 flex flex-col h-full min-h-0">
+                <div class="bg-tech rounded-xl shadow-xl overflow-hidden flex flex-col h-full min-h-0">
+                    <div class="p-4 border-b border-[#1a1a1a] bg-[#0b0b0b] flex justify-between items-center shrink-0">
                         <span class="font-mono text-[9px] font-black text-zinc-500 tracking-widest uppercase">Resultados del Escaneo</span>
                         <span id="badge" class="font-mono text-[9px] text-zinc-400 border border-zinc-800 bg-zinc-900/30 px-2 py-0.5 rounded uppercase" style="display:none;">Batch Match</span>
                     </div>
 
-                    <div class="overflow-x-auto w-full">
+                    <div class="overflow-y-auto flex-1 min-h-0 w-full chunk-scroll">
                         <table class="w-full text-left border-collapse" id="tabla-links">
-                            <thead>
-                                <tr class="border-b border-[#1a1a1a] bg-[#090909]">
+                            <thead class="sticky top-0 z-10 bg-[#090909] border-b border-[#1a1a1a]">
+                                <tr>
                                     <th class="p-4 font-mono text-[9px] font-black tracking-wider text-zinc-500 uppercase w-1/3">Elemento DOM (Texto / Anchor)</th>
-                                    <th class="p-4 font-mono text-[9px] font-black tracking-wider text-zinc-500 uppercase text-center w-16">Tipo</th>
+                                    <th class="p-4 font-mono text-[9px] font-black tracking-wider text-zinc-500 uppercase text-center w-20">Tipo</th>
                                     <th class="p-4 font-mono text-[9px] font-black tracking-wider text-zinc-500 uppercase w-1/2">Destino Relativo / Absoluto</th>
                                     <th class="p-4 font-mono text-[9px] font-black tracking-wider text-zinc-500 uppercase text-center w-24">Estado</th>
                                 </tr>
@@ -158,12 +135,41 @@
         </div>
     </main>
 
+    <div id="detail-drawer" class="fixed right-0 top-0 h-full w-[460px] bg-[#070707]/95 backdrop-blur-xl border-l border-[#1a1a1a] p-8 translate-x-full transition-transform duration-300 ease-in-out z-50 flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.8)]">
+        <div class="flex justify-between items-center mb-6 shrink-0">
+            <span id="drawer-module-badge" class="px-2.5 py-1 rounded bg-pink-500/10 border border-pink-500/20 text-pink-400 font-mono text-[9px] font-bold uppercase tracking-widest">
+                INSPECTOR // COMPONENTE
+            </span>
+            <button onclick="cerrarDrawer()" class="font-mono text-[10px] text-zinc-500 hover:text-white transition-colors tracking-wider uppercase bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
+                ✕ Close
+            </button>
+        </div>
+        
+        <div class="border-b border-zinc-900 pb-4 mb-6 shrink-0">
+            <div class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">Target Element</div>
+            <h2 id="drawer-element-text" class="text-sm font-bold text-white font-mono break-words"></h2>
+        </div>
+
+        <div id="drawer-dynamic-content" class="flex-1 overflow-y-auto space-y-5 pr-1">
+            </div>
+    </div>
+
 <script>
     const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
     const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
     const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = null;
+    let memoriaReporte = []; // Guarda los elementos para la inspección lateral
+
+    // DICCIONARIO DE COLORES EXCLUSIVOS PARA DIFERENCIAR LOS COMPONENTES
+    const COMPONENT_COLORS = {
+        'a': { text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
+        'button': { text: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
+        'onclick': { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+        'role_button': { text: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
+        'input_submit': { text: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' }
+    };
 
     async function init() {
         const { data: { session }, error } = await sbClient.auth.getSession();
@@ -175,7 +181,6 @@
         currentUser = session.user;
         document.getElementById('user-email').innerText = currentUser.email;
 
-        // Comprobación de disparo automático condicional
         const urlParam = sessionStorage.getItem('qavision_last_prod');
         const triggerParam = sessionStorage.getItem('qavision_trigger_test');
 
@@ -199,7 +204,7 @@
             .limit(1);
 
         if (error) {
-            console.error("Error cargando auditoría anterior:", error);
+            console.error("Error cargando auditoría:", error);
             return;
         }
 
@@ -213,7 +218,8 @@
                 badge.style.display = 'inline-block';
             }
 
-            renderizarTabla(registro.reporte || []);
+            memoriaReporte = registro.reporte || [];
+            renderizarTabla(memoriaReporte);
         } else {
             document.getElementById('sub-header').innerText = "No se registran auditorías previas para este entorno.";
             const tbody = document.querySelector('#tabla-links tbody');
@@ -221,12 +227,126 @@
         }
     }
 
+    function renderizarTabla(reporte) {
+        const tabla = document.querySelector('#tabla-links tbody');
+        tabla.innerHTML = '';
+        let obs = 0;
+
+        reporte.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-zinc-900/40 transition-all font-mono text-xs cursor-pointer group";
+            tr.setAttribute('onclick', `verDetalleLink(${index})`);
+
+            let textoHTML = `<span class="text-zinc-300 group-hover:text-white transition-colors">${item.texto || '[Sin texto interno]'}</span>`;
+            if (item.inner_html && item.inner_html.includes('<img')) {
+                textoHTML = `<span class="text-zinc-400 italic flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> Imagen Contenida</span>`;
+            }
+
+            // Asignación de estilos dinámicos por tipo de componente
+            const tipoNormalizado = item.tipo || 'tag';
+            const estiloConfig = COMPONENT_COLORS[tipoNormalizado] || { text: 'text-zinc-400', bg: 'bg-zinc-900', border: 'border-zinc-800' };
+
+            let interaccionHTML = '';
+            if (item.obstruido) {
+                obs++;
+                interaccionHTML = `<span class="text-[9px] font-black px-2.5 py-1 rounded border status-error uppercase">OBSTRUIDO</span>`;
+            } else {
+                interaccionHTML = `<span class="text-[9px] font-black px-2.5 py-1 rounded border status-ok uppercase">LIBRE</span>`;
+            }
+
+            tr.innerHTML = `
+                <td class="p-4 truncate max-w-[240px] font-medium">${textoHTML}</td>
+                <td class="p-4 text-center">
+                    <span class="text-[9px] font-black px-2 py-0.5 rounded border ${estiloConfig.bg} ${estiloConfig.border} ${estiloConfig.text} uppercase tracking-wider">
+                        ${tipoNormalizado}
+                    </span>
+                </td>
+                <td class="p-4 text-zinc-400 group-hover:text-zinc-300 font-mono truncate max-w-[300px]">
+                    ${item.href || item.url || '-'}
+                </td>
+                <td class="p-4 text-center">${interaccionHTML}</td>
+            `;
+            tabla.appendChild(tr);
+        });
+
+        document.getElementById('stat-total').innerText = reporte.length;
+        document.getElementById('stat-obstruidos').innerText = obs;
+        document.getElementById('stat-ok').innerText = reporte.length - obs;
+    }
+
+    // LÓGICA DEL DRAWER LATERAL DE INSPECCIÓN AVANZADA
+    function verDetalleLink(index) {
+        const item = memoriaReporte[index];
+        if (!item) return;
+
+        document.getElementById('drawer-element-text').innerText = item.texto || '[Elemento sin etiqueta de texto]';
+        
+        const tipoNormalizado = item.tipo || 'tag';
+        const estiloConfig = COMPONENT_COLORS[tipoNormalizado] || { text: 'text-zinc-400', bg: 'bg-zinc-900', border: 'border-zinc-800' };
+        
+        const box = document.getElementById('drawer-dynamic-content');
+        
+        let htmlContent = `
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">
+                    <span class="block text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Component Type</span>
+                    <span class="text-xs font-bold ${estiloConfig.text} bg-black/40 px-2 py-0.5 rounded border ${estiloConfig.border} uppercase font-mono tracking-wider inline-block">
+                        ${tipoNormalizado}
+                    </span>
+                </div>
+                <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">
+                    <span class="block text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Status Code</span>
+                    <span class="text-xs font-bold font-mono ${item.obstruido ? 'text-red-400' : 'text-emerald-400'}">
+                        ${item.obstruido ? 'POINTER_BLOCKED' : 'INTERACTIVE_OK'}
+                    </span>
+                </div>
+            </div>
+
+            <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">
+                <span class="block text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Destination URL / Anchor</span>
+                <p class="text-xs font-mono text-zinc-300 break-all bg-black/30 p-2.5 rounded border border-zinc-900 select-all">${item.href || item.url || 'N/A'}</p>
+            </div>
+        `;
+
+        if (item.obstruido) {
+            htmlContent += `
+                <div class="bg-red-950/10 border border-red-500/20 p-4 rounded-xl space-y-2">
+                    <span class="text-[9px] font-mono text-red-400 font-bold uppercase tracking-wider block">⚠️ Análisis de Interferencia Visual</span>
+                    <p class="text-xs text-gray-300 leading-relaxed font-mono bg-black/40 p-3 rounded border border-red-500/10">
+                        ${item.motivo || 'El puntero no pudo hacer foco en el elemento debido a un solapamiento de capas o un error en las coordenadas del árbol de accesibilidad del DOM.'}
+                    </p>
+                </div>
+            `;
+        } else {
+            htmlContent += `
+                <div class="bg-emerald-950/10 border border-emerald-500/20 p-4 rounded-xl">
+                    <span class="text-[9px] font-mono text-emerald-400 font-bold uppercase tracking-wider block">✓ Verificación Exitosa</span>
+                    <p class="text-xs text-gray-400 font-mono mt-1">El elemento es completamente accesible para el usuario y responde a eventos físicos nativos.</p>
+                </div>
+            `;
+        }
+
+        // Si contiene HTML interno o selectores complejos, se expone como bloque técnico limpio
+        if (item.inner_html) {
+            htmlContent += `
+                <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">
+                    <span class="block text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Inner HTML Code</span>
+                    <pre class="text-[10px] font-mono text-zinc-400 bg-black/60 p-3 rounded border border-zinc-800/60 overflow-x-auto whitespace-pre-wrap break-all">${item.inner_html.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                </div>
+            `;
+        }
+
+        box.innerHTML = htmlContent;
+        document.getElementById('detail-drawer').classList.remove('translate-x-full');
+    }
+
+    function cerrarDrawer() {
+        document.getElementById('detail-drawer').classList.add('translate-x-full');
+    }
+
     async function dispararAuditoria() {
         const urlInput = document.getElementById('new-test-url').value.trim();
-        if (!urlInput) {
-            alert("La URL de análisis es mandatoria.");
-            return;
-        }
+        if (!urlInput) { alert("La URL de análisis es mandatoria."); return; }
 
         const btn = document.getElementById('btn-launch-scan');
         btn.disabled = true;
@@ -240,9 +360,8 @@
                 body: JSON.stringify({ url: urlInput, user_id: currentUser.id })
             });
 
-            if (!respuesta.ok) throw new Error("Caída en el hilo de Hugging Face Engine");
+            if (!respuesta.ok) throw new Error("Caída en el backend engine");
 
-            // Bucle reactivo de espera para la persistencia en base de datos
             let intentos = 0;
             const maxIntentos = 15;
             
@@ -268,70 +387,16 @@
                     btn.disabled = false;
                     btn.innerText = "Escanear Enlaces";
                     btn.className = "w-full bg-white hover:bg-zinc-200 text-black font-black py-3 rounded-lg text-[10px] tracking-wider uppercase transition-all shadow-md";
-                    alert("El escaneo tardó más de lo esperado en indexarse. Recargue en unos segundos.");
+                    alert("Indexación completada tardíamente. Por favor, refresque el navegador.");
                 }
             }, 2500);
 
         } catch (err) {
             console.error(err);
-            alert("Excepción crítica en el Engine de análisis asíncrono.");
             btn.disabled = false;
             btn.innerText = "Escanear Enlaces";
             btn.className = "w-full bg-white hover:bg-zinc-200 text-black font-black py-3 rounded-lg text-[10px] tracking-wider uppercase transition-all shadow-md";
         }
-    }
-
-    function renderizarTabla(reporte) {
-        const tabla = document.querySelector('#tabla-links tbody');
-        tabla.innerHTML = '';
-
-        let obs = 0;
-
-        reporte.forEach(item => {
-            const tr = document.createElement('tr');
-            tr.className = "hover:bg-zinc-900/20 transition-all font-mono text-xs";
-
-            let textoHTML = `<span class="text-zinc-400 font-bold">${item.texto || '[Sin texto interno]'}</span>`;
-            if (item.inner_html && item.inner_html.includes('<img')) {
-                textoHTML = `<span class="text-zinc-500 italic flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> Tag de Imagen Contenido</span>`;
-            }
-
-            let interaccionHTML = '';
-            if (item.obstruido) {
-                obs++;
-                const motivo = item.motivo || "Elemento cubierto por capa superior o inalcanzable por puntero.";
-                interaccionHTML = `
-                    <div class="relative inline-block cursor-help">
-                        <span class="text-[10px] font-black px-2.5 py-1 rounded-md tracking-wider status-error uppercase">
-                            OBSTRUIDO ⓘ
-                        </span>
-                        <div class="motivo-tooltip">
-                            <span class="text-red-400 font-bold block mb-1 uppercase tracking-tight">Motivo de Falla:</span>
-                            ${motivo}
-                        </div>
-                    </div>`;
-            } else {
-                interaccionHTML = `<span class="text-[10px] font-black px-2.5 py-1 rounded-md tracking-wider status-ok uppercase">LIBRE</span>`;
-            }
-
-            tr.innerHTML = `
-                <td class="p-4 truncate max-w-[240px]">${textoHTML}</td>
-                <td class="p-4 text-center">
-                    <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-500 uppercase tracking-tighter">
-                        ${item.tipo || 'TAG'}
-                    </span>
-                </td>
-                <td class="p-4 text-zinc-300 truncate max-w-[320px]">
-                    ${item.href || item.url || '-'}
-                </td>
-                <td class="p-4 text-center">${interaccionHTML}</td>
-            `;
-            tabla.appendChild(tr);
-        });
-
-        document.getElementById('stat-total').innerText = reporte.length;
-        document.getElementById('stat-obstruidos').innerText = obs;
-        document.getElementById('stat-ok').innerText = reporte.length - obs;
     }
 
     window.addEventListener('DOMContentLoaded', init);
