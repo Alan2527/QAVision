@@ -3,58 +3,219 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QAVision - SEO & Accesibilidad</title>
+    <title>QAVision — SEO Audit</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; margin: 0; }
-        .bg-tech { background-color: #050505; border: 1px solid #111827; }
-        .ok    { color: #10b981; }
-        .warn  { color: #f59e0b; }
-        .error { color: #ef4444; }
-        .check-row { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid #111827; }
+        :root {
+            --green: #10b981;
+            --surface: #070707;
+            --surface-2: #0d0d0d;
+            --border: #1a1a1a;
+            --text: #e8e8e8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #000;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.4;
+        }
+
+        .hero-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 20%, transparent 100%);
+            z-index: 0;
+        }
+
+        .font-title { font-family: 'Syne', sans-serif; }
+        .font-mono  { font-family: 'DM Mono', monospace; }
+
+        .bg-tech {
+            background-color: var(--surface-2);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #505050;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            font-family: 'DM Mono', monospace;
+            border: 1px solid transparent;
+        }
+        .nav-item:hover  { color: #10b981; background: rgba(16,185,129,0.07); }
+        .nav-item.active { color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.15); }
+
+        .main-scroll { overflow-y: auto; height: 100vh; }
+        .main-scroll::-webkit-scrollbar { width: 5px; }
+        .main-scroll::-webkit-scrollbar-track { background: transparent; }
+        .main-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
+        .main-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+        .check-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 14px 0;
+            border-bottom: 1px solid #111;
+        }
         .check-row:last-child { border-bottom: none; }
-        .badge { font-size: 9px; font-weight: 900; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 99px; text-transform: uppercase; white-space: nowrap; }
-        .badge-ok    { color: #10b981; background: rgba(16,185,129,0.1); }
-        .badge-warn  { color: #f59e0b; background: rgba(245,158,11,0.1); }
-        .badge-error { color: #ef4444; background: rgba(239,68,68,0.1); }
-        .section-title { font-size: 9px; font-weight: 900; letter-spacing: 0.3em; text-transform: uppercase; color: #4b5563; margin-bottom: 4px; margin-top: 32px; }
+
+        .badge {
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            padding: 3px 10px;
+            border-radius: 99px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+        .badge-ok    { color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.2); }
+        .badge-warn  { color: #f59e0b; background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2); }
+        .badge-error { color: #ef4444; background: rgba(239,68,68,0.1);  border-color: rgba(239,68,68,0.2); }
+
+        .section-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: #303030;
+            margin-top: 28px;
+            margin-bottom: 2px;
+        }
     </style>
 </head>
-<body class="p-8">
+<body class="min-h-screen flex">
+    <div class="hero-grid"></div>
 
-    <header class="max-w-4xl mx-auto flex justify-between items-center mb-12">
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-[#10b981] rounded-xl flex items-center justify-center text-black font-black italic text-xl">Q</div>
-            <h1 class="text-2xl font-black tracking-tighter italic text-[#10b981]">QAVision</h1>
+    <!-- SIDEBAR NAV -->
+    <aside class="w-20 md:w-64 bg-black border-r border-[#1a1a1a] p-6 h-screen sticky top-0 flex flex-col z-10 shrink-0">
+        <div class="mb-8 hidden md:block">
+            <div class="flex items-center gap-2 mb-1">
+                <h1 class="font-title text-2xl font-black text-[#10b981] tracking-tighter italic">QAVision</h1>
+            </div>
+            <div class="h-px bg-gradient-to-r from-[#10b981]/50 to-transparent mt-1"></div>
+            <p class="font-mono text-[9px] text-[#303030] mt-2 uppercase tracking-widest">Console v2.0</p>
         </div>
-        <a href="index.html" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition">← Volver al Panel</a>
-    </header>
-
-    <main class="max-w-4xl mx-auto">
-
-        <div id="url-auditada" class="mb-8 text-center text-gray-600 text-xs font-mono"></div>
-
-        <!-- Resumen -->
-        <div class="grid grid-cols-3 gap-4 mb-10 text-center">
-            <div class="bg-tech p-5 rounded-2xl">
-                <p class="text-[9px] font-black text-gray-500 uppercase mb-1">Checks OK</p>
-                <h2 id="stat-ok" class="text-4xl font-black tracking-tighter ok">-</h2>
-            </div>
-            <div class="bg-tech p-5 rounded-2xl">
-                <p class="text-[9px] font-black text-gray-500 uppercase mb-1">Advertencias</p>
-                <h2 id="stat-warn" class="text-4xl font-black tracking-tighter warn">-</h2>
-            </div>
-            <div class="bg-tech p-5 rounded-2xl">
-                <p class="text-[9px] font-black text-gray-500 uppercase mb-1">Errores</p>
-                <h2 id="stat-error" class="text-4xl font-black tracking-tighter error">-</h2>
-            </div>
+        <div class="mb-8 md:hidden flex justify-center">
+            <span class="font-title text-lg font-black text-[#10b981] italic">Q</span>
         </div>
 
-        <!-- Checklist -->
-        <div class="bg-tech rounded-[2rem] p-8" id="checklist"></div>
+        <nav class="flex-1 space-y-1">
+            <a href="dashboard.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
+                <span class="hidden md:inline">Panel Principal</span>
+            </a>
+            <a href="visual_regression.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <span class="hidden md:inline">Visual Regression</span>
+            </a>
+            <a href="seo.html" class="nav-item active">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <span class="hidden md:inline">SEO Audit</span>
+            </a>
+            <a href="performance.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span class="hidden md:inline">Performance CWV</span>
+            </a>
+            <a href="interaction_audit.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                <span class="hidden md:inline">Link Scanner</span>
+            </a>
+            <a href="mass_execution.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                <span class="hidden md:inline">Mass Execution</span>
+            </a>
+        </nav>
 
+        <div class="mt-6 pt-4 border-t border-[#1a1a1a]">
+            <a href="dashboard.html" class="hidden md:flex items-center gap-2 font-mono text-[10px] font-bold text-gray-500 hover:text-[#10b981] transition-colors">
+                <span>&#9666;</span> Volver al Panel
+            </a>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="flex-1 main-scroll relative z-10">
+        <div class="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
+
+            <!-- PAGE HEADER -->
+            <header>
+                <span class="font-mono text-[10px] text-[#10b981] uppercase tracking-[0.3em] font-bold">QAVision // SEO Engine</span>
+                <div class="flex items-start justify-between mt-2 flex-wrap gap-4">
+                    <div>
+                        <h2 class="font-title text-4xl font-extrabold tracking-tight">SEO <span class="text-gray-600">Audit</span></h2>
+                        <p id="url-auditada" class="font-mono text-xs text-[#505050] mt-2 truncate max-w-lg"></p>
+                    </div>
+                    <span id="status-badge" class="font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest border border-[#1a1a1a] text-[#505050] self-start">Cargando...</span>
+                </div>
+            </header>
+
+            <!-- KPI CARDS -->
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-tech p-5 rounded-2xl text-center">
+                    <p class="font-mono text-[9px] font-bold text-[#505050] uppercase tracking-widest mb-2">Checks OK</p>
+                    <h2 id="stat-ok"    class="font-title text-4xl font-black text-[#10b981]">-</h2>
+                </div>
+                <div class="bg-tech p-5 rounded-2xl text-center">
+                    <p class="font-mono text-[9px] font-bold text-[#505050] uppercase tracking-widest mb-2">Advertencias</p>
+                    <h2 id="stat-warn"  class="font-title text-4xl font-black text-yellow-400">-</h2>
+                </div>
+                <div class="bg-tech p-5 rounded-2xl text-center">
+                    <p class="font-mono text-[9px] font-bold text-[#505050] uppercase tracking-widest mb-2">Errores</p>
+                    <h2 id="stat-error" class="font-title text-4xl font-black text-red-400">-</h2>
+                </div>
+            </div>
+
+            <!-- CHECKLIST -->
+            <div class="bg-tech rounded-2xl overflow-hidden">
+                <div class="p-5 border-b border-[#1a1a1a] flex justify-between items-center">
+                    <div>
+                        <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Análisis Detallado</span>
+                        <h3 class="font-title text-base font-bold text-white tracking-tight">Checklist SEO</h3>
+                    </div>
+                    <span class="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
+                </div>
+                <div class="p-6 md:p-8" id="checklist">
+                    <p class="font-mono text-xs text-[#505050] text-center py-10">Ejecutando auditoría...</p>
+                </div>
+            </div>
+
+        </div>
     </main>
 
 <script>
@@ -71,15 +232,15 @@
     function row(titulo, detalle, tipo) {
         return `<div class="check-row">
             <div style="padding-top:2px">${badge(tipo)}</div>
-            <div>
-                <p class="text-sm font-bold">${titulo}</p>
-                <p class="text-xs text-gray-500 mt-1 font-mono">${detalle}</p>
+            <div class="min-w-0">
+                <p class="text-sm font-bold text-white">${titulo}</p>
+                <p class="font-mono text-xs text-[#505050] mt-1 break-words">${detalle}</p>
             </div>
         </div>`;
     }
 
     function seccion(titulo) {
-        return `<p class="section-title">${titulo}</p>`;
+        return `<p class="section-label">// ${titulo}</p>`;
     }
 
     async function init() {
@@ -123,6 +284,7 @@
 
         if (error || !data.length) {
             document.getElementById('url-auditada').textContent = 'No hay auditorías registradas.';
+            document.getElementById('checklist').innerHTML = '<div class="py-10 text-center border border-dashed border-[#1a1a1a] rounded-xl font-mono text-[10px] text-[#505050]">SEO_EMPTY — Ejecutá una auditoría desde el Panel Principal.</div>';
             return;
         }
 
@@ -238,13 +400,26 @@
         }
 
         document.getElementById('checklist').innerHTML = html;
-        document.getElementById('stat-ok').textContent = oks;
-        document.getElementById('stat-warn').textContent = warns;
+        document.getElementById('stat-ok').textContent    = oks;
+        document.getElementById('stat-warn').textContent  = warns;
         document.getElementById('stat-error').textContent = errors;
+
+        const total = oks + warns + errors;
+        const badge = document.getElementById('status-badge');
+        if (errors > 0) {
+            badge.textContent  = `${errors} Error${errors > 1 ? 'es' : ''} Crítico${errors > 1 ? 's' : ''}`;
+            badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 self-start";
+        } else if (warns > 0) {
+            badge.textContent  = `${warns} Advertencia${warns > 1 ? 's' : ''}`;
+            badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 self-start";
+        } else {
+            badge.textContent  = "Todo OK ✓";
+            badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 self-start";
+        }
     }
 
     init();
 </script>
-    
+
 </body>
 </html>
