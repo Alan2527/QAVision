@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QAVision — Interaction Dashboard</title>
+    <title>QAVision — Link Scanner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -14,7 +14,6 @@
             --surface-2: #0d0d0d;
             --border: #1a1a1a;
             --text: #e8e8e8;
-            --muted: #505050;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -23,404 +22,344 @@
             font-family: 'DM Sans', sans-serif;
             background: #000;
             color: var(--text);
-            overflow: hidden;
-            height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* Capa de grano de fondo idéntica a toda la Suite */
         body::before {
             content: '';
             position: fixed;
             inset: 0;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.015'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
             pointer-events: none;
-            z-index: 40;
+            z-index: 50;
+            opacity: 0.4;
+        }
+
+        .hero-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 20%, transparent 100%);
+            z-index: 0;
         }
 
         .font-title { font-family: 'Syne', sans-serif; }
-        .bg-tech { background-color: var(--surface-2); border: 1px solid var(--border); }
-        
-        /* Custom Scrollbar unificado de la plataforma */
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: #000; }
-        ::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 9px; }
-        ::-webkit-scrollbar-thumb:hover { background: #262626; }
+        .font-mono  { font-family: 'DM Mono', monospace; }
 
-        .status-ok { color: var(--green); background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.15); }
-        .status-error { color: #ef4444; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.15); }
+        .bg-tech {
+            background-color: var(--surface-2);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #505050;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            font-family: 'DM Mono', monospace;
+            border: 1px solid transparent;
+        }
+        .nav-item:hover  { color: #10b981; background: rgba(16,185,129,0.07); }
+        .nav-item.active { color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.15); }
+
+        .main-scroll { overflow-y: auto; height: 100vh; }
+        .main-scroll::-webkit-scrollbar { width: 5px; }
+        .main-scroll::-webkit-scrollbar-track { background: transparent; }
+        .main-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
+        .main-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+        /* Tooltip */
+        .motivo-tooltip {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0d0d0d;
+            border: 1px solid #1a1a1a;
+            color: #e8e8e8;
+            font-size: 10px;
+            font-family: 'DM Mono', monospace;
+            padding: 8px 12px;
+            border-radius: 10px;
+            white-space: normal;
+            text-align: left;
+            z-index: 60;
+            max-width: 280px;
+            min-width: 180px;
+            pointer-events: none;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+        }
+        .motivo-wrap { position: relative; display: inline-block; }
+        .motivo-wrap:hover .motivo-tooltip { display: block; }
+
+        /* Table row hover */
+        .link-row { transition: background 0.12s ease; }
+        .link-row:hover { background: rgba(255,255,255,0.02); }
     </style>
 </head>
-<body class="flex h-screen w-screen overflow-hidden select-none">
+<body class="min-h-screen flex">
+    <div class="hero-grid"></div>
 
-    <aside class="w-64 bg-[#030303] border-r border-[#1a1a1a] p-6 flex flex-col justify-between h-full shrink-0 z-30 relative">
-        <div class="space-y-8">
-            <div class="flex items-center gap-3">
-                <a href="dashboard.html" class="font-title text-sm font-black tracking-widest text-white hover:text-zinc-400 transition-colors">QAVISION</a>
-                <span class="text-[8px] font-mono tracking-widest text-zinc-600 bg-zinc-900/40 px-1.5 py-0.5 rounded border border-zinc-800/50 uppercase">v1.2</span>
+    <!-- SIDEBAR NAV -->
+    <aside class="w-20 md:w-64 bg-black border-r border-[#1a1a1a] p-6 h-screen sticky top-0 flex flex-col z-10 shrink-0">
+        <div class="mb-8 hidden md:block">
+            <div class="flex items-center gap-2 mb-1">
+                <h1 class="font-title text-2xl font-black text-[#10b981] tracking-tighter italic">QAVision</h1>
             </div>
-
-            <nav class="space-y-1.5">
-                <span class="font-mono text-[8px] font-black text-zinc-600 tracking-widest block mb-2 uppercase">Módulos de Auditoría</span>
-                <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-[11px] text-zinc-400 hover:text-white hover:bg-zinc-900/40 transition">
-                    <span class="w-1.5 h-1.5 rounded-full bg-zinc-700"></span> Dashboard Central
-                </a>
-                <a href="visual_regression.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-[11px] text-zinc-400 hover:text-white hover:bg-zinc-900/40 transition">
-                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Regresión Visual VRT
-                </a>
-                <a href="seo.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-[11px] text-zinc-400 hover:text-white hover:bg-zinc-900/40 transition">
-                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Optimización SEO
-                </a>
-                <a href="performance.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-[11px] text-zinc-400 hover:text-white hover:bg-zinc-900/40 transition">
-                    <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span> Core Web Vitals
-                </a>
-                <a href="interaction_audit.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-[11px] text-white bg-zinc-900 border border-zinc-800/60 font-bold transition">
-                    <span class="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse"></span> Interactividad Enlaces
-                </a>
-                <a href="mass_execution.html" class="flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-[11px] text-zinc-400 hover:text-white hover:bg-zinc-900/40 transition">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Ejecuciones Masivas
-                </a>
-            </nav>
+            <div class="h-px bg-gradient-to-r from-[#10b981]/50 to-transparent mt-1"></div>
+            <p class="font-mono text-[9px] text-[#303030] mt-2 uppercase tracking-widest">Console v2.0</p>
+        </div>
+        <div class="mb-8 md:hidden flex justify-center">
+            <span class="font-title text-lg font-black text-[#10b981] italic">Q</span>
         </div>
 
-        <div class="border-t border-zinc-900 pt-4 space-y-2">
-            <span class="font-mono text-[8px] text-zinc-600 block uppercase">Consola de Usuario</span>
-            <div id="user-email" class="font-mono text-[10px] text-zinc-400 truncate bg-zinc-900/30 p-2 rounded border border-zinc-900">
-                Identificando...
-            </div>
+        <nav class="flex-1 space-y-1">
+            <a href="dashboard.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
+                <span class="hidden md:inline">Panel Principal</span>
+            </a>
+            <a href="visual_regression.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <span class="hidden md:inline">Visual Regression</span>
+            </a>
+            <a href="seo.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <span class="hidden md:inline">SEO Audit</span>
+            </a>
+            <a href="performance.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span class="hidden md:inline">Performance CWV</span>
+            </a>
+            <a href="interaction_audit.html" class="nav-item active">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                <span class="hidden md:inline">Link Scanner</span>
+            </a>
+            <a href="mass_execution.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                <span class="hidden md:inline">Mass Execution</span>
+            </a>
+        </nav>
+
+        <div class="mt-6 pt-4 border-t border-[#1a1a1a]">
+            <a href="dashboard.html" class="hidden md:flex items-center gap-2 font-mono text-[10px] font-bold text-gray-500 hover:text-[#10b981] transition-colors">
+                <span>&#9666;</span> Volver al Panel
+            </a>
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col h-full min-h-0 bg-black p-8 relative z-10">
-        <div class="mb-6 shrink-0 flex justify-between items-start">
-            <div>
-                <h1 class="font-title text-xl font-black text-white uppercase tracking-tight">Análisis de Interactividad</h1>
-                <p id="sub-header" class="text-xs font-mono text-zinc-500 mt-1">Sincronizando registros con Supabase...</p>
-            </div>
-            <span id="badge" class="font-mono text-[9px] text-zinc-400 border border-zinc-800 bg-zinc-900/30 px-2.5 py-1 rounded uppercase tracking-wider hidden">Batch Match</span>
-        </div>
+    <!-- MAIN -->
+    <main class="flex-1 main-scroll relative z-10">
+        <div class="max-w-7xl mx-auto p-6 md:p-10 space-y-8">
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-0 items-stretch">
-            
-            <div class="space-y-6 lg:col-span-1 flex flex-col justify-start shrink-0">
-                <div class="bg-tech p-5 rounded-xl shadow-xl">
-                    <span class="font-mono text-[9px] font-black text-zinc-500 tracking-widest block mb-3 uppercase">Nueva Auditoría</span>
-                    <div class="space-y-3">
-                        <input type="url" id="new-test-url" placeholder="https://ejemplo.com/pagina" 
-                               class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
-                        <button id="btn-launch-scan" onclick="dispararAuditoria()" 
-                                class="w-full bg-white hover:bg-zinc-200 text-black font-black py-3 rounded-lg text-[10px] tracking-wider uppercase transition-all shadow-md">
-                            Escanear Enlaces
-                        </button>
+            <!-- PAGE HEADER -->
+            <header>
+                <span class="font-mono text-[10px] text-[#10b981] uppercase tracking-[0.3em] font-bold">QAVision // Link Scanner</span>
+                <div class="flex items-start justify-between mt-2 flex-wrap gap-4">
+                    <div>
+                        <h2 class="font-title text-4xl font-extrabold tracking-tight">Interaction <span class="text-gray-600">Audit</span></h2>
+                        <p id="url-auditada" class="font-mono text-xs text-[#505050] mt-2 truncate max-w-xl"></p>
                     </div>
+                    <span id="status-badge" class="font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest border border-[#1a1a1a] text-[#505050] self-start">Cargando...</span>
                 </div>
+            </header>
 
-                <div class="bg-tech p-5 rounded-xl shadow-xl space-y-4">
-                    <span class="font-mono text-[9px] font-black text-zinc-500 tracking-widest block uppercase">Métricas Base</span>
-                    <div class="flex items-center justify-between border-b border-zinc-900/60 pb-3">
-                        <span class="text-xs font-mono text-zinc-400">Total Enlaces</span>
-                        <span id="stat-total" class="font-mono font-bold text-sm text-white">-</span>
-                    </div>
-                    <div class="flex items-center justify-between border-b border-zinc-900/60 pb-3">
-                        <span class="text-xs font-mono text-zinc-400">Libres/Válidos</span>
-                        <span id="stat-ok" class="font-mono font-bold text-sm text-emerald-400">-</span>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-mono text-zinc-400">Obstruidos</span>
-                        <span id="stat-obstruidos" class="font-mono font-bold text-sm text-red-500">-</span>
-                    </div>
+            <!-- KPI CARDS -->
+            <div class="grid grid-cols-3 gap-4">
+                <div class="bg-tech p-5 rounded-2xl text-center">
+                    <p class="font-mono text-[9px] font-bold text-[#505050] uppercase tracking-widest mb-2">Total Elementos</p>
+                    <h2 id="stat-total"      class="font-title text-4xl font-black text-white">-</h2>
+                </div>
+                <div class="bg-tech p-5 rounded-2xl text-center border-red-900/20">
+                    <p class="font-mono text-[9px] font-bold text-red-500/70 uppercase tracking-widest mb-2">Obstruidos</p>
+                    <h2 id="stat-obstruidos" class="font-title text-4xl font-black text-red-400">-</h2>
+                </div>
+                <div class="bg-tech p-5 rounded-2xl text-center border-[#10b981]/10">
+                    <p class="font-mono text-[9px] font-bold text-[#10b981]/70 uppercase tracking-widest mb-2">Saludables</p>
+                    <h2 id="stat-ok"         class="font-title text-4xl font-black text-[#10b981]">-</h2>
                 </div>
             </div>
 
-            <div class="lg:col-span-3 flex flex-col h-full min-h-0">
-                <div class="bg-tech rounded-xl shadow-xl overflow-hidden flex flex-col h-full min-h-0">
-                    
-                    <div class="overflow-y-auto flex-1 min-h-0 w-full chunk-scroll">
-                        <table class="w-full text-left border-collapse" id="tabla-links">
-                            <thead class="sticky top-0 z-10 bg-[#090909] border-b border-[#1a1a1a]">
-                                <tr>
-                                    <th class="p-4 font-mono text-[9px] font-black tracking-wider text-zinc-500 uppercase w-1/3">Elemento DOM (Texto / Anchor)</th>
-                                    <th class="p-4 font-mono text-[9px] font-black tracking-wider text-zinc-500 uppercase text-center w-24">Tipo</th>
-                                    <th class="p-4 font-mono text-[9px] font-black tracking-wider text-zinc-500 uppercase w-1/2">Destino Relativo / Absoluto</th>
-                                    <th class="p-4 font-mono text-[9px] font-black tracking-wider text-zinc-500 uppercase text-center w-24">Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-zinc-900/40">
-                                <tr>
-                                    <td colspan="4" class="p-8 text-center text-[#505050] font-mono text-xs">
-                                        Sincronizando registros con Supabase Core Engine...
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+            <!-- TABLE -->
+            <div class="bg-tech rounded-2xl overflow-hidden">
+                <div class="p-5 border-b border-[#1a1a1a] flex justify-between items-center">
+                    <div>
+                        <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Elementos Interactivos</span>
+                        <h3 class="font-title text-base font-bold text-white tracking-tight">Link & Button Report</h3>
                     </div>
+                    <span class="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
+                </div>
+
+                <div class="overflow-x-auto custom-scroll">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="bg-black/40 border-b border-[#1a1a1a]">
+                                <th class="p-4 font-mono text-[10px] font-bold text-[#505050] uppercase tracking-widest">Texto / Etiqueta</th>
+                                <th class="p-4 font-mono text-[10px] font-bold text-[#505050] uppercase tracking-widest text-center">Tag</th>
+                                <th class="p-4 font-mono text-[10px] font-bold text-[#505050] uppercase tracking-widest">URL / Destino</th>
+                                <th class="p-4 font-mono text-[10px] font-bold text-[#505050] uppercase tracking-widest text-center">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lista-elementos" class="divide-y divide-[#111]">
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="empty-state" class="hidden py-16 text-center">
+                    <p class="font-mono text-[10px] text-[#505050]">LINKS_EMPTY — Ejecutá una auditoría desde el Panel Principal.</p>
                 </div>
             </div>
 
         </div>
     </main>
 
-    <div id="detail-drawer" class="fixed right-0 top-0 h-full w-[460px] bg-[#070707]/95 backdrop-blur-xl border-l border-[#1a1a1a] p-8 translate-x-full transition-transform duration-300 ease-in-out z-50 flex flex-col shadow-[0_0_50px_rgba(0,0,0,0.8)]">
-        <div class="flex justify-between items-center mb-6 shrink-0">
-            <span id="drawer-module-badge" class="px-2.5 py-1 rounded bg-pink-500/10 border border-pink-500/20 text-pink-400 font-mono text-[9px] font-bold uppercase tracking-widest">
-                INSPECTOR // COMPONENTE
-            </span>
-            <button onclick="cerrarDrawer()" class="font-mono text-[10px] text-zinc-500 hover:text-white transition-colors tracking-wider uppercase bg-zinc-900 px-3 py-1.5 rounded-lg border border-zinc-800">
-                ✕ Close
-            </button>
-        </div>
-        
-        <div class="border-b border-zinc-900 pb-4 mb-6 shrink-0">
-            <div class="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-1">Target Element</div>
-            <h2 id="drawer-element-text" class="text-sm font-bold text-white font-mono break-words"></h2>
-        </div>
-
-        <div id="drawer-dynamic-content" class="flex-1 overflow-y-auto space-y-5 pr-1">
-            </div>
-    </div>
-
 <script>
-    const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
-    const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-    let currentUser = null;
-    let memoriaReporte = [];
-
-    // MAPEO DE COLORES DE IDENTIDAD EXCLUSIVOS PARA CADA TIPO DE COMPONENTE SOLICITADO
-    const COMPONENT_COLORS = {
-        'a': { text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-        'button': { text: 'text-purple-400', bg: 'bg-purple-500/10', border: 'border-purple-500/20' },
-        'onclick': { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-        'role_button': { text: 'text-pink-400', bg: 'bg-pink-500/10', border: 'border-pink-500/20' },
-        'input_submit': { text: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' }
-    };
+    const SB_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+    const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+    const qaClient = supabase.createClient(SB_URL, SB_KEY);
 
     async function init() {
-        const { data: { session }, error } = await sbClient.auth.getSession();
-        if (error || !session) {
-            window.location.replace('login.html');
-            return;
-        }
+        const { data: { user } } = await qaClient.auth.getUser();
+        if (!user) { window.location.href = 'login.html'; return; }
 
-        currentUser = session.user;
-        document.getElementById('user-email').innerText = currentUser.email;
+        const shouldTrigger = sessionStorage.getItem('qavision_trigger_test') === 'true';
 
-        const urlParam = sessionStorage.getItem('qavision_last_prod');
-        const triggerParam = sessionStorage.getItem('qavision_trigger_test');
+        if (shouldTrigger) {
+            document.getElementById('url-auditada').textContent = '⏳ Ejecutando análisis de links...';
+            const url = sessionStorage.getItem('qavision_last_prod');
 
-        if (triggerParam === 'true' && urlParam) {
-            document.getElementById('new-test-url').value = urlParam;
+            sessionStorage.removeItem('qavision_last_prod');
+            sessionStorage.removeItem('qavision_last_stage');
             sessionStorage.removeItem('qavision_trigger_test');
-            dispararAuditoria();
-        } else {
-            await cargarUltimaAuditoria();
+            sessionStorage.removeItem('qavision_user_id');
+
+            try {
+                const response = await fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, user_id: user.id })
+                });
+                if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            } catch (error) {
+                document.getElementById('url-auditada').textContent = `❌ Error: ${error.message}`;
+            }
         }
+
+        await cargarReporte(user.id);
     }
 
-    async function cargarUltimaAuditoria() {
-        if (!currentUser) return;
-
-        const { data, error } = await sbClient
+    async function cargarReporte(userId) {
+        const { data, error } = await qaClient
             .from('auditoria_links')
             .select('*')
-            .eq('user_id', currentUser.id)
+            .eq('user_id', userId)
             .order('created_at', { ascending: false })
             .limit(1);
 
-        if (error) {
-            console.error(error);
+        if (error || !data || !data.length) {
+            document.getElementById('empty-state').classList.remove('hidden');
             return;
         }
 
-        if (data && data.length > 0) {
-            const registro = data[0];
-            document.getElementById('sub-header').innerText = `Último análisis: ${registro.url_auditada} (${new Date(registro.created_at).toLocaleString()})`;
-            
-            if (registro.batch_id) {
-                const badge = document.getElementById('badge');
-                badge.innerText = `LOTE: ${registro.batch_id.substring(0, 8)}`;
-                badge.style.display = 'inline-block';
-            }
+        const registro = data[0];
+        const reporte  = registro.reporte || [];
 
-            memoriaReporte = registro.reporte || [];
-            renderizarTabla(memoriaReporte);
-        } else {
-            document.getElementById('sub-header').innerText = "No se registran auditorías previas para este entorno.";
-            const tbody = document.querySelector('#tabla-links tbody');
-            tbody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-[#505050] font-mono text-xs">El Suite Manager está listo para recibir ejecuciones.</td></tr>`;
-        }
-    }
+        document.getElementById('url-auditada').textContent = registro.url_auditada || '';
 
-    function renderizarTabla(reporte) {
-        const tabla = document.querySelector('#tabla-links tbody');
-        tabla.innerHTML = '';
+        const tabla = document.getElementById('lista-elementos');
         let obs = 0;
 
-        reporte.forEach((item, index) => {
-            const tr = document.createElement('tr');
-            tr.className = "hover:bg-zinc-900/40 transition-all font-mono text-xs cursor-pointer group";
-            tr.setAttribute('onclick', `verDetalleLink(${index})`);
+        tabla.innerHTML = '';
+        reporte.forEach(item => {
+            if (item.obstruido) obs++;
 
-            let textoHTML = `<span class="text-zinc-300 group-hover:text-white transition-colors">${item.texto || '[Sin texto interno]'}</span>`;
-            if (item.inner_html && item.inner_html.includes('<img')) {
-                textoHTML = `<span class="text-zinc-400 italic flex items-center gap-1.5"><svg class="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> Imagen</span>`;
-            }
+            const esSinEtiqueta = !item.texto || item.texto.startsWith('[');
+            const textoHTML = esSinEtiqueta
+                ? `<span class="font-mono text-xs text-[#505050] italic">${item.texto || '[sin etiqueta]'}</span>`
+                : `<span class="text-sm font-bold text-white">${item.texto}</span>`;
 
-            // Aplicación de los colores asignados semánticamente por componente
-            const tipoNormalizado = item.tipo || 'tag';
-            const estiloConfig = COMPONENT_COLORS[tipoNormalizado] || { text: 'text-zinc-400', bg: 'bg-zinc-900', border: 'border-zinc-800' };
-
-            let interaccionHTML = '';
-            if (item.obstruido) {
-                obs++;
-                interaccionHTML = `<span class="text-[9px] font-black px-2.5 py-1 rounded border status-error uppercase">OBSTRUIDO</span>`;
+            let estadoHTML;
+            if (item.nota) {
+                estadoHTML = `
+                    <div class="motivo-wrap">
+                        <span class="font-mono text-[10px] font-black px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 cursor-help">
+                            N/A ⓘ
+                        </span>
+                        <div class="motivo-tooltip">
+                            <span class="text-yellow-400 font-black block mb-1">Nota:</span>
+                            ${item.nota}
+                        </div>
+                    </div>`;
+            } else if (item.obstruido) {
+                const motivo = item.motivo_obstruccion || 'Motivo no disponible';
+                estadoHTML = `
+                    <div class="motivo-wrap">
+                        <span class="font-mono text-[10px] font-black px-3 py-1 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 cursor-help">
+                            OBSTRUIDO ⓘ
+                        </span>
+                        <div class="motivo-tooltip">
+                            <span class="text-red-400 font-black block mb-1">Motivo:</span>
+                            ${motivo}
+                        </div>
+                    </div>`;
             } else {
-                interaccionHTML = `<span class="text-[9px] font-black px-2.5 py-1 rounded border status-ok uppercase">LIBRE</span>`;
+                estadoHTML = `<span class="font-mono text-[10px] font-black px-3 py-1 rounded-full bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20">LIBRE</span>`;
             }
 
+            const tr = document.createElement('tr');
+            tr.className = "link-row";
             tr.innerHTML = `
-                <td class="p-4 truncate max-w-[240px] font-medium">${textoHTML}</td>
+                <td class="p-4">${textoHTML}</td>
                 <td class="p-4 text-center">
-                    <span class="text-[9px] font-black px-2 py-0.5 rounded border ${estiloConfig.bg} ${estiloConfig.border} ${estiloConfig.text} uppercase tracking-wider">
-                        ${tipoNormalizado}
+                    <span class="font-mono text-[9px] font-bold px-2 py-1 rounded bg-black border border-[#1a1a1a] text-[#505050] uppercase">
+                        ${item.tipo || 'tag'}
                     </span>
                 </td>
-                <td class="p-4 text-zinc-400 group-hover:text-zinc-300 font-mono truncate max-w-[300px]">
-                    ${item.href || item.url || '-'}
+                <td class="p-4">
+                    <span class="font-mono text-xs text-[#505050] truncate block max-w-xs">
+                        ${item.href || item.url || '—'}
+                    </span>
                 </td>
-                <td class="p-4 text-center">${interaccionHTML}</td>
+                <td class="p-4 text-center">${estadoHTML}</td>
             `;
             tabla.appendChild(tr);
         });
 
-        document.getElementById('stat-total').innerText = reporte.length;
+        document.getElementById('stat-total').innerText      = reporte.length;
         document.getElementById('stat-obstruidos').innerText = obs;
-        document.getElementById('stat-ok').innerText = reporte.length - obs;
-    }
+        document.getElementById('stat-ok').innerText         = reporte.length - obs;
 
-    function verDetalleLink(index) {
-        const item = memoriaReporte[index];
-        if (!item) return;
-
-        document.getElementById('drawer-element-text').innerText = item.texto || '[Elemento sin etiqueta de texto]';
-        
-        const tipoNormalizado = item.tipo || 'tag';
-        const estiloConfig = COMPONENT_COLORS[tipoNormalizado] || { text: 'text-zinc-400', bg: 'bg-zinc-900', border: 'border-zinc-800' };
-        const box = document.getElementById('drawer-dynamic-content');
-        
-        let htmlContent = `
-            <div class="grid grid-cols-2 gap-3">
-                <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">
-                    <span class="block text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Component Type</span>
-                    <span class="text-xs font-bold ${estiloConfig.text} bg-black/40 px-2 py-0.5 rounded border ${estiloConfig.border} uppercase font-mono tracking-wider inline-block">
-                        ${tipoNormalizado}
-                    </span>
-                </div>
-                <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">
-                    <span class="block text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Status Code</span>
-                    <span class="text-xs font-bold font-mono ${item.obstruido ? 'text-red-400' : 'text-emerald-400'}">
-                        ${item.obstruido ? 'POINTER_BLOCKED' : 'INTERACTIVE_OK'}
-                    </span>
-                </div>
-            </div>
-
-            <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">
-                <span class="block text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Destination URL / Anchor</span>
-                <p class="text-xs font-mono text-zinc-300 break-all bg-black/30 p-2.5 rounded border border-zinc-900 select-all">${item.href || item.url || 'N/A'}</p>
-            </div>
-        `;
-
-        if (item.obstruido) {
-            htmlContent += `
-                <div class="bg-red-950/10 border border-red-500/20 p-4 rounded-xl space-y-2">
-                    <span class="text-[9px] font-mono text-red-400 font-bold uppercase tracking-wider block">⚠️ Análisis de Interferencia Visual</span>
-                    <p class="text-xs text-gray-300 leading-relaxed font-mono bg-black/40 p-3 rounded border border-red-500/10">
-                        ${item.motivo || 'El puntero no pudo hacer foco en el elemento debido a un solapamiento de capas en el árbol DOM.'}
-                    </p>
-                </div>
-            `;
+        const badge = document.getElementById('status-badge');
+        if (obs > 0) {
+            badge.textContent = `${obs} Obstruido${obs > 1 ? 's' : ''}`;
+            badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 self-start";
+        } else if (reporte.length > 0) {
+            badge.textContent = "Todo Libre ✓";
+            badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 self-start";
         } else {
-            htmlContent += `
-                <div class="bg-emerald-950/10 border border-emerald-500/20 p-4 rounded-xl">
-                    <span class="text-[9px] font-mono text-emerald-400 font-bold uppercase tracking-wider block">✓ Verificación Exitosa</span>
-                    <p class="text-xs text-gray-400 font-mono mt-1">El elemento es accesible para el usuario y responde de forma nativa.</p>
-                </div>
-            `;
-        }
-
-        if (item.inner_html) {
-            htmlContent += `
-                <div class="bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">
-                    <span class="block text-[8px] font-mono text-zinc-500 uppercase tracking-widest mb-1">Inner HTML Code</span>
-                    <pre class="text-[10px] font-mono text-zinc-400 bg-black/60 p-3 rounded border border-zinc-800/60 overflow-x-auto whitespace-pre-wrap break-all">${item.inner_html.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
-                </div>
-            `;
-        }
-
-        box.innerHTML = htmlContent;
-        document.getElementById('detail-drawer').classList.remove('translate-x-full');
-    }
-
-    function cerrarDrawer() {
-        document.getElementById('detail-drawer').classList.add('translate-x-full');
-    }
-
-    async function dispararAuditoria() {
-        const urlInput = document.getElementById('new-test-url').value.trim();
-        if (!urlInput) { alert("La URL de análisis es mandatoria."); return; }
-
-        const btn = document.getElementById('btn-launch-scan');
-        btn.disabled = true;
-        btn.innerText = "PROCESANDO MAPEO CON PLAYWRIGHT...";
-        btn.className = "w-full bg-zinc-800 text-zinc-500 font-black py-3 rounded-lg text-[10px] tracking-wider uppercase cursor-not-allowed animate-pulse";
-
-        try {
-            const respuesta = await fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: urlInput, user_id: currentUser.id })
-            });
-
-            if (!respuesta.ok) throw new Error("Falla en el backend engine");
-
-            let intentos = 0;
-            const maxIntentos = 15;
-            
-            const verificarPersistencia = setInterval(async () => {
-                intentos++;
-                const { data } = await sbClient
-                    .from('auditoria_links')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .order('created_at', { ascending: false })
-                    .limit(1);
-
-                if (data && data.length > 0 && data[0].url_auditada === urlInput) {
-                    clearInterval(verificarPersistencia);
-                    btn.disabled = false;
-                    btn.innerText = "Escanear Enlaces";
-                    btn.className = "w-full bg-white hover:bg-zinc-200 text-black font-black py-3 rounded-lg text-[10px] tracking-wider uppercase transition-all shadow-md";
-                    await cargarUltimaAuditoria();
-                }
-
-                if (intentos >= maxIntentos) {
-                    clearInterval(verificarPersistencia);
-                    btn.disabled = false;
-                    btn.innerText = "Escanear Enlaces";
-                    btn.className = "w-full bg-white hover:bg-zinc-200 text-black font-black py-3 rounded-lg text-[10px] tracking-wider uppercase transition-all shadow-md";
-                    alert("Indexación completada. Recargue la consola.");
-                }
-            }, 2500);
-
-        } catch (err) {
-            console.error(err);
-            btn.disabled = false;
-            btn.innerText = "Escanear Enlaces";
-            btn.className = "w-full bg-white hover:bg-zinc-200 text-black font-black py-3 rounded-lg text-[10px] tracking-wider uppercase transition-all shadow-md";
+            badge.textContent = "Sin Datos";
+            badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest border border-[#1a1a1a] text-[#505050] self-start";
         }
     }
 
-    window.addEventListener('DOMContentLoaded', init);
+    init();
 </script>
+
 </body>
 </html>
