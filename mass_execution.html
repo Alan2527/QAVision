@@ -60,41 +60,71 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
 
-        /* SCROLL CUSTOM DARK */
-.custom-scroll::-webkit-scrollbar {
-    width: 6px;
-}
-
-.custom-scroll::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.custom-scroll::-webkit-scrollbar-thumb {
-    background-color: #3f3f46; /* zinc-700 */
-    border-radius: 10px;
-}
-
-.custom-scroll::-webkit-scrollbar-thumb:hover {
-    background-color: #52525b; /* zinc-600 */
-}
-.custom-scroll::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #52525b, #3f3f46);
-}
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #505050;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            font-family: 'DM Mono', monospace;
+            border: 1px solid transparent;
+        }
+        .nav-item:hover { color: #10b981; background: rgba(16,185,129,0.07); }
+        .nav-item.active { color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.15); }
     </style>
 </head>
 <body class="min-h-screen flex">
     <div class="hero-grid"></div>
 
-    <aside class="w-20 md:w-64 bg-black border-r border-[#1a1a1a] p-6 h-screen sticky top-0 flex flex-col z-10 transition-all">
-        <div class="mb-10 hidden md:block">
-            <h1 class="font-title text-2xl font-black text-[#10b981] tracking-tighter italic">QAVision</h1>
-            <div class="h-px bg-gradient-to-r from-[#10b981]/50 to-transparent mt-2"></div>
+    <aside class="w-20 md:w-64 bg-black border-r border-[#1a1a1a] p-6 h-screen sticky top-0 flex flex-col z-10 shrink-0">
+        <div class="mb-8 hidden md:block">
+            <div class="flex items-center gap-2 mb-1">
+                <h1 class="font-title text-2xl font-black text-[#10b981] tracking-tighter italic">QAVision</h1>
+            </div>
+            <div class="h-px bg-gradient-to-r from-[#10b981]/50 to-transparent mt-1"></div>
+            <p class="font-mono text-[9px] text-[#303030] mt-2 uppercase tracking-widest">Console v2.0</p>
         </div>
-        <nav class="flex-1 space-y-4">
-            <a href="dashboard.html" class="flex items-center gap-3 text-xs font-bold text-gray-400 hover:text-[#10b981] transition-colors p-2 rounded-lg hover:bg-[#10b981]/10">
-                <span class="font-mono text-lg">◂</span> <span class="hidden md:inline">Volver al Panel</span>
+        <div class="mb-8 md:hidden flex justify-center">
+            <span class="font-title text-lg font-black text-[#10b981] italic">Q</span>
+        </div>
+
+        <nav class="flex-1 space-y-1">
+            <a href="dashboard.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
+                <span class="hidden md:inline">Panel Principal</span>
+            </a>
+            <a href="visual_regression.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <span class="hidden md:inline">Visual Regression</span>
+            </a>
+            <a href="seo.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <span class="hidden md:inline">SEO Audit</span>
+            </a>
+            <a href="performance.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span class="hidden md:inline">Performance CWV</span>
+            </a>
+            <a href="interaction_audit.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                <span class="hidden md:inline">Link Scanner</span>
+            </a>
+            <a href="mass_execution.html" class="nav-item active">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                <span class="hidden md:inline">Mass Execution</span>
             </a>
         </nav>
+
+        <div class="mt-6 pt-4 border-t border-[#1a1a1a]">
+            <a href="dashboard.html" class="hidden md:flex items-center gap-2 font-mono text-[10px] font-bold text-gray-500 hover:text-[#10b981] transition-colors">
+                <span>&#9666;</span> Volver al Panel
+            </a>
+        </div>
     </aside>
 
     <main class="flex-1 p-6 md:p-12 relative z-10 overflow-y-auto">
@@ -305,27 +335,7 @@ function renderSEO(item) {
 /* ================= PERF ================= */
 function renderPERF(item) {
 
-    function calcularScore(item){
-        let total = 0;
-        let puntos = 0;
-
-        function evaluar(valor, good, mid){
-            if(valor == null) return;
-            total++;
-            if(valor <= good) puntos += 100;
-            else if(valor <= mid) puntos += 50;
-        }
-
-        evaluar(item.lcp_ms, 2500, 4000);
-        evaluar(item.fcp_ms, 1800, 3000);
-        evaluar(item.cls, 0.1, 0.25);
-        evaluar(item.tti_ms, 3800, 7300);
-
-        return total ? Math.round(puntos / total) : 0;
-    }
-
     function c(t,v){
-        if(v == null) return 'poor';
         if(t==='lcp') return v<=2500?'good':v<=4000?'warn':'poor';
         if(t==='fcp') return v<=1800?'good':v<=3000?'warn':'poor';
         if(t==='cls') return v<=0.1?'good':v<=0.25?'warn':'poor';
@@ -335,42 +345,25 @@ function renderPERF(item) {
     }
 
     function card(n,v,t,s){
-        if(v==null)return `<div class="bg-tech p-4 rounded-xl text-center text-xs text-gray-500">N/D</div>`;
-
+        if(v==null)return `<div class="bg-tech p-4 rounded-xl">N/D</div>`;
         const cl=c(t,v);
         const pct=cl==='good'?100:cl==='warn'?60:30;
         const col=cl==='good'?'green':cl==='warn'?'yellow':'red';
 
         return `<div class="p-4 rounded-xl border border-${col}-500/30">
             <p class="text-xs text-gray-500">${n}</p>
-            <p class="text-2xl font-black">
-                ${s==='ms'?(v/1000).toFixed(2)+'s':v+s}
-            </p>
-            <div class="h-1 bg-zinc-800 mt-2">
-                <div style="width:${pct}%" class="h-1 bg-${col}-400"></div>
-            </div>
+            <p class="text-2xl font-black">${s==='ms'?(v/1000).toFixed(2)+'s':v+s}</p>
+            <div class="h-1 bg-zinc-800"><div style="width:${pct}%" class="h-1 bg-${col}-400"></div></div>
         </div>`;
     }
 
-    const score = calcularScore(item);
-
     return `
     <div>
-
-        <!-- SCORE -->
         <div class="text-center mb-6">
-            <div class="w-24 h-24 border-4 
-                ${score >= 80 ? 'border-green-500' : score >= 50 ? 'border-yellow-500' : 'border-red-500'}
-                rounded-full flex items-center justify-center mx-auto">
-                
-                <span class="text-3xl font-black 
-                    ${score >= 80 ? 'text-green-400' : score >= 50 ? 'text-yellow-400' : 'text-red-400'}">
-                    ${score}
-                </span>
+            <div class="w-24 h-24 border-4 border-green-500 rounded-full flex items-center justify-center mx-auto">
+                <span class="text-3xl font-black">90</span>
             </div>
         </div>
-
-        <!-- METRICAS -->
         <div class="grid grid-cols-2 gap-4">
             ${card('LCP',item.lcp_ms,'lcp','ms')}
             ${card('FCP',item.fcp_ms,'fcp','ms')}
@@ -379,91 +372,33 @@ function renderPERF(item) {
             ${card('Carga',item.tiempo_carga_ms,'carga','ms')}
             ${card('Peso',item.peso_mb,'peso',' MB')}
         </div>
-
     </div>`;
 }
 
 /* ================= LINKS ================= */
 function renderLINKS(item){
-
-    function getLabel(r){
-        if(r.texto && r.texto.trim() !== '') return r.texto;
-        if(r.aria_label) return `[aria] ${r.aria_label}`;
-        if(r.id) return `#${r.id}`;
-        if(r.class) return `.${r.class}`;
-        if(r.tag) return `<${r.tag}>`;
-        return 'elemento sin identificar';
-    }
-
-    function shortUrl(url){
-        if(!url) return '-';
-        return url.length > 50 ? url.substring(0,50) + '...' : url;
-    }
-
-    const total = item.reporte?.length || 0;
-    const errores = item.reporte?.filter(r => r.obstruido).length || 0;
-
-    return `
-    <div class="space-y-4">
-
-        <!-- RESULTADO GLOBAL -->
-        <div class="flex justify-between items-center p-3 border border-zinc-800 rounded-xl">
+    return (item.reporte||[]).map(r=>`
+        <div class="flex justify-between border-b border-zinc-800 py-2 text-xs">
             <div>
-                <div class="text-sm text-gray-400">RESULTADO GLOBAL</div>
-                <div class="text-xs ${errores>0?'text-red-400':'text-green-400'}">
-                    ${errores>0?'ERROR':'OK'}
-                </div>
+                <div class="font-bold">${r.tipo||'elemento'}</div>
+                <div class="text-gray-500">${r.href||r.url||'-'}</div>
             </div>
-            <div class="text-lg font-bold ${errores>0?'text-red-400':'text-green-400'}">
-                ${errores} / ${total}
+            <div class="${r.obstruido?'text-red-500':'text-green-500'}">
+                ${r.obstruido?'OBSTRUIDO':'OK'}
             </div>
         </div>
-
-        <!-- SCROLL -->
-        <div class="max-h-[400px] overflow-y-auto pr-1 custom-scroll">
-
-            ${(item.reporte || []).map(r => {
-
-                const label = getLabel(r);
-                const fullUrl = r.href || r.url || '-';
-                const short = shortUrl(fullUrl);
-
-                return `
-                <div class="flex justify-between items-start border-b border-zinc-800 py-3 text-xs">
-
-                    <div class="max-w-[75%]">
-                        <div class="font-bold text-gray-200 mb-1">
-                            ${label}
-                        </div>
-
-                        <div class="text-gray-500 truncate"
-                             title="${fullUrl}">
-                            ${short}
-                        </div>
-                    </div>
-
-                    <div class="ml-3 ${r.obstruido?'text-red-500':'text-green-500'} font-semibold">
-                        ${r.obstruido?'OBSTRUIDO':'OK'}
-                    </div>
-
-                </div>
-                `;
-            }).join('')}
-
-        </div>
-
-    </div>
-    `;
+    `).join('');
 }
 
 /* ================= VRT ================= */
 function renderVRT(item){
 
     const errores = item.diferencias || 0;
+
     const id = "vrt-" + Math.random().toString(36).substring(2,7);
 
     return `
-    <div class="space-y-4 max-h-[500px] overflow-y-auto pr-1 custom-scroll">
+    <div class="space-y-4">
 
         <!-- RESUMEN -->
         <div class="flex justify-between items-center p-3 border border-zinc-800 rounded-xl">
@@ -476,6 +411,23 @@ function renderVRT(item){
             <div class="text-lg font-bold ${errores>0?'text-red-400':'text-green-400'}">
                 ${errores}
             </div>
+        </div>
+
+        <!-- SLIDER COMPARACIÓN -->
+        <div class="relative w-full overflow-hidden rounded-xl border border-zinc-800">
+            
+            <img src="${item.img_a_url || ''}" class="w-full block">
+
+            <div id="${id}-overlay" class="absolute top-0 left-0 h-full overflow-hidden" style="width:50%">
+                <img src="${item.img_b_url || ''}" class="w-full block">
+            </div>
+
+            <input type="range" min="0" max="100" value="50"
+                class="absolute bottom-2 left-1/2 -translate-x-1/2 w-2/3"
+                oninput="
+                    document.getElementById('${id}-overlay').style.width = this.value + '%'
+                "
+            >
         </div>
 
         <!-- DIFF -->
@@ -503,36 +455,6 @@ function renderVRT(item){
             </div>
         </div>
 
-        <!-- COMPARADOR COLAPSADO -->
-        <div class="border border-zinc-800 rounded-xl overflow-hidden">
-            
-            <div onclick="toggleVRT('${id}')"
-                 class="cursor-pointer flex justify-between items-center p-3 bg-zinc-900 hover:bg-zinc-800 transition">
-                <span class="text-xs text-gray-300">Comparador interactivo</span>
-                <span id="${id}-icon" class="text-xs text-gray-500">▼</span>
-            </div>
-
-            <div id="${id}" class="hidden p-3">
-
-                <div class="relative w-full overflow-hidden rounded-xl border border-zinc-800">
-                    
-                    <img src="${item.img_a_url || ''}" class="w-full block">
-
-                    <div id="${id}-overlay" 
-                         class="absolute top-0 left-0 h-full overflow-hidden" 
-                         style="width:50%">
-                        <img src="${item.img_b_url || ''}" class="w-full block">
-                    </div>
-
-                    <input type="range" min="0" max="100" value="50"
-                        class="absolute bottom-2 left-1/2 -translate-x-1/2 w-2/3"
-                        oninput="document.getElementById('${id}-overlay').style.width = this.value + '%'"
-                    >
-                </div>
-
-            </div>
-        </div>
-
     </div>`;
 }
 function openImageModal(src){
@@ -544,28 +466,10 @@ function openImageModal(src){
     modal.classList.add('flex');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    const modal = document.getElementById('img-modal');
-
-    if (modal) {
-        modal.addEventListener('click', function(){
-            this.classList.add('hidden');
-            this.classList.remove('flex');
-        });
-    }
+document.getElementById('img-modal').addEventListener('click', function(){
+    this.classList.add('hidden');
+    this.classList.remove('flex');
 });
-function toggleVRT(id){
-    const el = document.getElementById(id);
-    const icon = document.getElementById(id + '-icon');
-
-    if(el.classList.contains('hidden')){
-        el.classList.remove('hidden');
-        icon.innerText = '▲';
-    } else {
-        el.classList.add('hidden');
-        icon.innerText = '▼';
-    }
-}
 function cerrarDrawer(){
     document.getElementById('detail-drawer').classList.add('translate-x-full');
 }
