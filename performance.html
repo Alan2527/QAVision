@@ -3,128 +3,293 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QAVision - Core Web Vitals</title>
+    <title>QAVision — Performance CWV</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #000; color: #fff; margin: 0; }
-        .bg-tech { background-color: #050505; border: 1px solid #111827; }
-        .good  { color: #10b981; }
-        .warn  { color: #f59e0b; }
-        .poor  { color: #ef4444; }
-        .bg-good { background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.3); }
-        .bg-warn { background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.3); }
-        .bg-poor { background: rgba(239,68,68,0.08);  border-color: rgba(239,68,68,0.3); }
+        :root {
+            --green: #10b981;
+            --surface: #070707;
+            --surface-2: #0d0d0d;
+            --border: #1a1a1a;
+            --text: #e8e8e8;
+        }
 
-        .metric-bar-bg { background: #111827; border-radius: 99px; height: 6px; overflow: hidden; }
-        .metric-bar    { height: 6px; border-radius: 99px; transition: width 1s ease; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #000;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.4;
+        }
+
+        .hero-grid {
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 20%, transparent 100%);
+            z-index: 0;
+        }
+
+        .font-title { font-family: 'Syne', sans-serif; }
+        .font-mono  { font-family: 'DM Mono', monospace; }
+
+        .bg-tech {
+            background-color: var(--surface-2);
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #505050;
+            transition: all 0.15s ease;
+            text-decoration: none;
+            font-family: 'DM Mono', monospace;
+            border: 1px solid transparent;
+        }
+        .nav-item:hover  { color: #10b981; background: rgba(16,185,129,0.07); }
+        .nav-item.active { color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.15); }
+
+        .main-scroll { overflow-y: auto; height: 100vh; }
+        .main-scroll::-webkit-scrollbar { width: 5px; }
+        .main-scroll::-webkit-scrollbar-track { background: transparent; }
+        .main-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
+        .main-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+        .metric-bar-bg { background: #111; border-radius: 99px; height: 4px; overflow: hidden; margin-top: 10px; }
+        .metric-bar    { height: 4px; border-radius: 99px; width: 0%; transition: width 1s ease; }
+
+        /* Score ring animation */
+        .score-ring {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .score-ring svg { transform: rotate(-90deg); }
+        .score-ring .score-inner {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bg-good { background: rgba(16,185,129,0.06);  border-color: rgba(16,185,129,0.2) !important; }
+        .bg-warn { background: rgba(245,158,11,0.06);  border-color: rgba(245,158,11,0.2) !important; }
+        .bg-poor { background: rgba(239,68,68,0.06);   border-color: rgba(239,68,68,0.2)  !important; }
     </style>
 </head>
-<body class="p-8">
+<body class="min-h-screen flex">
+    <div class="hero-grid"></div>
 
-    <header class="max-w-5xl mx-auto flex justify-between items-center mb-12">
-        <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 bg-[#10b981] rounded-xl flex items-center justify-center text-black font-black italic text-xl">Q</div>
-            <h1 class="text-2xl font-black tracking-tighter italic text-[#10b981]">QAVision</h1>
-        </div>
-        <a href="index.html" class="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition">← Volver al Panel</a>
-    </header>
-
-    <main class="max-w-5xl mx-auto">
-
-        <!-- URL auditada -->
-        <div id="url-auditada" class="mb-8 text-center text-gray-600 text-xs font-mono"></div>
-
-        <!-- Score general -->
-        <div class="text-center mb-12">
-            <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Score General</p>
-            <div id="score-circle" class="inline-flex items-center justify-center w-32 h-32 rounded-full border-4 border-gray-800">
-                <span id="score-valor" class="text-5xl font-black tracking-tighter">-</span>
+    <!-- SIDEBAR NAV -->
+    <aside class="w-20 md:w-64 bg-black border-r border-[#1a1a1a] p-6 h-screen sticky top-0 flex flex-col z-10 shrink-0">
+        <div class="mb-8 hidden md:block">
+            <div class="flex items-center gap-2 mb-1">
+                <h1 class="font-title text-2xl font-black text-[#10b981] tracking-tighter italic">QAVision</h1>
             </div>
-            <p id="score-label" class="mt-3 text-sm font-black uppercase tracking-widest text-gray-500">Cargando...</p>
+            <div class="h-px bg-gradient-to-r from-[#10b981]/50 to-transparent mt-1"></div>
+            <p class="font-mono text-[9px] text-[#303030] mt-2 uppercase tracking-widest">Console v2.0</p>
+        </div>
+        <div class="mb-8 md:hidden flex justify-center">
+            <span class="font-title text-lg font-black text-[#10b981] italic">Q</span>
         </div>
 
-        <!-- Métricas principales -->
-        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+        <nav class="flex-1 space-y-1">
+            <a href="dashboard.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
+                <span class="hidden md:inline">Panel Principal</span>
+            </a>
+            <a href="visual_regression.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                <span class="hidden md:inline">Visual Regression</span>
+            </a>
+            <a href="seo.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                <span class="hidden md:inline">SEO Audit</span>
+            </a>
+            <a href="performance.html" class="nav-item active">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span class="hidden md:inline">Performance CWV</span>
+            </a>
+            <a href="interaction_audit.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                <span class="hidden md:inline">Link Scanner</span>
+            </a>
+            <a href="mass_execution.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                <span class="hidden md:inline">Mass Execution</span>
+            </a>
+        </nav>
 
-            <div id="card-lcp" class="bg-tech p-6 rounded-2xl border">
-                <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">LCP</p>
-                <p class="text-[9px] text-gray-600 mb-3">Largest Contentful Paint</p>
-                <h3 id="val-lcp" class="text-3xl font-black tracking-tighter mb-3">-</h3>
-                <div class="metric-bar-bg"><div id="bar-lcp" class="metric-bar" style="width:0%"></div></div>
-                <p id="label-lcp" class="text-[9px] font-black uppercase mt-2 text-gray-600">-</p>
-            </div>
-
-            <div id="card-fcp" class="bg-tech p-6 rounded-2xl border">
-                <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">FCP</p>
-                <p class="text-[9px] text-gray-600 mb-3">First Contentful Paint</p>
-                <h3 id="val-fcp" class="text-3xl font-black tracking-tighter mb-3">-</h3>
-                <div class="metric-bar-bg"><div id="bar-fcp" class="metric-bar" style="width:0%"></div></div>
-                <p id="label-fcp" class="text-[9px] font-black uppercase mt-2 text-gray-600">-</p>
-            </div>
-
-            <div id="card-cls" class="bg-tech p-6 rounded-2xl border">
-                <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">CLS</p>
-                <p class="text-[9px] text-gray-600 mb-3">Cumulative Layout Shift</p>
-                <h3 id="val-cls" class="text-3xl font-black tracking-tighter mb-3">-</h3>
-                <div class="metric-bar-bg"><div id="bar-cls" class="metric-bar" style="width:0%"></div></div>
-                <p id="label-cls" class="text-[9px] font-black uppercase mt-2 text-gray-600">-</p>
-            </div>
-
-            <div id="card-tti" class="bg-tech p-6 rounded-2xl border">
-                <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">TTI</p>
-                <p class="text-[9px] text-gray-600 mb-3">Time to Interactive</p>
-                <h3 id="val-tti" class="text-3xl font-black tracking-tighter mb-3">-</h3>
-                <div class="metric-bar-bg"><div id="bar-tti" class="metric-bar" style="width:0%"></div></div>
-                <p id="label-tti" class="text-[9px] font-black uppercase mt-2 text-gray-600">-</p>
-            </div>
-
-            <div id="card-carga" class="bg-tech p-6 rounded-2xl border">
-                <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Carga Total</p>
-                <p class="text-[9px] text-gray-600 mb-3">Tiempo hasta load</p>
-                <h3 id="val-carga" class="text-3xl font-black tracking-tighter mb-3">-</h3>
-                <div class="metric-bar-bg"><div id="bar-carga" class="metric-bar" style="width:0%"></div></div>
-                <p id="label-carga" class="text-[9px] font-black uppercase mt-2 text-gray-600">-</p>
-            </div>
-
-            <div id="card-peso" class="bg-tech p-6 rounded-2xl border">
-                <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Peso</p>
-                <p class="text-[9px] text-gray-600 mb-3">Transferencia total</p>
-                <h3 id="val-peso" class="text-3xl font-black tracking-tighter mb-3">-</h3>
-                <div class="metric-bar-bg"><div id="bar-peso" class="metric-bar" style="width:0%"></div></div>
-                <p id="label-peso" class="text-[9px] font-black uppercase mt-2 text-gray-600">-</p>
-            </div>
+        <div class="mt-6 pt-4 border-t border-[#1a1a1a]">
+            <a href="dashboard.html" class="hidden md:flex items-center gap-2 font-mono text-[10px] font-bold text-gray-500 hover:text-[#10b981] transition-colors">
+                <span>&#9666;</span> Volver al Panel
+            </a>
         </div>
+    </aside>
 
-        <!-- Umbrales de referencia -->
-        <div class="bg-tech rounded-2xl p-6">
-            <p class="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-4">Umbrales de referencia (Google)</p>
-            <div class="grid grid-cols-3 gap-3 text-center text-[10px]">
-                <div>
-                    <p class="font-black text-gray-400 mb-2">Métrica</p>
-                    <p class="text-gray-500">LCP</p>
-                    <p class="text-gray-500">FCP</p>
-                    <p class="text-gray-500">CLS</p>
-                    <p class="text-gray-500">TTI</p>
+    <!-- MAIN -->
+    <main class="flex-1 main-scroll relative z-10">
+        <div class="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
+
+            <!-- PAGE HEADER -->
+            <header>
+                <span class="font-mono text-[10px] text-[#10b981] uppercase tracking-[0.3em] font-bold">QAVision // Performance Engine</span>
+                <div class="flex items-start justify-between mt-2 flex-wrap gap-4">
+                    <div>
+                        <h2 class="font-title text-4xl font-extrabold tracking-tight">Core Web <span class="text-gray-600">Vitals</span></h2>
+                        <p id="url-auditada" class="font-mono text-xs text-[#505050] mt-2 truncate max-w-xl"></p>
+                    </div>
+                    <span id="status-badge" class="font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest border border-[#1a1a1a] text-[#505050] self-start">Cargando...</span>
                 </div>
-                <div>
-                    <p class="font-black good mb-2">✓ Bueno</p>
-                    <p class="good">≤ 2.5s</p>
-                    <p class="good">≤ 1.8s</p>
-                    <p class="good">≤ 0.1</p>
-                    <p class="good">≤ 3.8s</p>
+            </header>
+
+            <!-- SCORE + METRICS GRID -->
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+
+                <!-- Score circle -->
+                <div class="bg-tech rounded-2xl p-6 flex flex-col items-center justify-center text-center gap-3">
+                    <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold">// Score</span>
+                    <div class="score-ring" style="width:120px;height:120px;">
+                        <svg width="120" height="120" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="52" fill="none" stroke="#1a1a1a" stroke-width="8"/>
+                            <circle id="score-arc" cx="60" cy="60" r="52" fill="none" stroke="#1a1a1a" stroke-width="8"
+                                stroke-dasharray="326.7" stroke-dashoffset="326.7"
+                                stroke-linecap="round" style="transition: stroke-dashoffset 1.2s ease, stroke 0.4s ease;"/>
+                        </svg>
+                        <div class="score-inner">
+                            <span id="score-valor" class="font-title text-4xl font-black text-white leading-none">-</span>
+                            <span class="font-mono text-[9px] text-[#505050] mt-1">/ 100</span>
+                        </div>
+                    </div>
+                    <p id="score-label" class="font-mono text-[10px] font-bold uppercase tracking-widest text-[#505050]">Calculando...</p>
                 </div>
-                <div>
-                    <p class="font-black poor mb-2">✗ Pobre</p>
-                    <p class="poor">> 4.0s</p>
-                    <p class="poor">> 3.0s</p>
-                    <p class="poor">> 0.25</p>
-                    <p class="poor">> 7.3s</p>
+
+                <!-- Metrics 3x2 grid -->
+                <div class="lg:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4">
+
+                    <div id="card-lcp" class="bg-tech p-5 rounded-2xl border border-[#1a1a1a]">
+                        <p class="font-mono text-[9px] font-bold text-[#505050] uppercase tracking-widest">LCP</p>
+                        <p class="font-mono text-[9px] text-[#303030] mt-0.5 mb-3">Largest Contentful Paint</p>
+                        <h3 id="val-lcp"   class="font-title text-2xl font-black text-white mb-1">-</h3>
+                        <div class="metric-bar-bg"><div id="bar-lcp"   class="metric-bar"></div></div>
+                        <p id="label-lcp"  class="font-mono text-[9px] font-bold uppercase mt-2 text-[#505050]">-</p>
+                    </div>
+
+                    <div id="card-fcp" class="bg-tech p-5 rounded-2xl border border-[#1a1a1a]">
+                        <p class="font-mono text-[9px] font-bold text-[#505050] uppercase tracking-widest">FCP</p>
+                        <p class="font-mono text-[9px] text-[#303030] mt-0.5 mb-3">First Contentful Paint</p>
+                        <h3 id="val-fcp"   class="font-title text-2xl font-black text-white mb-1">-</h3>
+                        <div class="metric-bar-bg"><div id="bar-fcp"   class="metric-bar"></div></div>
+                        <p id="label-fcp"  class="font-mono text-[9px] font-bold uppercase mt-2 text-[#505050]">-</p>
+                    </div>
+
+                    <div id="card-cls" class="bg-tech p-5 rounded-2xl border border-[#1a1a1a]">
+                        <p class="font-mono text-[9px] font-bold text-[#505050] uppercase tracking-widest">CLS</p>
+                        <p class="font-mono text-[9px] text-[#303030] mt-0.5 mb-3">Cumulative Layout Shift</p>
+                        <h3 id="val-cls"   class="font-title text-2xl font-black text-white mb-1">-</h3>
+                        <div class="metric-bar-bg"><div id="bar-cls"   class="metric-bar"></div></div>
+                        <p id="label-cls"  class="font-mono text-[9px] font-bold uppercase mt-2 text-[#505050]">-</p>
+                    </div>
+
+                    <div id="card-tti" class="bg-tech p-5 rounded-2xl border border-[#1a1a1a]">
+                        <p class="font-mono text-[9px] font-bold text-[#505050] uppercase tracking-widest">TTI</p>
+                        <p class="font-mono text-[9px] text-[#303030] mt-0.5 mb-3">Time to Interactive</p>
+                        <h3 id="val-tti"   class="font-title text-2xl font-black text-white mb-1">-</h3>
+                        <div class="metric-bar-bg"><div id="bar-tti"   class="metric-bar"></div></div>
+                        <p id="label-tti"  class="font-mono text-[9px] font-bold uppercase mt-2 text-[#505050]">-</p>
+                    </div>
+
+                    <div id="card-carga" class="bg-tech p-5 rounded-2xl border border-[#1a1a1a]">
+                        <p class="font-mono text-[9px] font-bold text-[#505050] uppercase tracking-widest">Carga Total</p>
+                        <p class="font-mono text-[9px] text-[#303030] mt-0.5 mb-3">Tiempo hasta load</p>
+                        <h3 id="val-carga" class="font-title text-2xl font-black text-white mb-1">-</h3>
+                        <div class="metric-bar-bg"><div id="bar-carga" class="metric-bar"></div></div>
+                        <p id="label-carga" class="font-mono text-[9px] font-bold uppercase mt-2 text-[#505050]">-</p>
+                    </div>
+
+                    <div id="card-peso" class="bg-tech p-5 rounded-2xl border border-[#1a1a1a]">
+                        <p class="font-mono text-[9px] font-bold text-[#505050] uppercase tracking-widest">Peso</p>
+                        <p class="font-mono text-[9px] text-[#303030] mt-0.5 mb-3">Transferencia total</p>
+                        <h3 id="val-peso"  class="font-title text-2xl font-black text-white mb-1">-</h3>
+                        <div class="metric-bar-bg"><div id="bar-peso"  class="metric-bar"></div></div>
+                        <p id="label-peso" class="font-mono text-[9px] font-bold uppercase mt-2 text-[#505050]">-</p>
+                    </div>
+
                 </div>
             </div>
-        </div>
 
+            <!-- THRESHOLDS TABLE -->
+            <div class="bg-tech rounded-2xl overflow-hidden">
+                <div class="p-5 border-b border-[#1a1a1a]">
+                    <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Referencia</span>
+                    <h3 class="font-title text-base font-bold text-white tracking-tight">Umbrales Google (Core Web Vitals)</h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-4 gap-3 text-center">
+                        <div class="font-mono text-[10px]">
+                            <p class="font-bold text-[#505050] mb-3 uppercase tracking-widest">Métrica</p>
+                            <p class="text-[#505050] py-2 border-b border-[#111]">LCP</p>
+                            <p class="text-[#505050] py-2 border-b border-[#111]">FCP</p>
+                            <p class="text-[#505050] py-2 border-b border-[#111]">CLS</p>
+                            <p class="text-[#505050] py-2">TTI</p>
+                        </div>
+                        <div class="font-mono text-[10px]">
+                            <p class="font-bold text-[#10b981] mb-3 uppercase tracking-widest">✓ Bueno</p>
+                            <p class="text-[#10b981] py-2 border-b border-[#111]">≤ 2.5s</p>
+                            <p class="text-[#10b981] py-2 border-b border-[#111]">≤ 1.8s</p>
+                            <p class="text-[#10b981] py-2 border-b border-[#111]">≤ 0.1</p>
+                            <p class="text-[#10b981] py-2">≤ 3.8s</p>
+                        </div>
+                        <div class="font-mono text-[10px]">
+                            <p class="font-bold text-yellow-400 mb-3 uppercase tracking-widest">⚠ Mejorar</p>
+                            <p class="text-yellow-400 py-2 border-b border-[#111]">≤ 4.0s</p>
+                            <p class="text-yellow-400 py-2 border-b border-[#111]">≤ 3.0s</p>
+                            <p class="text-yellow-400 py-2 border-b border-[#111]">≤ 0.25</p>
+                            <p class="text-yellow-400 py-2">≤ 7.3s</p>
+                        </div>
+                        <div class="font-mono text-[10px]">
+                            <p class="font-bold text-red-400 mb-3 uppercase tracking-widest">✗ Pobre</p>
+                            <p class="text-red-400 py-2 border-b border-[#111]">> 4.0s</p>
+                            <p class="text-red-400 py-2 border-b border-[#111]">> 3.0s</p>
+                            <p class="text-red-400 py-2 border-b border-[#111]">> 0.25</p>
+                            <p class="text-red-400 py-2">> 7.3s</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
     </main>
 
 <script>
@@ -132,33 +297,41 @@
     const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
     const qaClient = supabase.createClient(SB_URL, SB_KEY);
 
-    const clasificar = {
-        lcp:   v => v <= 2500 ? {c:'good',l:'Bueno',pct:100}   : v <= 4000 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
-        fcp:   v => v <= 1800 ? {c:'good',l:'Bueno',pct:100}   : v <= 3000 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
-        cls:   v => v <= 0.1  ? {c:'good',l:'Bueno',pct:100}   : v <= 0.25 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
-        tti:   v => v <= 3800 ? {c:'good',l:'Bueno',pct:100}   : v <= 7300 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
-        carga: v => v <= 3000 ? {c:'good',l:'Bueno',pct:100}   : v <= 6000 ? {c:'warn',l:'Mejorar',pct:60} : {c:'poor',l:'Pobre',pct:30},
-        peso:  v => v <= 1    ? {c:'good',l:'Liviano',pct:100} : v <= 3    ? {c:'warn',l:'Moderado',pct:60}: {c:'poor',l:'Pesado',pct:30},
-    };
+    const colorMap = { good: '#10b981', warn: '#f59e0b', poor: '#ef4444' };
+    const textColorMap = { good: 'text-[#10b981]', warn: 'text-yellow-400', poor: 'text-red-400' };
 
-    const colorBar = { good: '#10b981', warn: '#f59e0b', poor: '#ef4444' };
+    const clasificar = {
+        lcp:   v => v <= 2500 ? {c:'good',l:'Bueno',pct:100}    : v <= 4000 ? {c:'warn',l:'Mejorar',pct:55} : {c:'poor',l:'Pobre',pct:25},
+        fcp:   v => v <= 1800 ? {c:'good',l:'Bueno',pct:100}    : v <= 3000 ? {c:'warn',l:'Mejorar',pct:55} : {c:'poor',l:'Pobre',pct:25},
+        cls:   v => v <= 0.1  ? {c:'good',l:'Bueno',pct:100}    : v <= 0.25 ? {c:'warn',l:'Mejorar',pct:55} : {c:'poor',l:'Pobre',pct:25},
+        tti:   v => v <= 3800 ? {c:'good',l:'Bueno',pct:100}    : v <= 7300 ? {c:'warn',l:'Mejorar',pct:55} : {c:'poor',l:'Pobre',pct:25},
+        carga: v => v <= 3000 ? {c:'good',l:'Bueno',pct:100}    : v <= 6000 ? {c:'warn',l:'Mejorar',pct:55} : {c:'poor',l:'Pobre',pct:25},
+        peso:  v => v <= 1    ? {c:'good',l:'Liviano',pct:100}  : v <= 3    ? {c:'warn',l:'Moderado',pct:55}: {c:'poor',l:'Pesado',pct:25},
+    };
 
     function renderMetrica(id, valor, tipo, sufijo) {
         if (valor === null || valor === undefined) {
-            document.getElementById(`val-${id}`).textContent = 'N/D';
+            document.getElementById(`val-${id}`).textContent   = 'N/D';
             document.getElementById(`label-${id}`).textContent = 'Sin datos';
             return null;
         }
         const { c, l, pct } = clasificar[tipo](valor);
-        const card = document.getElementById(`card-${id}`);
-        card.classList.add(`bg-${c}`);
+        document.getElementById(`card-${id}`).classList.add(`bg-${c}`);
+
         const valEl = document.getElementById(`val-${id}`);
-        valEl.textContent = sufijo === 'ms' ? (valor / 1000).toFixed(2) + 's' : valor + sufijo;
-        valEl.className = `text-3xl font-black tracking-tighter mb-3 ${c}`;
-        document.getElementById(`bar-${id}`).style.cssText = `width:${pct}%;background:${colorBar[c]}`;
+        valEl.textContent = sufijo === 'ms'
+            ? (valor / 1000).toFixed(2) + 's'
+            : valor + sufijo;
+        valEl.className = `font-title text-2xl font-black mb-1 ${textColorMap[c]}`;
+
+        const bar = document.getElementById(`bar-${id}`);
+        bar.style.width      = pct + '%';
+        bar.style.background = colorMap[c];
+
         const labelEl = document.getElementById(`label-${id}`);
         labelEl.textContent = l;
-        labelEl.className = `text-[9px] font-black uppercase mt-2 ${c}`;
+        labelEl.className   = `font-mono text-[9px] font-bold uppercase mt-2 ${textColorMap[c]}`;
+
         return c;
     }
 
@@ -218,31 +391,53 @@
             renderMetrica('peso',  r.peso_mb,         'peso',  ' MB'),
         ].filter(Boolean);
 
-        const score = Math.round((resultados.filter(c => c === 'good').length / resultados.length) * 100);
-        const scoreEl = document.getElementById('score-valor');
-        const scoreCircle = document.getElementById('score-circle');
-        const scoreLabel = document.getElementById('score-label');
+        // Score
+        const score = resultados.length
+            ? Math.round((resultados.filter(c => c === 'good').length / resultados.length) * 100)
+            : 0;
+
+        const scoreEl     = document.getElementById('score-valor');
+        const scoreLabel  = document.getElementById('score-label');
+        const scoreArc    = document.getElementById('score-arc');
+
+        const circumference = 2 * Math.PI * 52; // 326.7
+        const offset = circumference - (score / 100) * circumference;
+
         scoreEl.textContent = score;
+        scoreArc.style.strokeDashoffset = offset;
+
         if (score >= 80) {
-            scoreEl.className = 'text-5xl font-black tracking-tighter good';
-            scoreCircle.classList.add('border-emerald-500');
+            scoreEl.className    = 'font-title text-4xl font-black text-[#10b981] leading-none';
+            scoreArc.style.stroke = '#10b981';
             scoreLabel.textContent = 'Rendimiento Óptimo';
-            scoreLabel.className = 'mt-3 text-sm font-black uppercase tracking-widest good';
+            scoreLabel.className   = 'font-mono text-[10px] font-bold uppercase tracking-widest text-[#10b981]';
         } else if (score >= 50) {
-            scoreEl.className = 'text-5xl font-black tracking-tighter warn';
-            scoreCircle.classList.add('border-amber-500');
+            scoreEl.className    = 'font-title text-4xl font-black text-yellow-400 leading-none';
+            scoreArc.style.stroke = '#f59e0b';
             scoreLabel.textContent = 'Necesita Mejoras';
-            scoreLabel.className = 'mt-3 text-sm font-black uppercase tracking-widest warn';
+            scoreLabel.className   = 'font-mono text-[10px] font-bold uppercase tracking-widest text-yellow-400';
         } else {
-            scoreEl.className = 'text-5xl font-black tracking-tighter poor';
-            scoreCircle.classList.add('border-red-500');
+            scoreEl.className    = 'font-title text-4xl font-black text-red-400 leading-none';
+            scoreArc.style.stroke = '#ef4444';
             scoreLabel.textContent = 'Rendimiento Pobre';
-            scoreLabel.className = 'mt-3 text-sm font-black uppercase tracking-widest poor';
+            scoreLabel.className   = 'font-mono text-[10px] font-bold uppercase tracking-widest text-red-400';
+        }
+
+        const statusBadge = document.getElementById('status-badge');
+        if (score >= 80) {
+            statusBadge.textContent = `Score ${score} — Óptimo`;
+            statusBadge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 self-start";
+        } else if (score >= 50) {
+            statusBadge.textContent = `Score ${score} — Mejorar`;
+            statusBadge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 self-start";
+        } else {
+            statusBadge.textContent = `Score ${score} — Pobre`;
+            statusBadge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 self-start";
         }
     }
 
     init();
 </script>
-    
+
 </body>
 </html>
