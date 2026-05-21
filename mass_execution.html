@@ -345,24 +345,35 @@ function renderPERF(item) {
     }
 
     function card(n,v,t,s){
-        if(v==null)return `<div class="bg-tech p-4 rounded-xl">N/D</div>`;
+        if(v==null)return `<div class="bg-tech p-4 rounded-xl text-xs text-gray-500 font-mono">N/D</div>`;
         const cl=c(t,v);
         const pct=cl==='good'?100:cl==='warn'?60:30;
         const col=cl==='good'?'green':cl==='warn'?'yellow':'red';
-
         return `<div class="p-4 rounded-xl border border-${col}-500/30">
             <p class="text-xs text-gray-500">${n}</p>
             <p class="text-2xl font-black">${s==='ms'?(v/1000).toFixed(2)+'s':v+s}</p>
-            <div class="h-1 bg-zinc-800"><div style="width:${pct}%" class="h-1 bg-${col}-400"></div></div>
+            <div class="h-1 bg-zinc-800 mt-2"><div style="width:${pct}%" class="h-1 bg-${col}-400"></div></div>
         </div>`;
     }
+
+    // Score dinámico: promedio ponderado de las métricas disponibles
+    const scores = [];
+    if(item.fcp_ms != null){ const cl=c('fcp',item.fcp_ms); scores.push(cl==='good'?100:cl==='warn'?50:0); }
+    if(item.lcp_ms != null){ const cl=c('lcp',item.lcp_ms); scores.push(cl==='good'?100:cl==='warn'?50:0); }
+    if(item.cls    != null){ const cl=c('cls',item.cls);    scores.push(cl==='good'?100:cl==='warn'?50:0); }
+    if(item.tti_ms != null){ const cl=c('tti',item.tti_ms); scores.push(cl==='good'?100:cl==='warn'?50:0); }
+    if(item.tiempo_carga_ms != null){ const cl=c('carga',item.tiempo_carga_ms); scores.push(cl==='good'?100:cl==='warn'?50:0); }
+    const score = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : null;
+    const scoreCol = score==null?'gray':score>=90?'green':score>=50?'yellow':'red';
+    const scoreDisplay = score!=null ? score : '—';
 
     return `
     <div>
         <div class="text-center mb-6">
-            <div class="w-24 h-24 border-4 border-green-500 rounded-full flex items-center justify-center mx-auto">
-                <span class="text-3xl font-black">90</span>
+            <div class="w-24 h-24 border-4 border-${scoreCol}-500 rounded-full flex items-center justify-center mx-auto">
+                <span class="text-3xl font-black text-${scoreCol}-400">${scoreDisplay}</span>
             </div>
+            <p class="text-[10px] font-mono text-[#505050] mt-2 uppercase tracking-widest">Performance Score</p>
         </div>
         <div class="grid grid-cols-2 gap-4">
             ${card('LCP',item.lcp_ms,'lcp','ms')}
@@ -377,81 +388,96 @@ function renderPERF(item) {
 
 /* ================= LINKS ================= */
 function renderLINKS(item){
-    return (item.reporte||[]).map(r=>`
-        <div class="flex justify-between border-b border-zinc-800 py-2 text-xs">
-            <div>
-                <div class="font-bold">${r.tipo||'elemento'}</div>
-                <div class="text-gray-500">${r.href||r.url||'-'}</div>
-            </div>
-            <div class="${r.obstruido?'text-red-500':'text-green-500'}">
-                ${r.obstruido?'OBSTRUIDO':'OK'}
-            </div>
+    const reporte = item.reporte || [];
+    if(!reporte.length) return `<p class="text-xs text-gray-500 font-mono text-center py-6">Sin datos de links.</p>`;
+    const total = reporte.length;
+    const obstruidos = reporte.filter(r=>r.obstruido).length;
+    const ok = total - obstruidos;
+    return `
+    <div class="space-y-4">
+        <div class="grid grid-cols-3 gap-3 text-center">
+            <div class="bg-tech p-3 rounded-xl"><p class="font-mono text-[10px] text-gray-500 mb-1">TOTAL</p><p class="text-xl font-black text-white">${total}</p></div>
+            <div class="bg-tech p-3 rounded-xl"><p class="font-mono text-[10px] text-gray-500 mb-1">OK</p><p class="text-xl font-black text-green-400">${ok}</p></div>
+            <div class="bg-tech p-3 rounded-xl"><p class="font-mono text-[10px] text-gray-500 mb-1">OBSTRUIDOS</p><p class="text-xl font-black text-red-400">${obstruidos}</p></div>
         </div>
-    `).join('');
+        <div class="overflow-y-auto max-h-[420px] custom-scroll space-y-1 pr-1">
+            ${reporte.map(r=>`
+            <div class="flex justify-between items-center border-b border-zinc-800/60 py-2.5 text-xs gap-3">
+                <div class="min-w-0 flex-1">
+                    <div class="font-bold text-white truncate">${r.tipo||'elemento'}</div>
+                    <div class="text-gray-500 font-mono truncate text-[10px]">${r.href||r.url||'-'}</div>
+                </div>
+                <span class="shrink-0 font-mono font-black text-[10px] px-2 py-1 rounded ${r.obstruido?'text-red-400 bg-red-500/10 border border-red-500/20':'text-green-400 bg-green-500/10 border border-green-500/20'}">
+                    ${r.obstruido?'OBSTRUIDO':'OK'}
+                </span>
+            </div>`).join('')}
+        </div>
+    </div>`;
 }
 
 /* ================= VRT ================= */
 function renderVRT(item){
-
     const errores = item.diferencias || 0;
-
     const id = "vrt-" + Math.random().toString(36).substring(2,7);
 
     return `
-    <div class="space-y-4">
+    <div class="space-y-4 overflow-y-auto max-h-[600px] custom-scroll pr-1">
 
         <!-- RESUMEN -->
         <div class="flex justify-between items-center p-3 border border-zinc-800 rounded-xl">
             <div>
                 <div class="text-sm text-gray-400">Diferencias detectadas</div>
-                <div class="text-xs ${errores>0?'text-red-400':'text-green-400'}">
+                <div class="text-xs ${errores>0?'text-red-400':'text-green-400'} font-bold mt-0.5">
                     ${errores>0?'ERROR':'OK'}
                 </div>
             </div>
-            <div class="text-lg font-bold ${errores>0?'text-red-400':'text-green-400'}">
+            <div class="text-lg font-black ${errores>0?'text-red-400':'text-green-400'}">
                 ${errores}
             </div>
         </div>
 
-        <!-- SLIDER COMPARACIÓN -->
-        <div class="relative w-full overflow-hidden rounded-xl border border-zinc-800">
-            
-            <img src="${item.img_a_url || ''}" class="w-full block">
-
-            <div id="${id}-overlay" class="absolute top-0 left-0 h-full overflow-hidden" style="width:50%">
-                <img src="${item.img_b_url || ''}" class="w-full block">
+        <!-- SLIDER COMPARACIÓN: desplegable -->
+        <details class="group border border-zinc-800 rounded-xl overflow-hidden">
+            <summary class="flex items-center justify-between p-3 cursor-pointer select-none bg-[#0d0d0d] hover:bg-zinc-900 transition">
+                <span class="font-mono text-xs font-bold text-gray-400 uppercase tracking-widest">Comparación Interactiva</span>
+                <svg class="w-4 h-4 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </summary>
+            <div class="p-3 border-t border-zinc-800 bg-black/30">
+                <div class="relative w-full overflow-hidden rounded-xl border border-zinc-800">
+                    <img src="${item.img_a_url || ''}" class="w-full block">
+                    <div id="${id}-overlay" class="absolute top-0 left-0 h-full overflow-hidden" style="width:50%">
+                        <img src="${item.img_b_url || ''}" class="w-full block">
+                    </div>
+                    <input type="range" min="0" max="100" value="50"
+                        class="absolute bottom-2 left-1/2 -translate-x-1/2 w-2/3"
+                        oninput="document.getElementById('${id}-overlay').style.width = this.value + '%'"
+                    >
+                </div>
+                <p class="font-mono text-[9px] text-[#505050] text-center mt-2">Deslizá para comparar Baseline vs Actual</p>
             </div>
-
-            <input type="range" min="0" max="100" value="50"
-                class="absolute bottom-2 left-1/2 -translate-x-1/2 w-2/3"
-                oninput="
-                    document.getElementById('${id}-overlay').style.width = this.value + '%'
-                "
-            >
-        </div>
+        </details>
 
         <!-- DIFF -->
         <div>
-            <div class="text-xs text-red-400 mb-1">DIFF</div>
+            <div class="font-mono text-[10px] text-red-400 mb-1 uppercase tracking-widest">Diff</div>
             <img src="${item.img_diff_url || ''}" 
                  onclick="openImageModal('${item.img_diff_url}')"
-                 class="rounded border border-red-500 w-full cursor-zoom-in">
+                 class="rounded border border-red-500/40 w-full cursor-zoom-in">
         </div>
 
         <!-- ORIGINALES -->
         <div class="grid grid-cols-2 gap-3">
             <div>
-                <div class="text-xs text-gray-400 mb-1">BASELINE</div>
+                <div class="font-mono text-[10px] text-gray-400 mb-1 uppercase tracking-widest">Baseline</div>
                 <img src="${item.img_a_url || ''}" 
                      onclick="openImageModal('${item.img_a_url}')"
-                     class="rounded border border-zinc-800 cursor-zoom-in">
+                     class="rounded border border-zinc-800 cursor-zoom-in w-full">
             </div>
-
             <div>
-                <div class="text-xs text-gray-400 mb-1">ACTUAL</div>
+                <div class="font-mono text-[10px] text-gray-400 mb-1 uppercase tracking-widest">Actual</div>
                 <img src="${item.img_b_url || ''}" 
                      onclick="openImageModal('${item.img_b_url}')"
-                     class="rounded border border-zinc-800 cursor-zoom-in">
+                     class="rounded border border-zinc-800 cursor-zoom-in w-full">
             </div>
         </div>
 
