@@ -1,0 +1,1 @@
+"Hola. Vamos a trabajar sobre el sistema QAVision. Te adjunto los archivos .md de contexto técnico que definen la base de datos, las tablas, las columnas reales y las reglas estrictas de diseño visual oscuras. Leelos con atención. Queda estrictamente prohibido inventar nombres de columnas o cambiar la estructura CSS de los componentes."
