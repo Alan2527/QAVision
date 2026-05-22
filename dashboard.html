@@ -194,7 +194,7 @@
             <!-- TOP ROW: Command Center + Quick Actions -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                <div class="lg:col-span-2 bg-tech p-6 rounded-2xl relative overflow-hidden flex flex-col justify-between">
+                <div class="lg:col-span-2 bg-tech p-6 rounded-2xl relative overflow-hidden flex flex-col">
                     <div class="absolute top-0 right-0 w-64 h-64 bg-[#10b981]/5 rounded-full blur-3xl pointer-events-none"></div>
                     <div class="mb-5">
                         <span class="font-mono-custom text-[9px] text-[#10b981] uppercase tracking-[0.25em] font-bold block mb-1">// Ejecución Individual</span>
@@ -219,7 +219,7 @@
                             </div>
                         </div>
 
-                        <div id="container-url-staging" class="fade-field grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                        <div id="container-url-staging" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                             <div class="md:col-span-2 md:col-start-2">
                                 <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">URL de Staging / Branch Especial</label>
                                 <input type="url" id="new-test-url-stage" class="w-full bg-black border border-[#1a1a1a] text-white text-xs rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block p-3 outline-none placeholder-[#333] font-mono-custom" placeholder="https://staging.ejemplo.com">
@@ -227,7 +227,7 @@
                         </div>
 
                         <!-- LINK SCANNER OPTIONS (visible solo cuando se elige Link Scanner) -->
-                        <div id="container-links-options" class="fade-field space-y-3" style="opacity:0;pointer-events:none;transform:translateY(-10px);">
+                        <div id="container-links-options" class="space-y-3" style="display:none;">
                             <div>
                                 <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Elementos a auditar</label>
                                 <div class="flex gap-2" id="cc-selector-elementos">
@@ -552,7 +552,7 @@
         const labelProd = document.getElementById('label-url-prod');
         const inputProd = document.getElementById('new-test-url-prod');
         if (suiteSelector && suiteSelector.value !== 'visual_regression.html') {
-            if (stagingContainer) { stagingContainer.style.opacity = '0'; stagingContainer.style.pointerEvents = 'none'; stagingContainer.style.transform = 'translateY(-10px)'; }
+            if (stagingContainer) stagingContainer.style.display = 'none';
             if (labelProd) labelProd.innerText = 'Target URL Analysis';
             if (inputProd) inputProd.placeholder = 'https://ejemplo.com/pagina-a-auditar';
         }
@@ -563,20 +563,20 @@
                 const linksOpts = document.getElementById('container-links-options');
 
                 if (isVRT) {
-                    if (stagingContainer) { stagingContainer.style.opacity = "1"; stagingContainer.style.pointerEvents = "auto"; stagingContainer.style.transform = "translateY(0)"; }
+                    if (stagingContainer) stagingContainer.style.display = 'grid';
                     if (labelProd) labelProd.innerText = "URL de Producción";
                     if (inputProd) inputProd.placeholder = "https://ejemplo.com";
-                    if (linksOpts) { linksOpts.style.opacity = "0"; linksOpts.style.pointerEvents = "none"; linksOpts.style.transform = "translateY(-10px)"; }
+                    if (linksOpts) linksOpts.style.display = 'none';
                 } else if (isLinks) {
-                    if (stagingContainer) { stagingContainer.style.opacity = "0"; stagingContainer.style.pointerEvents = "none"; stagingContainer.style.transform = "translateY(-10px)"; }
+                    if (stagingContainer) stagingContainer.style.display = 'none';
                     if (labelProd) labelProd.innerText = "Target URL Analysis";
                     if (inputProd) inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
-                    if (linksOpts) { linksOpts.style.opacity = "1"; linksOpts.style.pointerEvents = "auto"; linksOpts.style.transform = "translateY(0)"; }
+                    if (linksOpts) linksOpts.style.display = 'block';
                 } else {
-                    if (stagingContainer) { stagingContainer.style.opacity = "0"; stagingContainer.style.pointerEvents = "none"; stagingContainer.style.transform = "translateY(-10px)"; }
+                    if (stagingContainer) stagingContainer.style.display = 'none';
                     if (labelProd) labelProd.innerText = "Target URL Analysis";
                     if (inputProd) inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
-                    if (linksOpts) { linksOpts.style.opacity = "0"; linksOpts.style.pointerEvents = "none"; linksOpts.style.transform = "translateY(-10px)"; }
+                    if (linksOpts) linksOpts.style.display = 'none';
                 }
             });
         }
