@@ -98,6 +98,30 @@
         .main-scroll::-webkit-scrollbar-track { background: transparent; }
         .main-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
         .main-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+        /* Link Scanner controls */
+        .links-sel-btn {
+            flex: 1; min-width: 0;
+            padding: 6px 4px;
+            border-radius: 8px;
+            font-family: 'DM Mono', monospace;
+            font-size: 11px; font-weight: 700;
+            border: 1px solid #1a1a1a;
+            background: #000; color: #505050;
+            cursor: pointer; transition: all 0.15s; text-align: center;
+        }
+        .links-sel-btn.active { border-color: rgba(16,185,129,0.4); color: #10b981; background: rgba(16,185,129,0.08); }
+
+        .links-tipo-check {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 10px; border-radius: 8px;
+            border: 1px solid #1a1a1a; background: #000;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .links-tipo-check input[type="checkbox"] { accent-color: #10b981; width: 11px; height: 11px; }
+        .links-tipo-check span { font-family: 'DM Mono', monospace; font-size: 10px; color: #505050; }
+        .links-tipo-check.checked { border-color: rgba(16,185,129,0.3); }
+        .links-tipo-check.checked span { color: #10b981; }
     </style>
 </head>
 <body class="min-h-screen flex">
@@ -199,6 +223,30 @@
                             <div class="md:col-span-2 md:col-start-2">
                                 <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">URL de Staging / Branch Especial</label>
                                 <input type="url" id="new-test-url-stage" class="w-full bg-black border border-[#1a1a1a] text-white text-xs rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block p-3 outline-none placeholder-[#333] font-mono-custom" placeholder="https://staging.ejemplo.com">
+                            </div>
+                        </div>
+
+                        <!-- LINK SCANNER OPTIONS (visible solo cuando se elige Link Scanner) -->
+                        <div id="container-links-options" class="fade-field space-y-3" style="opacity:0;pointer-events:none;transform:translateY(-10px);">
+                            <div>
+                                <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Elementos a auditar</label>
+                                <div class="flex gap-2" id="cc-selector-elementos">
+                                    <button onclick="ccSeleccionarElementos(50, this)"  class="links-sel-btn active">50</button>
+                                    <button onclick="ccSeleccionarElementos(100, this)" class="links-sel-btn">100</button>
+                                    <button onclick="ccSeleccionarElementos(150, this)" class="links-sel-btn">150</button>
+                                    <button onclick="ccSeleccionarElementos(200, this)" class="links-sel-btn">200</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Tipos a auditar</label>
+                                <div class="grid grid-cols-3 gap-1.5" id="cc-tipos-grid">
+                                    <label class="links-tipo-check checked"><input type="checkbox" value="a"            checked onchange="ccToggleTipo(this)"><span>Enlaces &lt;a&gt;</span></label>
+                                    <label class="links-tipo-check checked"><input type="checkbox" value="button"       checked onchange="ccToggleTipo(this)"><span>Botones</span></label>
+                                    <label class="links-tipo-check checked"><input type="checkbox" value="role_button"  checked onchange="ccToggleTipo(this)"><span>role=button</span></label>
+                                    <label class="links-tipo-check checked"><input type="checkbox" value="role_link"    checked onchange="ccToggleTipo(this)"><span>role=link</span></label>
+                                    <label class="links-tipo-check checked"><input type="checkbox" value="input_submit" checked onchange="ccToggleTipo(this)"><span>Submit</span></label>
+                                    <label class="links-tipo-check checked"><input type="checkbox" value="onclick"      checked onchange="ccToggleTipo(this)"><span>onclick</span></label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -358,6 +406,28 @@
     let currentUser = null;
     let suiteStorage = { vrt: [], seo: [], perf: [], links: [] };
 
+    // Command Center — Link Scanner state
+    let ccMaxElementos = 50;
+    let ccTiposSeleccionados = ["a","button","role_button","role_link","input_submit","onclick"];
+
+    window.ccSeleccionarElementos = function(cantidad, btn) {
+        ccMaxElementos = cantidad;
+        document.querySelectorAll('#cc-selector-elementos .links-sel-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+
+    window.ccToggleTipo = function(checkbox) {
+        const label = checkbox.closest('.links-tipo-check');
+        if (checkbox.checked) {
+            if (!ccTiposSeleccionados.includes(checkbox.value)) ccTiposSeleccionados.push(checkbox.value);
+            label.classList.add('checked');
+        } else {
+            ccTiposSeleccionados = ccTiposSeleccionados.filter(t => t !== checkbox.value);
+            label.classList.remove('checked');
+            if (ccTiposSeleccionados.length === 0) { checkbox.checked = true; ccTiposSeleccionados.push(checkbox.value); label.classList.add('checked'); }
+        }
+    };
+
     function inicializarPlataforma() {
         try {
             if (typeof supabase === 'undefined') {
@@ -488,14 +558,25 @@
         }
         if (suiteSelector) {
             suiteSelector.addEventListener('change', (e) => {
-                if (e.target.value === "visual_regression.html") {
+                const isVRT   = e.target.value === "visual_regression.html";
+                const isLinks = e.target.value === "interaction_audit.html";
+                const linksOpts = document.getElementById('container-links-options');
+
+                if (isVRT) {
                     if (stagingContainer) { stagingContainer.style.opacity = "1"; stagingContainer.style.pointerEvents = "auto"; stagingContainer.style.transform = "translateY(0)"; }
                     if (labelProd) labelProd.innerText = "URL de Producción";
                     if (inputProd) inputProd.placeholder = "https://ejemplo.com";
+                    if (linksOpts) { linksOpts.style.opacity = "0"; linksOpts.style.pointerEvents = "none"; linksOpts.style.transform = "translateY(-10px)"; }
+                } else if (isLinks) {
+                    if (stagingContainer) { stagingContainer.style.opacity = "0"; stagingContainer.style.pointerEvents = "none"; stagingContainer.style.transform = "translateY(-10px)"; }
+                    if (labelProd) labelProd.innerText = "Target URL Analysis";
+                    if (inputProd) inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
+                    if (linksOpts) { linksOpts.style.opacity = "1"; linksOpts.style.pointerEvents = "auto"; linksOpts.style.transform = "translateY(0)"; }
                 } else {
                     if (stagingContainer) { stagingContainer.style.opacity = "0"; stagingContainer.style.pointerEvents = "none"; stagingContainer.style.transform = "translateY(-10px)"; }
                     if (labelProd) labelProd.innerText = "Target URL Analysis";
                     if (inputProd) inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
+                    if (linksOpts) { linksOpts.style.opacity = "0"; linksOpts.style.pointerEvents = "none"; linksOpts.style.transform = "translateY(-10px)"; }
                 }
             });
         }
@@ -510,6 +591,10 @@
             sessionStorage.setItem('qavision_last_prod', urlProd);
             sessionStorage.setItem('qavision_last_stage', urlStage);
             sessionStorage.setItem('qavision_trigger_test', 'true');
+            if (testType === 'interaction_audit.html') {
+                sessionStorage.setItem('qavision_links_max', ccMaxElementos);
+                sessionStorage.setItem('qavision_links_tipos', JSON.stringify(ccTiposSeleccionados));
+            }
             window.location.href = testType;
         });
         document.getElementById('btn-trigger-mass-run').addEventListener('click', async () => {
@@ -527,7 +612,7 @@
                     ...suiteStorage.vrt.map(r => fetch('https://qavision-qavision-engine.hf.space/api/comparar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url_a: r.stage, url_b: r.prod, user_id: userId, batch_id: batchId }) })),
                     ...suiteStorage.seo.map(r => fetch('https://qavision-qavision-engine.hf.space/api/seo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId }) })),
                     ...suiteStorage.perf.map(r => fetch('https://qavision-qavision-engine.hf.space/api/performance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId }) })),
-                    ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId }) })),
+                    ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, max_elementos: r.maxElementos || 50, tipos: r.tipos || ["a","button","role_button","role_link","input_submit","onclick"] }) })),
                 ];
                 await Promise.allSettled(llamadas);
                 window.location.href = 'mass_execution.html';
@@ -570,6 +655,39 @@
                     <div><span class="font-mono text-[9px] text-[#505050] block mb-1">STAGING TARGET #${index+1}</span><input type="url" onchange="updateRowValue('${item.id}', 'stage', this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.stage || ''}" placeholder="https://staging.site.com"></div>
                     <div class="relative pr-8"><span class="font-mono text-[9px] text-[#505050] block mb-1">PROD TARGET #${index+1}</span><input type="url" onchange="updateRowValue('${item.id}', 'prod', this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.prod || ''}" placeholder="https://site.com"><button onclick="removeSuiteRow('${item.id}')" class="absolute right-1 bottom-2 text-xs text-red-500/60 hover:text-red-400 p-1">&#x2715;</button></div>
                 </div>`;
+            } else if (currentActiveTab === 'links') {
+                const maxEl = item.maxElementos || 50;
+                const tipos = item.tipos || ["a","button","role_button","role_link","input_submit","onclick"];
+                const selBtns = [50,100,150,200].map(n =>
+                    `<button onclick="suiteSelElementos('${item.id}',${n},this)" class="links-sel-btn${maxEl===n?' active':''}">${n}</button>`
+                ).join('');
+                const tipoList = [
+                    {v:'a', l:'Enlaces &lt;a&gt;'},
+                    {v:'button', l:'Botones'},
+                    {v:'role_button', l:'role=button'},
+                    {v:'role_link', l:'role=link'},
+                    {v:'input_submit', l:'Submit'},
+                    {v:'onclick', l:'onclick'},
+                ];
+                const tipoChecks = tipoList.map(t => {
+                    const ch = tipos.includes(t.v);
+                    return `<label class="links-tipo-check${ch?' checked':''}"><input type="checkbox" value="${t.v}"${ch?' checked':''} onchange="suiteToggleTipo('${item.id}',this)"><span>${t.l}</span></label>`;
+                }).join('');
+                return `<div class="p-3 bg-black/40 rounded-xl border border-[#1a1a1a] space-y-3 relative">
+                    <div class="flex items-center gap-3 pr-7">
+                        <div class="flex-1"><span class="font-mono text-[9px] text-[#505050] block mb-1">ANALYSIS TARGET #${index+1}</span>
+                        <input type="url" onchange="updateRowValue('${item.id}', 'url', this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.url || ''}" placeholder="https://site.com/subpage"></div>
+                        <button onclick="removeSuiteRow('${item.id}')" class="absolute right-2 top-3 text-xs text-red-500/60 hover:text-red-400 p-1">&#x2715;</button>
+                    </div>
+                    <div>
+                        <span class="font-mono text-[9px] text-[#505050] block mb-1.5">ELEMENTOS</span>
+                        <div class="flex gap-1.5" id="suite-sel-${item.id}">${selBtns}</div>
+                    </div>
+                    <div>
+                        <span class="font-mono text-[9px] text-[#505050] block mb-1.5">TIPOS</span>
+                        <div class="grid grid-cols-3 gap-1" id="suite-tipos-${item.id}">${tipoChecks}</div>
+                    </div>
+                </div>`;
             } else {
                 return `<div class="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative pr-10">
                     <div class="flex-1"><span class="font-mono text-[9px] text-[#505050] block mb-1">ANALYSIS TARGET #${index+1}</span><input type="url" onchange="updateRowValue('${item.id}', 'url', this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.url || ''}" placeholder="https://site.com/subpage"></div>
@@ -587,9 +705,32 @@
         if (suiteStorage[currentActiveTab].length >= 20) { alert("Límite alcanzado: Máximo 20 configuraciones por módulo."); return; }
         const newId = generateSafeID();
         if (currentActiveTab === 'vrt') suiteStorage.vrt.push({ id: newId, stage: '', prod: '' });
+        else if (currentActiveTab === 'links') suiteStorage.links.push({ id: newId, url: '', maxElementos: 50, tipos: ["a","button","role_button","role_link","input_submit","onclick"] });
         else suiteStorage[currentActiveTab].push({ id: newId, url: '' });
         renderSuiteRows();
         updateCountersPanel();
+    };
+
+    // Suite Manager — Link Scanner helpers
+    window.suiteSelElementos = function(id, cantidad, btn) {
+        const row = suiteStorage.links.find(i => i.id === id);
+        if (row) row.maxElementos = cantidad;
+        const container = document.getElementById(`suite-sel-${id}`);
+        if (container) container.querySelectorAll('.links-sel-btn').forEach(b => b.classList.toggle('active', parseInt(b.textContent) === cantidad));
+    };
+
+    window.suiteToggleTipo = function(id, checkbox) {
+        const row = suiteStorage.links.find(i => i.id === id);
+        if (!row) return;
+        const label = checkbox.closest('.links-tipo-check');
+        if (checkbox.checked) {
+            if (!row.tipos.includes(checkbox.value)) row.tipos.push(checkbox.value);
+            label.classList.add('checked');
+        } else {
+            row.tipos = row.tipos.filter(t => t !== checkbox.value);
+            label.classList.remove('checked');
+            if (row.tipos.length === 0) { checkbox.checked = true; row.tipos.push(checkbox.value); label.classList.add('checked'); }
+        }
     };
 
     window.removeSuiteRow = function(id) {
