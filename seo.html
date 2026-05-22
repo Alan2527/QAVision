@@ -239,6 +239,32 @@
         </div>`;
     }
 
+    // Row con detalle de elementos (chips de id/class/src)
+    function rowDetalle(titulo, detalle, tipo, elementos) {
+        const chips = (elementos || []).map(el => {
+            let label = '';
+            if (el.id)     label = `#${el.id}`;
+            else if (el.clase) label = `.${el.clase.trim().split(/\s+/)[0]}`;
+            else if (el.src)   label = el.src.split('/').pop().slice(0, 30);
+            else if (el.name)  label = `[name="${el.name}"]`;
+            else if (el.tipo)  label = `<${el.tipo}>`;
+            else               label = 'sin selector';
+
+            const colorMap = { warn: 'text-yellow-400 border-yellow-500/20 bg-yellow-500/5', error: 'text-red-400 border-red-500/20 bg-red-500/5' };
+            const cc = colorMap[tipo] || colorMap.warn;
+            return `<span class="font-mono text-[9px] px-2 py-0.5 rounded border ${cc} whitespace-nowrap">${label}</span>`;
+        }).join('');
+
+        return `<div class="check-row">
+            <div style="padding-top:2px">${badge(tipo)}</div>
+            <div class="min-w-0 flex-1">
+                <p class="text-sm font-bold text-white">${titulo}</p>
+                <p class="font-mono text-xs text-[#505050] mt-1 break-words">${detalle}</p>
+                ${chips ? `<div class="flex flex-wrap gap-1.5 mt-2">${chips}</div>` : ''}
+            </div>
+        </div>`;
+    }
+
     function seccion(titulo) {
         return `<p class="section-label">// ${titulo}</p>`;
     }
@@ -377,7 +403,12 @@
         html += seccion('Accesibilidad');
         if (r.imgs_sin_alt > 0) {
             const t = r.imgs_sin_alt > 5 ? 'error' : 'warn'; cuenta(t);
-            html += row('Imágenes sin alt', `${r.imgs_sin_alt} de ${r.total_imgs} imágenes no tienen atributo alt`, t);
+            html += rowDetalle(
+                'Imágenes sin alt',
+                `${r.imgs_sin_alt} de ${r.total_imgs} imágenes no tienen atributo alt`,
+                t,
+                (r.imgs_sin_alt_detalle || []).map(el => ({ id: el.id, clase: el.class || el.clase, src: el.src, tipo: 'img' }))
+            );
         } else {
             const t = 'ok'; cuenta(t);
             html += row('Imágenes sin alt', `Todas las ${r.total_imgs} imágenes tienen alt`, t);
@@ -385,7 +416,12 @@
 
         if (r.inputs_sin_label > 0) {
             const t = 'error'; cuenta(t);
-            html += row('Inputs sin label', `${r.inputs_sin_label} campos de formulario sin etiqueta accesible`, t);
+            html += rowDetalle(
+                'Inputs sin label',
+                `${r.inputs_sin_label} campos de formulario sin etiqueta accesible`,
+                t,
+                (r.inputs_sin_label_detalle || []).map(el => ({ id: el.id, clase: el.class || el.clase, name: el.name, tipo: el.type || 'input' }))
+            );
         } else {
             const t = 'ok'; cuenta(t);
             html += row('Inputs sin label', 'Todos los inputs tienen label o aria-label', t);
@@ -393,7 +429,12 @@
 
         if (r.botones_sin_etiqueta > 0) {
             const t = 'warn'; cuenta(t);
-            html += row('Botones sin etiqueta', `${r.botones_sin_etiqueta} botones sin texto ni aria-label`, t);
+            html += rowDetalle(
+                'Botones sin etiqueta',
+                `${r.botones_sin_etiqueta} botones sin texto ni aria-label`,
+                t,
+                (r.botones_sin_etiqueta_detalle || []).map(el => ({ id: el.id, clase: el.class || el.clase, tipo: 'button' }))
+            );
         } else {
             const t = 'ok'; cuenta(t);
             html += row('Botones sin etiqueta', 'Todos los botones tienen texto o aria-label', t);
