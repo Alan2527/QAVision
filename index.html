@@ -9,7 +9,7 @@
     <style>
         :root {
             --green: #10b981;
-            --green-dim: rgba(16,185,129,0.12);
+            --green-dim: rgba(16,185,129,0.1);
             --green-border: rgba(16,185,129,0.25);
             --surface: #070707;
             --surface-2: #0d0d0d;
@@ -27,7 +27,7 @@
             overflow-x: hidden;
         }
 
-        /* Grain overlay */
+        /* Noise */
         body::before {
             content: '';
             position: fixed;
@@ -38,18 +38,19 @@
             opacity: 0.4;
         }
 
-        /* Grid background hero */
+        /* Grid hero */
         .hero-grid {
             position: absolute;
             inset: 0;
             background-image:
-                linear-gradient(rgba(16,185,129,0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(16,185,129,0.04) 1px, transparent 1px);
+                linear-gradient(rgba(16,185,129,0.035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(16,185,129,0.035) 1px, transparent 1px);
             background-size: 40px 40px;
-            mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 30%, transparent 100%);
+            mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 20%, transparent 100%);
+            z-index: 0;
         }
 
-        /* Nav */
+        /* NAV */
         nav {
             position: fixed;
             top: 0; left: 0; right: 0;
@@ -57,275 +58,28 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 48px;
-            background: rgba(0,0,0,0.7);
-            backdrop-filter: blur(16px);
+            padding: 18px 48px;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
         }
 
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-        }
-
-        .logo-mark {
-            width: 32px; height: 32px;
-            background: var(--green);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Syne', sans-serif;
-            font-weight: 800;
-            font-size: 16px;
-            color: #000;
-            font-style: italic;
-        }
-
-        .logo-text {
-            font-family: 'Syne', sans-serif;
-            font-weight: 800;
-            font-size: 18px;
-            color: var(--green);
-            letter-spacing: -0.5px;
-        }
-
-        .nav-tagline {
-            font-family: 'DM Mono', monospace;
-            font-size: 10px;
-            color: var(--muted);
-            letter-spacing: 0.15em;
-        }
-
-        .btn-login {
-            font-family: 'DM Sans', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--text);
-            background: var(--surface-2);
-            border: 1px solid var(--border);
-            padding: 8px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: border-color 0.2s, color 0.2s;
-        }
-        .btn-login:hover { border-color: var(--green); color: var(--green); }
-
-        /* Hero */
-        .hero {
-            position: relative;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 120px 48px 80px;
-            text-align: center;
-        }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--green-dim);
-            border: 1px solid var(--green-border);
-            border-radius: 99px;
-            padding: 6px 16px;
-            font-family: 'DM Mono', monospace;
-            font-size: 11px;
-            color: var(--green);
-            letter-spacing: 0.1em;
-            margin-bottom: 40px;
-            animation: fadeUp 0.8s ease both;
-        }
-
-        .hero-badge::before {
-            content: '';
-            width: 6px; height: 6px;
-            background: var(--green);
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(0.8); }
-        }
-
-        h1 {
-            font-family: 'Syne', sans-serif;
-            font-weight: 800;
-            font-size: clamp(36px, 6vw, 72px);
-            line-height: 1.0;
-            letter-spacing: -2px;
-            max-width: 860px;
-            animation: fadeUp 0.8s 0.1s ease both;
-        }
-
-        h1 em {
-            font-style: normal;
-            color: var(--green);
-        }
-
-        .hero-sub {
-            font-size: clamp(15px, 1.8vw, 18px);
-            color: var(--muted);
-            max-width: 580px;
-            line-height: 1.7;
-            margin-top: 24px;
-            font-weight: 400;
-            animation: fadeUp 0.8s 0.2s ease both;
-        }
-
-        .hero-cta {
-            display: flex;
-            gap: 12px;
-            margin-top: 48px;
-            flex-wrap: wrap;
-            justify-content: center;
-            animation: fadeUp 0.8s 0.3s ease both;
-        }
-
-        .btn-primary {
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 700;
-            font-size: 14px;
-            background: var(--green);
-            color: #000;
-            border: none;
-            padding: 14px 32px;
-            border-radius: 10px;
-            cursor: pointer;
-            text-decoration: none;
-            letter-spacing: 0.02em;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(16,185,129,0.3); }
-
-        .btn-ghost {
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 500;
-            font-size: 14px;
-            background: transparent;
-            color: var(--muted);
-            border: 1px solid var(--border);
-            padding: 14px 32px;
-            border-radius: 10px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: border-color 0.2s, color 0.2s;
-        }
-        .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
-
-        /* Scroll indicator */
-        .scroll-hint {
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            animation: fadeUp 1s 0.6s ease both;
-        }
-        .scroll-hint span {
-            font-family: 'DM Mono', monospace;
-            font-size: 10px;
-            color: var(--muted);
-            letter-spacing: 0.15em;
-        }
-        .scroll-line {
-            width: 1px;
-            height: 40px;
-            background: linear-gradient(to bottom, var(--muted), transparent);
-            animation: scrollLine 1.5s ease-in-out infinite;
-        }
-        @keyframes scrollLine {
-            0% { transform: scaleY(0); transform-origin: top; }
-            50% { transform: scaleY(1); transform-origin: top; }
-            51% { transform: scaleY(1); transform-origin: bottom; }
-            100% { transform: scaleY(0); transform-origin: bottom; }
-        }
+        .font-title { font-family: 'Syne', sans-serif; }
+        .font-mono  { font-family: 'DM Mono', monospace; }
 
         @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(24px); }
+            from { opacity: 0; transform: translateY(20px); }
             to   { opacity: 1; transform: translateY(0); }
         }
-
-        /* Módulos */
-        .modules {
-            padding: 0 48px 120px;
-            max-width: 1200px;
-            margin: 0 auto;
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.8); }
         }
-
-        .section-label {
-            font-family: 'DM Mono', monospace;
-            font-size: 10px;
-            color: var(--muted);
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            margin-bottom: 48px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        .section-label::after {
-            content: '';
-            flex: 1;
-            height: 1px;
-            background: var(--border);
-        }
-
-        .module-card {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0;
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 24px;
-            background: var(--surface);
-            transition: border-color 0.3s;
-        }
-        .module-card:hover { border-color: #2a2a2a; }
-
-        .module-form {
-            padding: 48px;
-            border-right: 1px solid var(--border);
-        }
-
-        .module-info {
-            padding: 48px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .module-number {
-            font-family: 'DM Mono', monospace;
-            font-size: 10px;
-            color: var(--green);
-            letter-spacing: 0.2em;
-            margin-bottom: 16px;
-        }
-
-        .module-title {
-            font-family: 'Syne', sans-serif;
-            font-weight: 700;
-            font-size: 22px;
-            letter-spacing: -0.5px;
-            margin-bottom: 12px;
-        }
-
-        .module-desc {
-            font-size: 14px;
-            color: var(--muted);
-            line-height: 1.7;
+        @keyframes scrollLine {
+            0%   { transform: scaleY(0); transform-origin: top; }
+            50%  { transform: scaleY(1); transform-origin: top; }
+            51%  { transform: scaleY(1); transform-origin: bottom; }
+            100% { transform: scaleY(0); transform-origin: bottom; }
         }
 
         /* Inputs */
@@ -334,26 +88,26 @@
             background: #000;
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 14px 16px;
+            padding: 12px 14px;
             font-family: 'DM Mono', monospace;
             font-size: 12px;
             color: var(--green);
             outline: none;
-            transition: border-color 0.2s;
-            margin-bottom: 12px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            margin-bottom: 10px;
         }
-        .input-field:focus { border-color: var(--green-border); }
-        .input-field::placeholder { color: #333; }
+        .input-field:focus { border-color: var(--green-border); box-shadow: 0 0 0 3px rgba(16,185,129,0.05); }
+        .input-field::placeholder { color: #252525; }
 
-        /* Botón de módulo */
+        /* Module run button */
         .btn-module {
             width: 100%;
             background: var(--surface-2);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: 14px;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 700;
+            padding: 13px;
+            font-family: 'DM Mono', monospace;
+            font-weight: 500;
             font-size: 11px;
             letter-spacing: 0.12em;
             text-transform: uppercase;
@@ -363,17 +117,19 @@
             margin-top: 4px;
         }
         .btn-module:hover:not(:disabled) { background: var(--green); color: #000; border-color: var(--green); }
-        .btn-module:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-module.running { border-color: var(--green-border); color: var(--green); }
+        .btn-module:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-module.running { border-color: var(--green-border); color: var(--green); animation: subtlePulse 1.5s ease-in-out infinite; }
 
-        /* Resultado inline */
+        @keyframes subtlePulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+        /* Result preview */
         .result-preview {
             display: none;
-            margin-top: 16px;
+            margin-top: 14px;
             background: #000;
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 20px;
+            padding: 18px;
             animation: fadeUp 0.4s ease both;
         }
         .result-preview.visible { display: block; }
@@ -382,49 +138,45 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--border);
+            padding: 7px 0;
+            border-bottom: 1px solid #111;
             font-size: 12px;
         }
-        .result-row:last-child { border-bottom: none; padding-bottom: 0; }
-        .result-label { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 11px; }
-        .result-val { font-weight: 700; font-family: 'DM Mono', monospace; font-size: 11px; }
+        .result-row:last-of-type { border-bottom: none; }
+        .result-label { color: var(--muted); font-family: 'DM Mono', monospace; font-size: 10px; }
+        .result-val   { font-weight: 700; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text); }
         .result-val.good  { color: #10b981; }
         .result-val.warn  { color: #f59e0b; }
         .result-val.error { color: #ef4444; }
 
+        /* CTA after result */
         .result-cta {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             width: 100%;
             margin-top: 14px;
             background: var(--green-dim);
             border: 1px solid var(--green-border);
-            border-radius: 8px;
-            padding: 11px;
-            font-family: 'DM Sans', sans-serif;
+            border-radius: 10px;
+            padding: 11px 14px;
+            font-family: 'DM Mono', monospace;
             font-weight: 700;
             font-size: 11px;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
             color: var(--green);
-            cursor: pointer;
-            text-align: center;
             text-decoration: none;
-            transition: background 0.2s;
+            transition: background 0.2s, box-shadow 0.2s;
         }
-        .result-cta:hover { background: rgba(16,185,129,0.2); }
+        .result-cta:hover { background: rgba(16,185,129,0.18); box-shadow: 0 0 20px rgba(16,185,129,0.1); }
 
-        /* Selector de elementos / tipos */
-        .selector-row {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
-        }
+        /* Selector btns */
         .sel-btn {
             flex: 1;
             min-width: 40px;
-            padding: 7px 4px;
+            padding: 6px 4px;
             border-radius: 8px;
             font-size: 11px;
             font-weight: 700;
@@ -432,502 +184,555 @@
             background: #000;
             color: var(--muted);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.15s;
             text-align: center;
             font-family: 'DM Mono', monospace;
         }
-        .sel-btn.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+        .sel-btn.active { border-color: var(--green-border); color: var(--green); background: var(--green-dim); }
 
-        .tipos-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 5px;
-            margin-bottom: 12px;
-        }
         .tipo-check {
-            display: flex;
-            align-items: center;
-            gap: 7px;
-            padding: 7px 10px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            background: #000;
-            cursor: pointer;
-            transition: all 0.2s;
+            display: flex; align-items: center; gap: 7px;
+            padding: 6px 10px;
+            border-radius: 8px; border: 1px solid var(--border);
+            background: #000; cursor: pointer; transition: all 0.15s;
         }
         .tipo-check input[type="checkbox"] { accent-color: var(--green); width: 12px; height: 12px; }
-        .tipo-check span { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.05em; }
+        .tipo-check span { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); }
         .tipo-check.checked { border-color: var(--green-border); }
         .tipo-check.checked span { color: var(--green); }
 
-        .form-label {
-            font-family: 'DM Mono', monospace;
-            font-size: 10px;
-            color: var(--muted);
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            display: block;
+        /* Module card */
+        .module-card {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            background: var(--surface);
+            transition: border-color 0.3s;
         }
+        .module-card:hover { border-color: #222; }
+        .module-form { padding: 40px; border-right: 1px solid var(--border); }
+        .module-info { padding: 40px; display: flex; flex-direction: column; justify-content: center; }
 
         /* Footer */
         footer {
             border-top: 1px solid var(--border);
-            padding: 40px 48px;
+            padding: 32px 48px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         footer p { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.1em; }
 
-        /* Responsive */
         @media (max-width: 768px) {
-            nav { padding: 16px 24px; }
-            .hero { padding: 100px 24px 80px; }
-            .modules { padding: 0 24px 80px; }
+            nav { padding: 14px 20px; }
+            .hero-inner { padding: 110px 20px 80px; }
+            .modules-wrap { padding: 0 20px 80px; }
             .module-card { grid-template-columns: 1fr; }
-            .module-form { border-right: none; border-bottom: 1px solid var(--border); padding: 32px 24px; }
-            .module-info { padding: 32px 24px; }
-            h1 { letter-spacing: -1px; }
+            .module-form { border-right: none; border-bottom: 1px solid var(--border); padding: 28px 20px; }
+            .module-info { padding: 28px 20px; }
+            footer { padding: 24px 20px; flex-direction: column; gap: 8px; text-align: center; }
         }
     </style>
 </head>
 <body>
 
-    <!-- NAV -->
-    <nav>
-        <a href="#" class="logo">
-        <div class="flex items-center gap-3">
-            <span class="font-title text-2xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">
-                QAVision
-            </span>
-            <span class="text-[10px] font-mono bg-zinc-900 border border-zinc-800 text-gray-400 px-2 py-0.5 rounded-full">Console v2.0</span>
+<!-- NAV -->
+<nav>
+    <a href="#" class="flex items-center gap-3 no-underline">
+        <span class="font-title text-xl font-black text-[#10b981] tracking-tighter italic">QAVision</span>
+        <span class="font-mono text-[9px] text-[#10b981]/50 bg-[#10b981]/10 border border-[#10b981]/20 px-2 py-0.5 rounded-full uppercase tracking-wider">v2.0</span>
+    </a>
+    <span class="font-mono text-[10px] text-[#303030] tracking-[0.2em] hidden md:block">QA SIN FRICCIÓN</span>
+    <a href="login.html" class="font-mono text-xs font-bold text-[#e8e8e8] bg-[#0d0d0d] border border-[#1a1a1a] px-5 py-2 rounded-lg hover:border-[#10b981] hover:text-[#10b981] transition-all">
+        Iniciar sesión
+    </a>
+</nav>
+
+<!-- HERO -->
+<section class="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden">
+    <div class="hero-grid"></div>
+
+    <!-- big glow -->
+    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] bg-[#10b981]/[0.04] rounded-full blur-[100px] pointer-events-none"></div>
+
+    <div class="hero-inner relative z-10 flex flex-col items-center px-6 pt-32 pb-24">
+
+        <!-- Badge -->
+        <div class="inline-flex items-center gap-2 bg-[#10b981]/10 border border-[#10b981]/25 rounded-full px-4 py-1.5 font-mono text-[11px] text-[#10b981] tracking-[0.1em] mb-10"
+             style="animation: fadeUp 0.7s ease both;">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#10b981]" style="animation: pulse 2s infinite;"></span>
+            VERSIÓN BETA PÚBLICA
         </div>
-        </a>
-        <span class="nav-tagline">QA SIN FRICCIÓN</span>
-        <a href="login.html" class="btn-login">Iniciar sesión</a>
-    </nav>
 
-    <!-- HERO -->
-    <section class="hero">
+        <!-- Title -->
+        <h1 class="font-title font-black tracking-tighter text-white leading-none mb-4 max-w-4xl"
+            style="font-size: clamp(52px, 8vw, 96px); animation: fadeUp 0.7s 0.08s ease both;">
+            QA sin fricción<br>
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#10b981] to-[#34d399]">para equipos reales.</span>
+        </h1>
 
-        <div class="hero-badge">VERSIÓN BETA PÚBLICA</div>
-
-<h1 class="font-title text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-500 tracking-tighter">
-    QAVision
-</h1>
-<p class="text-xl md:text-2xl text-gray-400 mt-6 max-w-lg font-medium">
-    QA sin fricción para equipos que no esperan.
-</p>
-
-        <p class="hero-sub">
+        <!-- Sub -->
+        <p class="text-[#505050] max-w-xl leading-relaxed mb-10 text-base md:text-lg"
+           style="animation: fadeUp 0.7s 0.16s ease both;">
             QAVision detecta regresiones visuales, valida interacciones y mide performance por vos.
-            Para equipos que priorizan entregar, no mantener scripts de testing.
+            Sin scripts. Sin Playwright. Sin Lighthouse instalado.
         </p>
 
-        <div class="hero-cta">
-            <a href="login.html" class="btn-primary">Crear cuenta gratis</a>
-            <a href="#modulos" class="btn-ghost">Ver cómo funciona ↓</a>
+        <!-- CTA row -->
+        <div class="flex gap-3 flex-wrap justify-center" style="animation: fadeUp 0.7s 0.24s ease both;">
+            <a href="login.html"
+               class="font-mono text-sm font-black uppercase tracking-wider bg-[#10b981] text-black px-8 py-3.5 rounded-xl hover:bg-[#0d9668] transition-all shadow-[0_0_28px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(16,185,129,0.3)] hover:-translate-y-0.5">
+                Crear cuenta gratis
+            </a>
+            <a href="#modulos"
+               class="font-mono text-sm font-medium text-[#505050] border border-[#1a1a1a] px-8 py-3.5 rounded-xl hover:border-[#2a2a2a] hover:text-[#e8e8e8] transition-all">
+                Ver cómo funciona ↓
+            </a>
         </div>
 
-        <div class="scroll-hint">
-            <span>SCROLL</span>
-            <div class="scroll-line"></div>
-        </div>
-    </section>
-
-    <!-- MÓDULOS -->
-    <section class="modules" id="modulos">
-
-        <p class="section-label">Módulos disponibles</p>
-
-        <!-- 01 VRT -->
-        <div class="module-card">
-            <div class="module-form">
-                <p class="module-number">01 // REGRESIÓN VISUAL</p>
-                <label class="form-label">URL Staging</label>
-                <input type="text" id="url_a" placeholder="https://staging.tusitio.com"
-                    value="https://polite-croissant-2576ee.netlify.app" class="input-field">
-                <label class="form-label">URL Producción</label>
-                <input type="text" id="url_b" placeholder="https://www.tusitio.com"
-                    value="https://lustrous-tapioca-75c610.netlify.app" class="input-field">
-                <button onclick="ejecutarVRT()" id="btn-vrt" class="btn-module">
-                    Comparar ambientes
-                </button>
-                <div id="result-vrt" class="result-preview">
-                    <div class="result-row">
-                        <span class="result-label">Diferencias detectadas</span>
-                        <span class="result-val" id="vrt-diffs">—</span>
-                    </div>
-                    <div class="result-row">
-                        <span class="result-label">Estado</span>
-                        <span class="result-val" id="vrt-estado">—</span>
-                    </div>
-                    <a href="login.html" class="result-cta">Iniciar sesión para ver el reporte completo →</a>
-                </div>
+        <!-- Stats row -->
+        <div class="flex gap-8 mt-16 flex-wrap justify-center" style="animation: fadeUp 0.7s 0.32s ease both;">
+            <div class="text-center">
+                <p class="font-title text-3xl font-black text-white">4</p>
+                <p class="font-mono text-[9px] text-[#505050] uppercase tracking-widest mt-0.5">Módulos de QA</p>
             </div>
-            <div class="module-info">
-                <p class="module-number">01</p>
-                <h3 class="module-title">Regresión Visual</h3>
-                <p class="module-desc">
-                    Comparamos staging vs producción pixel a pixel y reportamos cada diferencia de CSS antes de que llegue a tus usuarios. Sin configurar Playwright, sin escribir selectores.
-                </p>
+            <div class="w-px bg-[#1a1a1a] self-stretch hidden md:block"></div>
+            <div class="text-center">
+                <p class="font-title text-3xl font-black text-white">0</p>
+                <p class="font-mono text-[9px] text-[#505050] uppercase tracking-widest mt-0.5">Scripts a mantener</p>
+            </div>
+            <div class="w-px bg-[#1a1a1a] self-stretch hidden md:block"></div>
+            <div class="text-center">
+                <p class="font-title text-3xl font-black text-[#10b981]">∞</p>
+                <p class="font-mono text-[9px] text-[#505050] uppercase tracking-widest mt-0.5">URLs auditables</p>
             </div>
         </div>
 
-        <!-- 02 Interaction -->
-        <div class="module-card">
-            <div class="module-form">
-                <p class="module-number">02 // AUDITORÍA DE INTERACCIÓN</p>
-                <label class="form-label">URL a auditar</label>
-                <input type="text" id="url_links" placeholder="https://www.tusitio.com" class="input-field">
-
-                <label class="form-label">Elementos a auditar</label>
-                <div class="selector-row" id="selector-elementos">
-                    <button onclick="seleccionarElementos(50, this)" class="sel-btn active">50</button>
-                    <button onclick="seleccionarElementos(100, this)" class="sel-btn">100</button>
-                    <button onclick="seleccionarElementos(150, this)" class="sel-btn">150</button>
-                    <button onclick="seleccionarElementos(200, this)" class="sel-btn">200</button>
-                </div>
-
-                <label class="form-label">Tipos a auditar</label>
-                <div class="tipos-grid" id="tipos-grid">
-                    <label class="tipo-check checked">
-                        <input type="checkbox" value="a" checked onchange="toggleTipo(this)">
-                        <span>Enlaces &lt;a&gt;</span>
-                    </label>
-                    <label class="tipo-check checked">
-                        <input type="checkbox" value="button" checked onchange="toggleTipo(this)">
-                        <span>Botones</span>
-                    </label>
-                    <label class="tipo-check checked">
-                        <input type="checkbox" value="role_button" checked onchange="toggleTipo(this)">
-                        <span>role=button</span>
-                    </label>
-                    <label class="tipo-check checked">
-                        <input type="checkbox" value="role_link" checked onchange="toggleTipo(this)">
-                        <span>role=link</span>
-                    </label>
-                    <label class="tipo-check checked">
-                        <input type="checkbox" value="input_submit" checked onchange="toggleTipo(this)">
-                        <span>Submit</span>
-                    </label>
-                    <label class="tipo-check checked">
-                        <input type="checkbox" value="onclick" checked onchange="toggleTipo(this)">
-                        <span>onclick</span>
-                    </label>
-                </div>
-
-                <button onclick="ejecutarLinks()" id="btn-links" class="btn-module">
-                    Auditar interacciones
-                </button>
-                <div id="result-links" class="result-preview">
-                    <div class="result-row">
-                        <span class="result-label">Total elementos</span>
-                        <span class="result-val" id="links-total">—</span>
-                    </div>
-                    <div class="result-row">
-                        <span class="result-label">Obstruidos</span>
-                        <span class="result-val error" id="links-obs">—</span>
-                    </div>
-                    <div class="result-row">
-                        <span class="result-label">Saludables</span>
-                        <span class="result-val good" id="links-ok">—</span>
-                    </div>
-                    <a href="login.html" class="result-cta">Iniciar sesión para ver el reporte completo →</a>
-                </div>
-            </div>
-            <div class="module-info">
-                <p class="module-number">02</p>
-                <h3 class="module-title">Auditoría de Interacción</h3>
-                <p class="module-desc">
-                    Verificamos que cada botón, enlace y formulario sea realmente clickeable, sin popups ni anuncios que los obstruyan. Detectamos obstrucciones de z-index, elementos ocultos y errores de layout.
-                </p>
-            </div>
+        <!-- Scroll hint -->
+        <div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2" style="animation: fadeUp 1s 0.5s ease both;">
+            <span class="font-mono text-[9px] text-[#303030] tracking-[0.2em]">SCROLL</span>
+            <div style="width:1px;height:36px;background:linear-gradient(to bottom,#303030,transparent);animation:scrollLine 1.6s ease-in-out infinite;"></div>
         </div>
 
-        <!-- 03 Performance -->
-        <div class="module-card">
-            <div class="module-form">
-                <p class="module-number">03 // CORE WEB VITALS</p>
-                <label class="form-label">URL a medir</label>
-                <input type="text" id="url_perf" placeholder="https://www.tusitio.com" class="input-field">
-                <button onclick="ejecutarPerformance()" id="btn-perf" class="btn-module">
-                    Medir rendimiento
-                </button>
-                <div id="result-perf" class="result-preview">
-                    <div class="result-row">
-                        <span class="result-label">LCP</span>
-                        <span class="result-val" id="perf-lcp">—</span>
-                    </div>
-                    <div class="result-row">
-                        <span class="result-label">FCP</span>
-                        <span class="result-val" id="perf-fcp">—</span>
-                    </div>
-                    <div class="result-row">
-                        <span class="result-label">CLS</span>
-                        <span class="result-val" id="perf-cls">—</span>
-                    </div>
-                    <div class="result-row">
-                        <span class="result-label">Score general</span>
-                        <span class="result-val" id="perf-score">—</span>
-                    </div>
-                    <a href="login.html" class="result-cta">Iniciar sesión para ver el reporte completo →</a>
-                </div>
+    </div>
+</section>
+
+<!-- MODULES SECTION -->
+<section class="modules-wrap relative z-10 max-w-6xl mx-auto px-6 md:px-12 pb-32" id="modulos">
+
+    <!-- Section label -->
+    <div class="flex items-center gap-4 mb-12">
+        <span class="font-mono text-[10px] text-[#10b981] uppercase tracking-[0.25em] font-bold">// Módulos disponibles</span>
+        <div class="flex-1 h-px bg-[#1a1a1a]"></div>
+        <span class="font-mono text-[9px] text-[#303030]">Probá en vivo — el reporte completo requiere cuenta</span>
+    </div>
+
+    <!-- 01 VRT -->
+    <div class="module-card">
+        <div class="module-form">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="font-mono text-[9px] text-[#10b981] font-bold uppercase tracking-[0.2em]">01 // Regresión Visual</span>
             </div>
-            <div class="module-info">
-                <p class="module-number">03</p>
-                <h3 class="module-title">Core Web Vitals</h3>
-                <p class="module-desc">
-                    Medimos LCP, FCP, CLS y TTI contra los umbrales oficiales de Google y te damos un score de rendimiento accionable. Sin instalar Lighthouse ni extensiones de Chrome.
-                </p>
+            <label class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.15em] block mb-2">URL Staging</label>
+            <input type="text" id="url_a" placeholder="https://staging.tusitio.com"
+                value="https://polite-croissant-2576ee.netlify.app" class="input-field">
+            <label class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.15em] block mb-2">URL Producción</label>
+            <input type="text" id="url_b" placeholder="https://www.tusitio.com"
+                value="https://lustrous-tapioca-75c610.netlify.app" class="input-field">
+            <button onclick="ejecutarVRT()" id="btn-vrt" class="btn-module">Comparar ambientes</button>
+            <div id="result-vrt" class="result-preview">
+                <div class="result-row">
+                    <span class="result-label">Diferencias detectadas</span>
+                    <span class="result-val" id="vrt-diffs">—</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Estado</span>
+                    <span class="result-val" id="vrt-estado">—</span>
+                </div>
+                <a href="login.html" class="result-cta">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                    Ver reporte completo con imágenes →
+                </a>
             </div>
         </div>
-
-        <!-- 04 SEO -->
-        <div class="module-card">
-            <div class="module-form">
-                <p class="module-number">04 // SEO & ACCESIBILIDAD</p>
-                <label class="form-label">URL a auditar</label>
-                <input type="text" id="url_seo" placeholder="https://www.tusitio.com" class="input-field">
-                <button onclick="ejecutarSEO()" id="btn-seo" class="btn-module">
-                    Auditar SEO
-                </button>
-                <div id="result-seo" class="result-preview">
-                    <div class="result-row">
-                        <span class="result-label">Checks OK</span>
-                        <span class="result-val good" id="seo-ok">—</span>
-                    </div>
-                    <div class="result-row">
-                        <span class="result-label">Advertencias</span>
-                        <span class="result-val warn" id="seo-warn">—</span>
-                    </div>
-                    <div class="result-row">
-                        <span class="result-label">Errores</span>
-                        <span class="result-val error" id="seo-errors">—</span>
-                    </div>
-                    <a href="login.html" class="result-cta">Iniciar sesión para ver el reporte completo →</a>
+        <div class="module-info">
+            <p class="font-mono text-[9px] text-[#10b981] tracking-[0.2em] mb-4">01</p>
+            <h3 class="font-title text-2xl font-bold tracking-tight mb-3">Regresión Visual</h3>
+            <p class="text-sm text-[#505050] leading-relaxed mb-6">
+                Comparamos staging vs producción pixel a pixel y reportamos cada diferencia de CSS antes de que llegue a tus usuarios. Sin configurar Playwright, sin escribir selectores.
+            </p>
+            <div class="space-y-2">
+                <div class="flex items-center gap-2 font-mono text-[10px] text-[#505050]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0"></span> Comparación pixel-a-pixel
+                </div>
+                <div class="flex items-center gap-2 font-mono text-[10px] text-[#505050]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0"></span> Imagen diff interactiva
+                </div>
+                <div class="flex items-center gap-2 font-mono text-[10px] text-[#505050]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0"></span> Historial de regresiones
                 </div>
             </div>
-            <div class="module-info">
-                <p class="module-number">04</p>
-                <h3 class="module-title">SEO & Accesibilidad</h3>
-                <p class="module-desc">
-                    Checklist completo de title, meta tags, Open Graph, imágenes sin alt e inputs sin label. Listo para presentarle al cliente o al equipo de producto.
-                </p>
+        </div>
+    </div>
+
+    <!-- 02 Interaction -->
+    <div class="module-card">
+        <div class="module-form">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="font-mono text-[9px] text-[#10b981] font-bold uppercase tracking-[0.2em]">02 // Auditoría de Interacción</span>
+            </div>
+            <label class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.15em] block mb-2">URL a auditar</label>
+            <input type="text" id="url_links" placeholder="https://www.tusitio.com" class="input-field">
+
+            <label class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.15em] block mb-2">Elementos a auditar</label>
+            <div class="flex gap-1.5 mb-3" id="selector-elementos">
+                <button onclick="seleccionarElementos(50, this)"  class="sel-btn active">50</button>
+                <button onclick="seleccionarElementos(100, this)" class="sel-btn">100</button>
+                <button onclick="seleccionarElementos(150, this)" class="sel-btn">150</button>
+                <button onclick="seleccionarElementos(200, this)" class="sel-btn">200</button>
+            </div>
+
+            <label class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.15em] block mb-2">Tipos a auditar</label>
+            <div class="grid grid-cols-2 gap-1.5 mb-3">
+                <label class="tipo-check checked"><input type="checkbox" value="a" checked onchange="toggleTipo(this)"><span>Enlaces &lt;a&gt;</span></label>
+                <label class="tipo-check checked"><input type="checkbox" value="button" checked onchange="toggleTipo(this)"><span>Botones</span></label>
+                <label class="tipo-check checked"><input type="checkbox" value="role_button" checked onchange="toggleTipo(this)"><span>role=button</span></label>
+                <label class="tipo-check checked"><input type="checkbox" value="role_link" checked onchange="toggleTipo(this)"><span>role=link</span></label>
+                <label class="tipo-check checked"><input type="checkbox" value="input_submit" checked onchange="toggleTipo(this)"><span>Submit</span></label>
+                <label class="tipo-check checked"><input type="checkbox" value="onclick" checked onchange="toggleTipo(this)"><span>onclick</span></label>
+            </div>
+
+            <button onclick="ejecutarLinks()" id="btn-links" class="btn-module">Auditar interacciones</button>
+            <div id="result-links" class="result-preview">
+                <div class="result-row">
+                    <span class="result-label">Total elementos</span>
+                    <span class="result-val" id="links-total">—</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Obstruidos</span>
+                    <span class="result-val error" id="links-obs">—</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Saludables</span>
+                    <span class="result-val good" id="links-ok">—</span>
+                </div>
+                <a href="login.html" class="result-cta">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                    Ver tabla completa de interacciones →
+                </a>
             </div>
         </div>
+        <div class="module-info">
+            <p class="font-mono text-[9px] text-[#10b981] tracking-[0.2em] mb-4">02</p>
+            <h3 class="font-title text-2xl font-bold tracking-tight mb-3">Auditoría de Interacción</h3>
+            <p class="text-sm text-[#505050] leading-relaxed mb-6">
+                Verificamos que cada botón, enlace y formulario sea realmente clickeable, sin popups ni anuncios que los obstruyan. Detectamos obstrucciones de z-index, elementos ocultos y errores de layout.
+            </p>
+            <div class="space-y-2">
+                <div class="flex items-center gap-2 font-mono text-[10px] text-[#505050]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0"></span> Detección de obstrucciones
+                </div>
+                <div class="flex items-center gap-2 font-mono text-[10px] text-[#505050]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0"></span> Análisis de z-index y overlays
+                </div>
+                <div class="flex items-center gap-2 font-mono text-[10px] text-[#505050]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0"></span> Reporte por tipo de elemento
+                </div>
+            </div>
+        </div>
+    </div>
 
-    </section>
+    <!-- 03 Performance -->
+    <div class="module-card">
+        <div class="module-form">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="font-mono text-[9px] text-[#10b981] font-bold uppercase tracking-[0.2em]">03 // Core Web Vitals</span>
+            </div>
+            <label class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.15em] block mb-2">URL a medir</label>
+            <input type="text" id="url_perf" placeholder="https://www.tusitio.com" class="input-field">
+            <button onclick="ejecutarPerformance()" id="btn-perf" class="btn-module">Medir rendimiento</button>
+            <div id="result-perf" class="result-preview">
+                <div class="result-row">
+                    <span class="result-label">LCP</span>
+                    <span class="result-val" id="perf-lcp">—</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">FCP</span>
+                    <span class="result-val" id="perf-fcp">—</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">CLS</span>
+                    <span class="result-val" id="perf-cls">—</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Score general</span>
+                    <span class="result-val" id="perf-score">—</span>
+                </div>
+                <a href="login.html" class="result-cta">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Ver CWV completos con TTI y Peso →
+                </a>
+            </div>
+        </div>
+        <div class="module-info">
+            <p class="font-mono text-[9px] text-[#10b981] tracking-[0.2em] mb-4">03</p>
+            <h3 class="font-title text-2xl font-bold tracking-tight mb-3">Core Web Vitals</h3>
+            <p class="text-sm text-[#505050] leading-relaxed mb-6">
+                Medimos LCP, FCP, CLS y TTI contra los umbrales oficiales de Google y te damos un score de rendimiento accionable. Sin instalar Lighthouse ni extensiones de Chrome.
+            </p>
+            <div class="space-y-2">
+                <div class="flex items-center gap-2 font-mono text-[10px] text-[#505050]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0"></span> LCP, FCP, CLS, TTI
+                </div>
+                <div class="flex items-center gap-2 font-mono text-[10px] text-[#505050]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0"></span> Score con umbrales Google
+                </div>
+                <div class="flex items-center gap-2 font-mono text-[10px] text-[#505050]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0"></span> Peso y tiempo de carga total
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- FOOTER -->
-    <footer>
-        <p>QAVISION © 2026</p>
-        <p>QA SIN FRICCIÓN</p>
-    </footer>
+    <!-- 04 SEO -->
+    <div class="module-card">
+        <div class="module-form">
+            <div class="flex items-center gap-2 mb-6">
+                <span class="font-mono text-[9px] text-[#10b981] font-bold uppercase tracking-[0.2em]">04 // SEO & Accesibilidad</span>
+            </div>
+            <label class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.15em] block mb-2">URL a auditar</label>
+            <input type="text" id="url_seo" placeholder="https://www.tusitio.com" class="input-field">
+            <button onclick="ejecutarSEO()" id="btn-seo" class="btn-module">Auditar SEO</button>
+            <div id="result-seo" class="result-preview">
+                <div class="result-row">
+                    <span class="result-label">Checks OK</span>
+                    <span class="result-val good" id="seo-ok">—</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Advertencias</span>
+                    <span class="result-val warn" id="seo-warn">—</span>
+                </div>
+                <div class="result-row">
+                    <span class="result-label">Errores críticos</span>
+                    <span class="result-val error" id="seo-errors">—</span>
+                </div>
+                <a href="login.html" class="result-cta">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    Ver checklist SEO completo →
+                </a>
+            </div>
+        </div>
+        <div class="module-info">
+            <p class="font-mono text-[9px] text-[#10b981] tracking-[0.2em] mb-4">04</p>
+            <h3 class="font-title text-2xl font-bold tracking-tight mb-3">SEO & Accesibilidad</h3>
+            <p class="text-sm text-[#505050] leading-relaxed mb-6">
+                Checklist completo de title, meta tags, Open Graph, imágenes sin alt e inputs sin label. Listo para presentarle al cliente o al equipo de producto.
+            </p>
+            <div class="space-y-2">
+                <div class="flex items-center gap-2 font-mono text-[10px] text-[#505050]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0"></span> Title, description, OG tags
+                </div>
+                <div class="flex items-center gap-2 font-mono text-[10px] text-[#505050]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0"></span> Accesibilidad: alt, labels, aria
+                </div>
+                <div class="flex items-center gap-2 font-mono text-[10px] text-[#505050]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] shrink-0"></span> Robots, canonical, indexación
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <script>
-        const API_BASE = 'https://qavision-qavision-engine.hf.space/api';
+    <!-- Bottom CTA banner -->
+    <div class="mt-16 relative border border-[#10b981]/20 rounded-2xl overflow-hidden bg-[#0d0d0d] p-10 text-center">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(16,185,129,0.04),transparent)]"></div>
+        <div class="relative z-10">
+            <span class="font-mono text-[9px] text-[#10b981] uppercase tracking-[0.3em] font-bold block mb-3">// Para ver los reportes completos</span>
+            <h3 class="font-title text-3xl font-black text-white tracking-tight mb-3">Creá tu cuenta gratis.</h3>
+            <p class="font-mono text-xs text-[#505050] mb-8 max-w-sm mx-auto">Guardá historial ilimitado, ejecutá mass execution y accedé al dashboard completo.</p>
+            <div class="flex gap-3 justify-center flex-wrap">
+                <a href="login.html"
+                   class="font-mono text-sm font-black uppercase tracking-wider bg-[#10b981] text-black px-8 py-3.5 rounded-xl hover:bg-[#0d9668] transition-all shadow-[0_0_24px_rgba(16,185,129,0.2)]">
+                    Registrarme gratis
+                </a>
+                <a href="login.html"
+                   class="font-mono text-sm font-medium text-[#505050] border border-[#1a1a1a] px-8 py-3.5 rounded-xl hover:text-white hover:border-[#2a2a2a] transition-all">
+                    Ya tengo cuenta →
+                </a>
+            </div>
+        </div>
+    </div>
 
-        // Estado compartido
-        let maxElementos = 50;
-        let tiposSeleccionados = ["a", "button", "role_button", "role_link", "input_submit", "onclick"];
+</section>
 
-        function seleccionarElementos(cantidad, btn) {
-            maxElementos = cantidad;
-            document.querySelectorAll('#selector-elementos .sel-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+<!-- FOOTER -->
+<footer>
+    <div class="flex items-center gap-2">
+        <span class="font-title text-base font-black text-[#10b981] italic tracking-tighter">QAVision</span>
+        <span class="font-mono text-[9px] text-[#303030]">© 2026</span>
+    </div>
+    <p class="font-mono text-[9px] text-[#303030] tracking-[0.2em]">QA SIN FRICCIÓN // CONSOLE V2.0</p>
+</footer>
+
+<script>
+    const API_BASE = 'https://qavision-qavision-engine.hf.space/api';
+
+    let maxElementos = 50;
+    let tiposSeleccionados = ["a", "button", "role_button", "role_link", "input_submit", "onclick"];
+
+    function seleccionarElementos(cantidad, btn) {
+        maxElementos = cantidad;
+        document.querySelectorAll('#selector-elementos .sel-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    function toggleTipo(checkbox) {
+        const valor = checkbox.value;
+        const label = checkbox.closest('.tipo-check');
+        if (checkbox.checked) {
+            if (!tiposSeleccionados.includes(valor)) tiposSeleccionados.push(valor);
+            label.classList.add('checked');
+        } else {
+            tiposSeleccionados = tiposSeleccionados.filter(t => t !== valor);
+            label.classList.remove('checked');
         }
-
-        function toggleTipo(checkbox) {
-            const valor = checkbox.value;
-            const label = checkbox.closest('.tipo-check');
-            if (checkbox.checked) {
-                if (!tiposSeleccionados.includes(valor)) tiposSeleccionados.push(valor);
-                label.classList.add('checked');
-            } else {
-                tiposSeleccionados = tiposSeleccionados.filter(t => t !== valor);
-                label.classList.remove('checked');
-            }
-            if (tiposSeleccionados.length === 0) {
-                checkbox.checked = true;
-                tiposSeleccionados.push(valor);
-                label.classList.add('checked');
-            }
+        if (tiposSeleccionados.length === 0) {
+            checkbox.checked = true;
+            tiposSeleccionados.push(valor);
+            label.classList.add('checked');
         }
+    }
 
-        // Helpers
-        function msToS(ms) { return ms ? (ms / 1000).toFixed(2) + 's' : 'N/D'; }
-        function clsClass(v) { return v <= 0.1 ? 'good' : v <= 0.25 ? 'warn' : 'error'; }
-        function timeClass(ms, good, poor) { return ms <= good ? 'good' : ms <= poor ? 'warn' : 'error'; }
+    function msToS(ms) { return ms ? (ms / 1000).toFixed(2) + 's' : 'N/D'; }
+    function clsClass(v) { return v <= 0.1 ? 'good' : v <= 0.25 ? 'warn' : 'error'; }
+    function timeClass(ms, good, poor) { return ms <= good ? 'good' : ms <= poor ? 'warn' : 'error'; }
 
-        // --- 01 VRT ---
-        async function ejecutarVRT() {
-            const btn = document.getElementById('btn-vrt');
-            const urlA = document.getElementById('url_a').value.trim();
-            const urlB = document.getElementById('url_b').value.trim();
-            if (!urlA || !urlB) { alert('Ingresá ambas URLs antes de comparar.'); return; }
-
-            btn.textContent = 'Analizando...';
-            btn.classList.add('running');
-            btn.disabled = true;
-
-            try {
-                const res = await fetch(`${API_BASE}/comparar`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url_a: urlA, url_b: urlB })
-                });
-                if (!res.ok) throw new Error();
-                const data = await res.json();
-                const diffs = data.diferencias;
-
-                document.getElementById('vrt-diffs').textContent = diffs;
-                document.getElementById('vrt-diffs').className = 'result-val ' + (diffs === 0 ? 'good' : diffs < 5 ? 'warn' : 'error');
-                document.getElementById('vrt-estado').textContent = diffs === 0 ? 'Sin regresiones ✓' : `${diffs} diferencia${diffs > 1 ? 's' : ''} encontrada${diffs > 1 ? 's' : ''}`;
-                document.getElementById('vrt-estado').className = 'result-val ' + (diffs === 0 ? 'good' : 'error');
-                document.getElementById('result-vrt').classList.add('visible');
-
-                btn.textContent = 'Comparar de nuevo';
-            } catch(e) {
-                alert('Error al conectar con el motor VRT.');
-                btn.textContent = 'Comparar ambientes';
-            }
-            btn.classList.remove('running');
-            btn.disabled = false;
+    async function ejecutarVRT() {
+        const btn = document.getElementById('btn-vrt');
+        const urlA = document.getElementById('url_a').value.trim();
+        const urlB = document.getElementById('url_b').value.trim();
+        if (!urlA || !urlB) { alert('Ingresá ambas URLs antes de comparar.'); return; }
+        btn.textContent = 'Analizando...'; btn.classList.add('running'); btn.disabled = true;
+        try {
+            const res = await fetch(`${API_BASE}/comparar`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url_a: urlA, url_b: urlB })
+            });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            const diffs = data.diferencias;
+            document.getElementById('vrt-diffs').textContent = diffs;
+            document.getElementById('vrt-diffs').className = 'result-val ' + (diffs === 0 ? 'good' : diffs < 5 ? 'warn' : 'error');
+            document.getElementById('vrt-estado').textContent = diffs === 0 ? 'Sin regresiones ✓' : `${diffs} diferencia${diffs > 1 ? 's' : ''} encontrada${diffs > 1 ? 's' : ''}`;
+            document.getElementById('vrt-estado').className = 'result-val ' + (diffs === 0 ? 'good' : 'error');
+            document.getElementById('result-vrt').classList.add('visible');
+            btn.textContent = 'Comparar de nuevo';
+        } catch(e) {
+            alert('Error al conectar con el motor VRT.');
+            btn.textContent = 'Comparar ambientes';
         }
+        btn.classList.remove('running'); btn.disabled = false;
+    }
 
-        // --- 02 INTERACTION ---
-        async function ejecutarLinks() {
-            const btn = document.getElementById('btn-links');
-            const url = document.getElementById('url_links').value.trim();
-            if (!url) { alert('Ingresá una URL válida.'); return; }
-
-            btn.textContent = 'Auditando...';
-            btn.classList.add('running');
-            btn.disabled = true;
-
-            try {
-                const res = await fetch(`${API_BASE}/auditar-links`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url, max_elementos: maxElementos, tipos: tiposSeleccionados })
-                });
-                if (!res.ok) throw new Error();
-                const data = await res.json();
-                const reporte = data.reporte;
-                const obs = reporte.filter(r => r.obstruido).length;
-
-                document.getElementById('links-total').textContent = reporte.length;
-                document.getElementById('links-obs').textContent = obs;
-                document.getElementById('links-ok').textContent = reporte.length - obs;
-                document.getElementById('result-links').classList.add('visible');
-
-                btn.textContent = 'Auditar de nuevo';
-            } catch(e) {
-                alert('Error al conectar con el motor de interacción.');
-                btn.textContent = 'Auditar interacciones';
-            }
-            btn.classList.remove('running');
-            btn.disabled = false;
+    async function ejecutarLinks() {
+        const btn = document.getElementById('btn-links');
+        const url = document.getElementById('url_links').value.trim();
+        if (!url) { alert('Ingresá una URL válida.'); return; }
+        btn.textContent = 'Auditando...'; btn.classList.add('running'); btn.disabled = true;
+        try {
+            const res = await fetch(`${API_BASE}/auditar-links`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url, max_elementos: maxElementos, tipos: tiposSeleccionados })
+            });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            const obs = data.reporte.filter(r => r.obstruido).length;
+            document.getElementById('links-total').textContent = data.reporte.length;
+            document.getElementById('links-obs').textContent = obs;
+            document.getElementById('links-ok').textContent = data.reporte.length - obs;
+            document.getElementById('result-links').classList.add('visible');
+            btn.textContent = 'Auditar de nuevo';
+        } catch(e) {
+            alert('Error al conectar con el motor de interacción.');
+            btn.textContent = 'Auditar interacciones';
         }
+        btn.classList.remove('running'); btn.disabled = false;
+    }
 
-        // --- 03 PERFORMANCE ---
-        async function ejecutarPerformance() {
-            const btn = document.getElementById('btn-perf');
-            const url = document.getElementById('url_perf').value.trim();
-            if (!url) { alert('Ingresá una URL válida.'); return; }
-
-            btn.textContent = 'Midiendo...';
-            btn.classList.add('running');
-            btn.disabled = true;
-
-            try {
-                const res = await fetch(`${API_BASE}/performance`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url })
-                });
-                if (!res.ok) throw new Error();
-                const d = await res.json();
-
-                const lcp = d.lcp_ms; const fcp = d.fcp_ms; const cls = d.cls;
-                document.getElementById('perf-lcp').textContent = msToS(lcp);
-                document.getElementById('perf-lcp').className = 'result-val ' + (lcp ? timeClass(lcp, 2500, 4000) : '');
-                document.getElementById('perf-fcp').textContent = msToS(fcp);
-                document.getElementById('perf-fcp').className = 'result-val ' + (fcp ? timeClass(fcp, 1800, 3000) : '');
-                document.getElementById('perf-cls').textContent = cls !== null ? cls : 'N/D';
-                document.getElementById('perf-cls').className = 'result-val ' + (cls !== null ? clsClass(cls) : '');
-
-                // Score simple
-                const checks = [
-                    lcp && lcp <= 2500, fcp && fcp <= 1800, cls !== null && cls <= 0.1
-                ].filter(Boolean).length;
-                const score = Math.round((checks / 3) * 100);
-                document.getElementById('perf-score').textContent = score + '/100';
-                document.getElementById('perf-score').className = 'result-val ' + (score >= 80 ? 'good' : score >= 50 ? 'warn' : 'error');
-                document.getElementById('result-perf').classList.add('visible');
-
-                btn.textContent = 'Medir de nuevo';
-            } catch(e) {
-                alert('Error al conectar con el motor de performance.');
-                btn.textContent = 'Medir rendimiento';
-            }
-            btn.classList.remove('running');
-            btn.disabled = false;
+    async function ejecutarPerformance() {
+        const btn = document.getElementById('btn-perf');
+        const url = document.getElementById('url_perf').value.trim();
+        if (!url) { alert('Ingresá una URL válida.'); return; }
+        btn.textContent = 'Midiendo...'; btn.classList.add('running'); btn.disabled = true;
+        try {
+            const res = await fetch(`${API_BASE}/performance`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            if (!res.ok) throw new Error();
+            const d = await res.json();
+            const lcp = d.lcp_ms, fcp = d.fcp_ms, cls = d.cls;
+            document.getElementById('perf-lcp').textContent = msToS(lcp);
+            document.getElementById('perf-lcp').className = 'result-val ' + (lcp ? timeClass(lcp, 2500, 4000) : '');
+            document.getElementById('perf-fcp').textContent = msToS(fcp);
+            document.getElementById('perf-fcp').className = 'result-val ' + (fcp ? timeClass(fcp, 1800, 3000) : '');
+            document.getElementById('perf-cls').textContent = cls !== null ? cls : 'N/D';
+            document.getElementById('perf-cls').className = 'result-val ' + (cls !== null ? clsClass(cls) : '');
+            const checks = [lcp && lcp <= 2500, fcp && fcp <= 1800, cls !== null && cls <= 0.1].filter(Boolean).length;
+            const score = Math.round((checks / 3) * 100);
+            document.getElementById('perf-score').textContent = score + '/100';
+            document.getElementById('perf-score').className = 'result-val ' + (score >= 80 ? 'good' : score >= 50 ? 'warn' : 'error');
+            document.getElementById('result-perf').classList.add('visible');
+            btn.textContent = 'Medir de nuevo';
+        } catch(e) {
+            alert('Error al conectar con el motor de performance.');
+            btn.textContent = 'Medir rendimiento';
         }
+        btn.classList.remove('running'); btn.disabled = false;
+    }
 
-        // --- 04 SEO ---
-        async function ejecutarSEO() {
-            const btn = document.getElementById('btn-seo');
-            const url = document.getElementById('url_seo').value.trim();
-            if (!url) { alert('Ingresá una URL válida.'); return; }
-
-            btn.textContent = 'Auditando...';
-            btn.classList.add('running');
-            btn.disabled = true;
-
-            try {
-                const res = await fetch(`${API_BASE}/seo`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url })
-                });
-                if (!res.ok) throw new Error();
-                const d = await res.json();
-
-                // Calcular checks del resultado
-                let oks = 0, warns = 0, errors = 0;
-                if (d.title && d.title_len >= 30 && d.title_len <= 60) oks++; else if (!d.title) errors++; else warns++;
-                if (d.description && d.desc_len >= 70 && d.desc_len <= 160) oks++; else if (!d.description) errors++; else warns++;
-                if (d.h1_count === 1) oks++; else if (d.h1_count === 0) errors++; else warns++;
-                if (d.canonical) oks++; else warns++;
-                if (!d.robots || d.robots === 'index,follow') oks++; else if (d.robots.includes('noindex')) errors++; else warns++;
-                if (d.og_title) oks++; else warns++;
-                if (d.og_image) oks++; else warns++;
-                if (d.imgs_sin_alt === 0) oks++; else if (d.imgs_sin_alt > 5) errors++; else warns++;
-                if (d.inputs_sin_label === 0) oks++; else errors++;
-                if (d.botones_sin_etiqueta === 0) oks++; else warns++;
-
-                document.getElementById('seo-ok').textContent = oks;
-                document.getElementById('seo-warn').textContent = warns;
-                document.getElementById('seo-errors').textContent = errors;
-                document.getElementById('result-seo').classList.add('visible');
-
-                btn.textContent = 'Auditar de nuevo';
-            } catch(e) {
-                alert('Error al conectar con el motor SEO.');
-                btn.textContent = 'Auditar SEO';
-            }
-            btn.classList.remove('running');
-            btn.disabled = false;
+    async function ejecutarSEO() {
+        const btn = document.getElementById('btn-seo');
+        const url = document.getElementById('url_seo').value.trim();
+        if (!url) { alert('Ingresá una URL válida.'); return; }
+        btn.textContent = 'Auditando...'; btn.classList.add('running'); btn.disabled = true;
+        try {
+            const res = await fetch(`${API_BASE}/seo`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            if (!res.ok) throw new Error();
+            const d = await res.json();
+            let oks = 0, warns = 0, errors = 0;
+            if (d.title && d.title_len >= 30 && d.title_len <= 60) oks++; else if (!d.title) errors++; else warns++;
+            if (d.description && d.desc_len >= 70 && d.desc_len <= 160) oks++; else if (!d.description) errors++; else warns++;
+            if (d.h1_count === 1) oks++; else if (d.h1_count === 0) errors++; else warns++;
+            if (d.canonical) oks++; else warns++;
+            if (!d.robots || d.robots === 'index,follow') oks++; else if (d.robots.includes('noindex')) errors++; else warns++;
+            if (d.og_title) oks++; else warns++;
+            if (d.og_image) oks++; else warns++;
+            if (d.imgs_sin_alt === 0) oks++; else if (d.imgs_sin_alt > 5) errors++; else warns++;
+            if (d.inputs_sin_label === 0) oks++; else errors++;
+            if (d.botones_sin_etiqueta === 0) oks++; else warns++;
+            document.getElementById('seo-ok').textContent = oks;
+            document.getElementById('seo-warn').textContent = warns;
+            document.getElementById('seo-errors').textContent = errors;
+            document.getElementById('result-seo').classList.add('visible');
+            btn.textContent = 'Auditar de nuevo';
+        } catch(e) {
+            alert('Error al conectar con el motor SEO.');
+            btn.textContent = 'Auditar SEO';
         }
+        btn.classList.remove('running'); btn.disabled = false;
+    }
 
-        // Smooth scroll para el CTA "Ver cómo funciona"
-        document.querySelector('a[href="#modulos"]').addEventListener('click', e => {
-            e.preventDefault();
-            document.getElementById('modulos').scrollIntoView({ behavior: 'smooth' });
-        });
-    </script>
+    // Smooth scroll
+    document.querySelector('a[href="#modulos"]').addEventListener('click', e => {
+        e.preventDefault();
+        document.getElementById('modulos').scrollIntoView({ behavior: 'smooth' });
+    });
+</script>
 </body>
 </html>
