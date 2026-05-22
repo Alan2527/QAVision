@@ -489,7 +489,7 @@
         }
         tbody.innerHTML = rows.map(r => `
             <tr class="hover:bg-zinc-900/40 transition">
-                <td class="p-4 font-mono text-gray-500 text-xs">${new Date(r.fecha).toLocaleDateString()}</td>
+                <td class="p-4 font-mono text-gray-500 text-xs">${new Date(r.fecha).toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })}</td>
                 <td class="p-4 truncate max-w-[200px] font-mono text-white text-xs">${r.url.replace('https://', '').replace('http://', '')}</td>
                 <td class="p-4"><span class="bg-black px-2 py-0.5 rounded border border-[#1a1a1a] text-[10px] font-mono text-[#505050]">${r.tipo}</span></td>
                 <td class="p-4 text-right">
