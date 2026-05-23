@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>editadoQAVision — Visual Regression</title>
+    <title>QAVision — Visual Regression</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -167,77 +167,75 @@
                 </div>
             </header>
 
-            <!-- MAIN GRID: diff + history -->
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <!-- ROW 1: Diff image + CSS Diffs side by side -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-                <!-- LEFT: diff + screenshots -->
-                <div class="xl:col-span-2 space-y-6">
-
-                    <!-- Master Diff -->
-                    <div class="bg-tech rounded-2xl overflow-hidden">
-                        <div class="p-5 border-b border-[#1a1a1a] flex justify-between items-center">
-                            <div>
-                                <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Diff View</span>
-                                <h3 class="font-title text-base font-bold text-white tracking-tight">Master Diff</h3>
-                            </div>
-                            <div class="flex gap-1.5">
-                                <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
-                                <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
-                                <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
-                            </div>
+                <!-- Master Diff -->
+                <div class="bg-tech rounded-2xl overflow-hidden">
+                    <div class="p-5 border-b border-[#1a1a1a] flex justify-between items-center">
+                        <div>
+                            <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Diff View</span>
+                            <h3 class="font-title text-base font-bold text-white tracking-tight">Master Diff</h3>
                         </div>
-                        <div class="p-5">
-                            <div class="rounded-xl overflow-hidden border border-[#1a1a1a] image-checker max-w-md mx-auto max-h-[520px] overflow-y-auto custom-scroll">
-                                <img id="img-diff" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700" style="image-rendering: -webkit-optimize-contrast;">
-                            </div>
+                        <div class="flex gap-1.5">
+                            <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
+                            <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
+                            <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
                         </div>
                     </div>
-
-                    <!-- A vs B screenshots -->
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-tech p-5 rounded-2xl">
-                            <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-3">// Ambiente A — Expected</span>
-                            <div class="rounded-xl overflow-hidden border border-[#1a1a1a] bg-black max-h-[400px] overflow-y-auto custom-scroll">
-                                <img id="img-a" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700">
-                            </div>
-                        </div>
-                        <div class="bg-tech p-5 rounded-2xl">
-                            <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-3">// Ambiente B — Actual</span>
-                            <div class="rounded-xl overflow-hidden border border-[#1a1a1a] bg-black max-h-[400px] overflow-y-auto custom-scroll">
-                                <img id="img-b" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700">
-                            </div>
+                    <div class="p-5">
+                        <div class="rounded-xl border border-[#1a1a1a] image-checker overflow-y-auto custom-scroll" style="max-height:560px; scrollbar-gutter:stable;">
+                            <img id="img-diff" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700" style="image-rendering: -webkit-optimize-contrast;">
                         </div>
                     </div>
-
-                    <!-- CSS DIFF LIST -->
-                    <div id="css-diff-section" class="bg-tech rounded-2xl overflow-hidden" style="display:none;">
-                        <div class="p-5 border-b border-[#1a1a1a] flex justify-between items-center">
-                            <div>
-                                <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Análisis CSS</span>
-                                <h3 class="font-title text-base font-bold text-white tracking-tight">Diferencias Detectadas</h3>
-                            </div>
-                            <span id="css-diff-count" class="font-mono text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full font-bold"></span>
-                        </div>
-                        <div id="css-diff-list" class="divide-y divide-[#111] max-h-[480px] overflow-y-auto custom-scroll">
-                        </div>
-                    </div>
-
                 </div>
 
-                <!-- RIGHT: activity history -->
-                <div class="bg-tech rounded-2xl flex flex-col overflow-hidden">
+                <!-- CSS DIFF LIST -->
+                <div id="css-diff-section" class="bg-tech rounded-2xl overflow-hidden flex flex-col" style="display:none;">
                     <div class="p-5 border-b border-[#1a1a1a] flex justify-between items-center shrink-0">
                         <div>
-                            <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Historial</span>
-                            <h3 class="font-title text-base font-bold text-white tracking-tight">Activity History</h3>
+                            <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Análisis CSS</span>
+                            <h3 class="font-title text-base font-bold text-white tracking-tight">Diferencias Detectadas</h3>
                         </div>
-                        <span class="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
+                        <span id="css-diff-count" class="font-mono text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full font-bold"></span>
                     </div>
-                    <div id="historial" class="flex-1 overflow-y-auto custom-scroll p-4 space-y-2 max-h-[640px]">
-                        <p class="font-mono text-[10px] text-[#505050] text-center py-8">Cargando historial...</p>
+                    <div id="css-diff-list" class="divide-y divide-[#111] overflow-y-auto custom-scroll flex-1" style="max-height:560px; scrollbar-gutter:stable;">
                     </div>
                 </div>
 
+                <!-- Placeholder cuando no hay CSS diffs: mantiene la grilla -->
+                <div id="css-diff-placeholder" class="hidden xl:block"></div>
+
+            </div>
+
+            <!-- ROW 2: Screenshots A vs B -->
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-tech p-5 rounded-2xl">
+                    <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-3">// Ambiente A — Expected</span>
+                    <div class="rounded-xl overflow-hidden border border-[#1a1a1a] bg-black max-h-[400px] overflow-y-auto custom-scroll" style="scrollbar-gutter:stable;">
+                        <img id="img-a" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700">
+                    </div>
+                </div>
+                <div class="bg-tech p-5 rounded-2xl">
+                    <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-3">// Ambiente B — Actual</span>
+                    <div class="rounded-xl overflow-hidden border border-[#1a1a1a] bg-black max-h-[400px] overflow-y-auto custom-scroll" style="scrollbar-gutter:stable;">
+                        <img id="img-b" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROW 3: Activity History -->
+            <div class="bg-tech rounded-2xl flex flex-col overflow-hidden">
+                <div class="p-5 border-b border-[#1a1a1a] flex justify-between items-center shrink-0">
+                    <div>
+                        <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Historial</span>
+                        <h3 class="font-title text-base font-bold text-white tracking-tight">Activity History</h3>
+                    </div>
+                    <span class="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
+                </div>
+                <div id="historial" class="overflow-y-auto custom-scroll p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 max-h-[280px]">
+                    <p class="font-mono text-[10px] text-[#505050] text-center py-8 col-span-full">Cargando historial...</p>
+                </div>
             </div>
 
         </div>
@@ -357,16 +355,19 @@
         }
 
         function renderCSSDiffs(diffs) {
-            const section = document.getElementById('css-diff-section');
-            const list    = document.getElementById('css-diff-list');
-            const count   = document.getElementById('css-diff-count');
+            const section     = document.getElementById('css-diff-section');
+            const placeholder = document.getElementById('css-diff-placeholder');
+            const list        = document.getElementById('css-diff-list');
+            const count       = document.getElementById('css-diff-count');
 
             if (!diffs || diffs.length === 0) {
                 section.style.display = 'none';
+                if (placeholder) placeholder.classList.remove('hidden');
                 return;
             }
 
-            section.style.display = 'block';
+            section.style.display = 'flex';
+            if (placeholder) placeholder.classList.add('hidden');
             count.textContent = `${diffs.length} diferencia${diffs.length !== 1 ? 's' : ''}`;
 
             list.innerHTML = diffs.map(d => {
@@ -390,7 +391,9 @@
                         </div>
                     </div>`;
                 } else {
-                    const color = d.tipo === 'ausente_en_prod' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' : 'text-orange-400 bg-orange-500/10 border-orange-500/20';
+                    const color = d.tipo === 'ausente_en_prod'
+                        ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
+                        : 'text-orange-400 bg-orange-500/10 border-orange-500/20';
                     return `
                     <div class="p-4 hover:bg-white/[0.02] transition">
                         <div class="flex items-center gap-2 flex-wrap">
@@ -404,14 +407,14 @@
 
         function renderizarHistorial(data) {
             document.getElementById('historial').innerHTML = data.slice(0, 20).map((item, idx) => `
-                <div class="history-item p-3 bg-black/50 rounded-xl border border-[#1a1a1a] ${idx === 0 ? 'selected' : ''}"
+                <div class="history-item p-3 bg-black/50 rounded-xl border border-[#1a1a1a] ${idx === 0 ? 'selected' : ''} cursor-pointer"
                      onclick="mostrarEntrada(allData[${idx}], ${idx})">
                     <div class="flex justify-between items-start mb-1.5">
                         <span class="font-mono text-[9px] text-[#505050] uppercase">${new Date(item.creado_el).toLocaleDateString()}</span>
                         <span class="w-1.5 h-1.5 rounded-full shrink-0 ${item.diferencias > 0 ? 'bg-red-500' : 'bg-[#10b981]'}"></span>
                     </div>
                     <p class="font-mono text-[11px] font-bold mb-1 ${item.diferencias > 0 ? 'text-red-400' : 'text-[#10b981]'}">
-                        ${item.diferencias > 0 ? item.diferencias + ' ERRORES' : 'SIN CAMBIOS'}
+                        ${item.diferencias > 0 ? item.diferencias + ' ERR' : 'OK'}
                     </p>
                     <p class="font-mono text-[9px] text-[#505050] truncate">${(item.url_a || '').replace('https://', '')}</p>
                 </div>
