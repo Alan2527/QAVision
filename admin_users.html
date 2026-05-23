@@ -26,7 +26,7 @@
         .bg-tech { background-color: #0d0d0d; border: 1px solid #1a1a1a; }
     </style>
 </head>
-<!-- Arranca invisible para que nadie pueda leer datos antes de la verificación -->
+<!-- Mantiene la opacidad en 0 para evitar parpadeos de información antes de validar -->
 <body class="p-8 md:p-12 transition-opacity duration-150 opacity-0" id="admin-body">
 
     <main class="max-w-5xl mx-auto relative z-10">
@@ -70,7 +70,7 @@
     const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function verificarYCargarAdmin() {
-        // 1. Validar autenticación básica
+        // 1. Validar autenticación básica de la sesión
         const { data: { user } } = await sb.auth.getUser();
         if (!user) { 
             window.location.replace('login.html'); 
@@ -78,24 +78,25 @@
         }
 
         try {
-            // 2. Consultar el rol del usuario en la tabla de perfiles públicos
+            // 2. Consultar el rol asignado en la tabla pública de perfiles
             const { data: perfil, error } = await sb
                 .from('perfiles')
                 .select('plan')
                 .eq('id', user.id)
                 .maybeSingle();
 
-            // 3. Control de acceso estricto: si no existe o no es ADMIN, eyectar de inmediato
+            // 3. Control perimetral: si hay error o no es ADMIN, salta el diagnóstico y eyecta
             if (error || !perfil || perfil.plan !== 'ADMIN') {
-                console.warn("Intento de acceso no autorizado detectado.");
+                console.error("Acceso denegado. Detalles del diagnóstico:", { error, perfil });
+                alert("Tu usuario no cuenta con los privilegios de ADMIN requeridos.");
                 window.location.replace('dashboard.html');
                 return;
             }
 
-            // 4. Si pasó la seguridad, mostramos el cuerpo de la página
+            // 4. Si la autenticación es correcta, removemos la opacidad y revelamos la UI
             document.getElementById('admin-body').classList.remove('opacity-0');
 
-            // 5. Descargar la lista completa de usuarios para el monitoreo
+            // 5. Descargar la nómina completa de perfiles para el visor de la grilla
             const { data: usuarios } = await sb
                 .from('perfiles')
                 .select('*')
@@ -104,7 +105,7 @@
             renderizarUsuarios(usuarios || []);
 
         } catch (e) {
-            console.error("Falla en el control de acceso perimetral:", e);
+            console.error("Falla crítica en el control de acceso perimetral:", e);
             window.location.replace('dashboard.html');
         }
     }
@@ -136,7 +137,7 @@
         if (error) {
             alert(`Error al mitigar plan: ${error.message}`);
         } else {
-            verificarYCargarAdmin(); // Recarga limpia para actualizar la UI
+            verificarYCargarAdmin(); // Recarga limpia para actualizar tokens y estados de interfaz
         }
     }
 
