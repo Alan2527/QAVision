@@ -168,10 +168,10 @@
             </header>
 
             <!-- ROW 1: Diff image + CSS Diffs side by side -->
-            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
 
-                <!-- Master Diff -->
-                <div class="bg-tech rounded-2xl overflow-hidden">
+                <!-- Master Diff — ocupa 3/5 del ancho -->
+                <div class="xl:col-span-3 bg-tech rounded-2xl overflow-hidden">
                     <div class="p-5 border-b border-[#1a1a1a] flex justify-between items-center">
                         <div>
                             <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Diff View</span>
@@ -186,18 +186,16 @@
                             </div>
                         </div>
                     </div>
-                    <div class="p-5">
-                        <div id="diff-scroll-container" class="rounded-xl border border-[#1a1a1a] image-checker overflow-y-auto custom-scroll relative" style="max-height:580px; scrollbar-gutter:stable;">
-                            <div id="diff-inner" class="relative">
-                                <img id="img-diff" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700" style="image-rendering: -webkit-optimize-contrast;">
-                                <canvas id="diff-canvas" class="absolute inset-0 w-full h-full pointer-events-none" style="display:none;"></canvas>
-                            </div>
+                    <div id="diff-scroll-container" class="image-checker overflow-y-auto custom-scroll relative" style="max-height:640px; scrollbar-gutter:stable;">
+                        <div id="diff-inner" class="relative">
+                            <img id="img-diff" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700" style="image-rendering: -webkit-optimize-contrast;">
+                            <canvas id="diff-canvas" class="absolute inset-0 w-full h-full pointer-events-none" style="display:none;"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- CSS DIFF LIST -->
-                <div id="css-diff-section" class="bg-tech rounded-2xl overflow-hidden flex flex-col" style="display:none;">
+                <!-- CSS DIFF LIST — ocupa 2/5 del ancho -->
+                <div id="css-diff-section" class="xl:col-span-2 bg-tech rounded-2xl overflow-hidden flex flex-col" style="display:none;">
                     <div class="p-5 border-b border-[#1a1a1a] flex justify-between items-center shrink-0">
                         <div>
                             <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Análisis CSS</span>
@@ -205,12 +203,12 @@
                         </div>
                         <span id="css-diff-count" class="font-mono text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full font-bold"></span>
                     </div>
-                    <div id="css-diff-list" class="divide-y divide-[#111] overflow-y-auto custom-scroll flex-1" style="max-height:560px; scrollbar-gutter:stable;">
+                    <div id="css-diff-list" class="divide-y divide-[#111] overflow-y-auto custom-scroll flex-1" style="max-height:640px; scrollbar-gutter:stable;">
                     </div>
                 </div>
 
-                <!-- Placeholder cuando no hay CSS diffs: mantiene la grilla -->
-                <div id="css-diff-placeholder" class="hidden xl:block"></div>
+                <!-- Placeholder cuando no hay CSS diffs -->
+                <div id="css-diff-placeholder" class="hidden xl:col-span-2"></div>
 
             </div>
 
