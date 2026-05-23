@@ -283,6 +283,7 @@
             sessionStorage.removeItem('qavision_last_stage');
             sessionStorage.removeItem('qavision_trigger_test');
             sessionStorage.removeItem('qavision_user_id');
+            sessionStorage.removeItem('qavision_seo_detalle'); // limpiar detalle anterior
 
             try {
                 const response = await fetch('https://qavision-qavision-engine.hf.space/api/seo', {
@@ -291,6 +292,18 @@
                     body: JSON.stringify({ url, user_id: user.id })
                 });
                 if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
+                // Capturar el detalle completo que devuelve el engine
+                try {
+                    const engineData = await response.clone().json();
+                    console.log('ENGINE RESPONSE KEYS:', Object.keys(engineData));
+                    console.log('ENGINE FULL:', JSON.stringify(engineData).slice(0, 2000));
+                    const detalle = {
+                        imgs_sin_alt_detalle:        engineData.imgs_sin_alt_detalle        || engineData.imagenes_sin_alt   || [],
+                        inputs_sin_label_detalle:    engineData.inputs_sin_label_detalle    || engineData.inputs_sin_label_lista || [],
+                        botones_sin_etiqueta_detalle: engineData.botones_sin_etiqueta_detalle || engineData.botones_detalle    || [],
+                    };
+                    sessionStorage.setItem('qavision_seo_detalle', JSON.stringify(detalle));
+                } catch(_) {}
                 await new Promise(resolve => setTimeout(resolve, 2000));
             } catch (error) {
                 document.getElementById('url-auditada').textContent = `❌ Error: ${error.message}`;
@@ -316,6 +329,13 @@
 
         const r = data[0];
         document.getElementById('url-auditada').textContent = r.url;
+
+        // Leer detalle guardado del engine (disponible si se ejecutó en esta sesión)
+        let detalle = { imgs_sin_alt_detalle: [], inputs_sin_label_detalle: [], botones_sin_etiqueta_detalle: [] };
+        try {
+            const raw = sessionStorage.getItem('qavision_seo_detalle');
+            if (raw) detalle = JSON.parse(raw);
+        } catch(_) {}
 
         let html = '';
         let oks = 0, warns = 0, errors = 0;
@@ -407,7 +427,12 @@
                 'Imágenes sin alt',
                 `${r.imgs_sin_alt} de ${r.total_imgs} imágenes no tienen atributo alt`,
                 t,
-                (r.imgs_sin_alt_detalle || []).map(el => ({ id: el.id, clase: el.class || el.clase, src: el.src, tipo: 'img' }))
+                detalle.imgs_sin_alt_detalle.map(el => ({
+                    id:    el.id    || el.element_id || null,
+                    clase: el.class || el.clase      || el.className || null,
+                    src:   el.src   || el.url        || null,
+                    tipo:  'img'
+                }))
             );
         } else {
             const t = 'ok'; cuenta(t);
@@ -420,7 +445,12 @@
                 'Inputs sin label',
                 `${r.inputs_sin_label} campos de formulario sin etiqueta accesible`,
                 t,
-                (r.inputs_sin_label_detalle || []).map(el => ({ id: el.id, clase: el.class || el.clase, name: el.name, tipo: el.type || 'input' }))
+                detalle.inputs_sin_label_detalle.map(el => ({
+                    id:    el.id    || el.element_id || null,
+                    clase: el.class || el.clase      || el.className || null,
+                    name:  el.name  || null,
+                    tipo:  el.type  || el.input_type || 'input'
+                }))
             );
         } else {
             const t = 'ok'; cuenta(t);
@@ -433,7 +463,11 @@
                 'Botones sin etiqueta',
                 `${r.botones_sin_etiqueta} botones sin texto ni aria-label`,
                 t,
-                (r.botones_sin_etiqueta_detalle || []).map(el => ({ id: el.id, clase: el.class || el.clase, tipo: 'button' }))
+                detalle.botones_sin_etiqueta_detalle.map(el => ({
+                    id:    el.id    || el.element_id || null,
+                    clase: el.class || el.clase      || el.className || null,
+                    tipo:  'button'
+                }))
             );
         } else {
             const t = 'ok'; cuenta(t);
