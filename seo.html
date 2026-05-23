@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QAVision — SEO Audit</title>
+    <title>editadoQAVision — SEO Audit</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -241,26 +241,36 @@
 
     // Row con detalle de elementos (chips de id/class/src)
     function rowDetalle(titulo, detalle, tipo, elementos) {
-        const chips = (elementos || []).map(el => {
-            let label = '';
-            if (el.id)     label = `#${el.id}`;
-            else if (el.clase) label = `.${el.clase.trim().split(/\s+/)[0]}`;
-            else if (el.src)   label = el.src.split('/').pop().slice(0, 30);
-            else if (el.name)  label = `[name="${el.name}"]`;
-            else if (el.tipo)  label = `<${el.tipo}>`;
-            else               label = 'sin selector';
+        const colorMap = {
+            warn:  'text-yellow-400 border-yellow-500/20 bg-yellow-500/5',
+            error: 'text-red-400 border-red-500/20 bg-red-500/5'
+        };
+        const cc = colorMap[tipo] || colorMap.warn;
 
-            const colorMap = { warn: 'text-yellow-400 border-yellow-500/20 bg-yellow-500/5', error: 'text-red-400 border-red-500/20 bg-red-500/5' };
-            const cc = colorMap[tipo] || colorMap.warn;
-            return `<span class="font-mono text-[9px] px-2 py-0.5 rounded border ${cc} whitespace-nowrap">${label}</span>`;
-        }).join('');
+        let chipsHtml = '';
+        if (elementos && elementos.length > 0) {
+            const chips = elementos.map(el => {
+                let label = '';
+                if (el.id && el.id.trim())         label = `#${el.id.trim()}`;
+                else if (el.class && el.class.trim()) label = `.${el.class.trim().split(/\s+/)[0]}`;
+                else if (el.src && el.src.trim())   label = el.src.trim().slice(0, 35);
+                else if (el.name && el.name.trim()) label = `[name="${el.name.trim()}"]`;
+                else if (el.type && el.type.trim()) label = `<input type="${el.type}">`;
+                else                                label = '&lt;sin selector&gt;';
+                return `<span class="font-mono text-[9px] px-2 py-0.5 rounded border ${cc} whitespace-nowrap">${label}</span>`;
+            });
+            chipsHtml = `<div class="flex flex-wrap gap-1.5 mt-2">${chips.join('')}</div>`;
+        } else {
+            // Sin detalle: auditoría vieja o engine sin actualizar
+            chipsHtml = `<p class="font-mono text-[9px] text-[#303030] mt-2 italic">Re-ejecutá la auditoría para ver los selectores de cada elemento.</p>`;
+        }
 
         return `<div class="check-row">
             <div style="padding-top:2px">${badge(tipo)}</div>
             <div class="min-w-0 flex-1">
                 <p class="text-sm font-bold text-white">${titulo}</p>
                 <p class="font-mono text-xs text-[#505050] mt-1 break-words">${detalle}</p>
-                ${chips ? `<div class="flex flex-wrap gap-1.5 mt-2">${chips}</div>` : ''}
+                ${chipsHtml}
             </div>
         </div>`;
     }
@@ -295,12 +305,12 @@
                 // Capturar el detalle completo que devuelve el engine
                 try {
                     const engineData = await response.clone().json();
-                    console.log('ENGINE RESPONSE KEYS:', Object.keys(engineData));
-                    console.log('ENGINE FULL:', JSON.stringify(engineData).slice(0, 2000));
+                    // El engine devuelve { status, resultado: { ...campos, imgs_sin_alt_detalle, ... } }
+                    const r = engineData.resultado || engineData;
                     const detalle = {
-                        imgs_sin_alt_detalle:        engineData.imgs_sin_alt_detalle        || engineData.imagenes_sin_alt   || [],
-                        inputs_sin_label_detalle:    engineData.inputs_sin_label_detalle    || engineData.inputs_sin_label_lista || [],
-                        botones_sin_etiqueta_detalle: engineData.botones_sin_etiqueta_detalle || engineData.botones_detalle    || [],
+                        imgs_sin_alt_detalle:         r.imgs_sin_alt_detalle         || [],
+                        inputs_sin_label_detalle:     r.inputs_sin_label_detalle     || [],
+                        botones_sin_etiqueta_detalle: r.botones_sin_etiqueta_detalle || [],
                     };
                     sessionStorage.setItem('qavision_seo_detalle', JSON.stringify(detalle));
                 } catch(_) {}
