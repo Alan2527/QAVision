@@ -177,15 +177,21 @@
                             <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Diff View</span>
                             <h3 class="font-title text-base font-bold text-white tracking-tight">Master Diff</h3>
                         </div>
-                        <div class="flex gap-1.5">
-                            <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
-                            <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
-                            <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
+                        <div class="flex items-center gap-3">
+                            <span id="highlight-label" class="font-mono text-[9px] text-yellow-400 hidden">Click en una diferencia para ubicarla →</span>
+                            <div class="flex gap-1.5">
+                                <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
+                                <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
+                                <div class="w-2 h-2 rounded-full bg-[#1a1a1a]"></div>
+                            </div>
                         </div>
                     </div>
                     <div class="p-5">
-                        <div class="rounded-xl border border-[#1a1a1a] image-checker overflow-y-auto custom-scroll" style="max-height:560px; scrollbar-gutter:stable;">
-                            <img id="img-diff" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700" style="image-rendering: -webkit-optimize-contrast;">
+                        <div id="diff-scroll-container" class="rounded-xl border border-[#1a1a1a] image-checker overflow-y-auto custom-scroll relative" style="max-height:580px; scrollbar-gutter:stable;">
+                            <div id="diff-inner" class="relative">
+                                <img id="img-diff" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700" style="image-rendering: -webkit-optimize-contrast;">
+                                <canvas id="diff-canvas" class="absolute inset-0 w-full h-full pointer-events-none" style="display:none;"></canvas>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -334,6 +340,8 @@
                 });
             }, 150);
 
+            clearHighlight();
+
             document.getElementById('sub-header').innerText = `Sync: ${new Date(item.creado_el).toLocaleString()}`;
             document.getElementById('sub-header').className = "font-mono text-[11px] text-[#505050] uppercase tracking-wider";
 
@@ -354,11 +362,82 @@
             renderCSSDiffs(cssDiffsCache[idx] || []);
         }
 
+        // ── HIGHLIGHT EN IMAGEN ──────────────────────────────────────────
+        let currentDiffs = [];
+
+        function highlightDiff(diff, rowEl) {
+            // Quitar selección previa
+            document.querySelectorAll('.diff-row-active').forEach(el => el.classList.remove('diff-row-active', 'bg-yellow-500/10'));
+
+            if (!diff || !diff.x || !diff.w) return;
+
+            rowEl.classList.add('diff-row-active', 'bg-yellow-500/10');
+
+            const img    = document.getElementById('img-diff');
+            const canvas = document.getElementById('diff-canvas');
+            const scroll = document.getElementById('diff-scroll-container');
+            if (!img.naturalWidth) return;
+
+            // Escala: la imagen puede estar redimensionada en pantalla
+            const scaleX = img.clientWidth  / img.naturalWidth;
+            const scaleY = img.clientHeight / img.naturalHeight;
+
+            const cx = diff.x * scaleX;
+            const cy = diff.y * scaleY;
+            const cw = diff.w * scaleX;
+            const ch = diff.h * scaleY;
+
+            canvas.width  = img.clientWidth;
+            canvas.height = img.clientHeight;
+            canvas.style.display = 'block';
+
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Fondo semitransparente amarillo
+            ctx.fillStyle = 'rgba(250, 204, 21, 0.15)';
+            ctx.fillRect(cx, cy, cw, ch);
+
+            // Borde amarillo
+            ctx.strokeStyle = '#facc15';
+            ctx.lineWidth   = 3;
+            ctx.setLineDash([6, 3]);
+            ctx.strokeRect(cx, cy, cw, ch);
+
+            // Etiqueta arriba del recuadro
+            const label = diff.codigo || diff.propiedad || 'DIFF';
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#facc15';
+            ctx.font = 'bold 11px DM Mono, monospace';
+            const textW = ctx.measureText(label).width + 10;
+            const labelY = cy > 22 ? cy - 22 : cy + ch + 4;
+            ctx.fillRect(cx, labelY, textW, 18);
+            ctx.fillStyle = '#000';
+            ctx.fillText(label, cx + 5, labelY + 13);
+
+            // Scroll hasta el elemento en la imagen
+            const targetScroll = cy - 60;
+            scroll.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+
+            // Mostrar hint en header
+            document.getElementById('highlight-label').classList.remove('hidden');
+        }
+
+        function clearHighlight() {
+            const canvas = document.getElementById('diff-canvas');
+            if (canvas) { canvas.style.display = 'none'; }
+            document.getElementById('highlight-label').classList.add('hidden');
+            document.querySelectorAll('.diff-row-active').forEach(el => el.classList.remove('diff-row-active', 'bg-yellow-500/10'));
+        }
+
         function renderCSSDiffs(diffs) {
             const section     = document.getElementById('css-diff-section');
             const placeholder = document.getElementById('css-diff-placeholder');
             const list        = document.getElementById('css-diff-list');
             const count       = document.getElementById('css-diff-count');
+
+            currentDiffs = diffs || [];
+            clearHighlight();
 
             if (!diffs || diffs.length === 0) {
                 section.style.display = 'none';
@@ -370,13 +449,17 @@
             if (placeholder) placeholder.classList.add('hidden');
             count.textContent = `${diffs.length} diferencia${diffs.length !== 1 ? 's' : ''}`;
 
-            list.innerHTML = diffs.map(d => {
+            list.innerHTML = diffs.map((d, idx) => {
+                const hasCoords = d.x && d.w;
+                const clickable = hasCoords ? `cursor-pointer hover:bg-yellow-500/5` : '';
+                const hint      = hasCoords ? `<span class="font-mono text-[8px] text-yellow-500/40 ml-1">↖ ver en imagen</span>` : '';
+
                 if (d.tipo === 'cambio_css') {
-                    return `
-                    <div class="p-4 hover:bg-white/[0.02] transition">
+                    return `<div class="diff-row p-4 transition ${clickable}" data-idx="${idx}">
                         <div class="flex items-center gap-2 mb-2 flex-wrap">
                             <span class="font-mono text-[10px] font-bold text-white bg-black border border-[#1a1a1a] px-2 py-0.5 rounded">${d.elemento}</span>
                             <span class="font-mono text-[9px] text-[#505050]">${d.propiedad}</span>
+                            ${hint}
                         </div>
                         <div class="flex items-center gap-3 flex-wrap">
                             <div class="flex items-center gap-1.5">
@@ -394,15 +477,23 @@
                     const color = d.tipo === 'ausente_en_prod'
                         ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20'
                         : 'text-orange-400 bg-orange-500/10 border-orange-500/20';
-                    return `
-                    <div class="p-4 hover:bg-white/[0.02] transition">
+                    return `<div class="diff-row p-4 transition ${clickable}" data-idx="${idx}">
                         <div class="flex items-center gap-2 flex-wrap">
                             <span class="font-mono text-[10px] font-bold text-white bg-black border border-[#1a1a1a] px-2 py-0.5 rounded">${d.elemento}</span>
                             <span class="font-mono text-[9px] ${color} border px-2 py-0.5 rounded">${d.descripcion}</span>
+                            ${hint}
                         </div>
                     </div>`;
                 }
             }).join('');
+
+            // Event listeners para highlight
+            list.querySelectorAll('.diff-row[data-idx]').forEach(row => {
+                row.addEventListener('click', () => {
+                    const diff = currentDiffs[parseInt(row.dataset.idx)];
+                    if (diff && diff.x) highlightDiff(diff, row);
+                });
+            });
         }
 
         function renderizarHistorial(data) {
