@@ -254,6 +254,11 @@
         const toggleText = document.getElementById('toggle-text');
         const alertBox   = document.getElementById('auth-alert');
 
+        // Generador dinámico de URL de retorno seguro para evitar fallos por subcarpetas
+        const getRedirectUrl = () => {
+            return window.location.origin + window.location.pathname.replace('login.html', 'dashboard.html');
+        };
+
         function showAlert(msg, type = 'error') {
             alertBox.innerText = msg;
             alertBox.className = `mb-5 p-3 rounded-xl font-mono text-[11px] font-bold border text-center ${
@@ -264,7 +269,8 @@
             alertBox.classList.remove('hidden');
         }
 
-        btnToggle.addEventListener('click', () => {
+        btnToggle.addEventListener('click', (e) => {
+            e.preventDefault();
             isLoginMode = !isLoginMode;
             if (isLoginMode) {
                 title.innerText      = "Iniciar Sesión";
@@ -289,7 +295,7 @@
             btnSubmit.textContent = isLoginMode ? "Ingresando..." : "Registrando...";
             alertBox.classList.add('hidden');
 
-            const email    = document.getElementById('email').value;
+            const email    = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
 
             if (isLoginMode) {
@@ -302,16 +308,21 @@
                     window.location.href = 'dashboard.html';
                 }
             } else {
-                const { error } = await authClient.auth.signUp({ email, password });
+                const { data, error } = await authClient.auth.signUp({ email, password });
                 if (error) {
                     showAlert(error.message, 'error');
                     btnSubmit.disabled = false;
                     btnSubmit.textContent = "Crear Cuenta";
                 } else {
-                    showAlert("¡Registro exitoso! Revisá tu correo si se requiere confirmación.", 'success');
-                    form.reset();
-                    btnSubmit.disabled = false;
-                    btnSubmit.textContent = "Crear Cuenta";
+                    // Verificamos si Supabase inició sesión automáticamente al crear el usuario
+                    if (data && data.session) {
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        showAlert("¡Registro exitoso! Por favor, revisá tu correo para confirmar tu cuenta.", 'success');
+                        form.reset();
+                        btnSubmit.disabled = false;
+                        btnSubmit.textContent = "Crear Cuenta";
+                    }
                 }
             }
         });
@@ -319,7 +330,7 @@
         document.getElementById('btn-google').addEventListener('click', async () => {
             const { error } = await authClient.auth.signInWithOAuth({
                 provider: 'google',
-                options: { redirectTo: window.location.origin + '/QAVision/dashboard.html' }
+                options: { redirectTo: getRedirectUrl() }
             });
             if (error) showAlert(error.message, 'error');
         });
@@ -327,14 +338,14 @@
         document.getElementById('btn-github').addEventListener('click', async () => {
             const { error } = await authClient.auth.signInWithOAuth({
                 provider: 'github',
-                options: { redirectTo: window.location.origin + '/QAVision/dashboard.html' }
+                options: { redirectTo: getRedirectUrl() }
             });
             if (error) showAlert(error.message, 'error');
         });
 
         async function verificarSesion() {
             const { data: { session } } = await authClient.auth.getSession();
-            if (session) window.location.href = '/QAVision/dashboard.html';
+            if (session) window.location.href = 'dashboard.html';
         }
         verificarSesion();
     </script>
