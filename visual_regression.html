@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QAVision — Visual Regression</title>
+    <title>editadoQAVision — Visual Regression</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -187,7 +187,7 @@
                             </div>
                         </div>
                         <div class="p-5">
-                            <div class="rounded-xl overflow-hidden border border-[#1a1a1a] image-checker max-w-md mx-auto">
+                            <div class="rounded-xl overflow-hidden border border-[#1a1a1a] image-checker max-w-md mx-auto max-h-[520px] overflow-y-auto custom-scroll">
                                 <img id="img-diff" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700" style="image-rendering: -webkit-optimize-contrast;">
                             </div>
                         </div>
@@ -197,15 +197,28 @@
                     <div class="grid grid-cols-2 gap-4">
                         <div class="bg-tech p-5 rounded-2xl">
                             <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-3">// Ambiente A — Expected</span>
-                            <div class="rounded-xl overflow-hidden border border-[#1a1a1a] bg-black">
+                            <div class="rounded-xl overflow-hidden border border-[#1a1a1a] bg-black max-h-[400px] overflow-y-auto custom-scroll">
                                 <img id="img-a" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700">
                             </div>
                         </div>
                         <div class="bg-tech p-5 rounded-2xl">
                             <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-3">// Ambiente B — Actual</span>
-                            <div class="rounded-xl overflow-hidden border border-[#1a1a1a] bg-black">
+                            <div class="rounded-xl overflow-hidden border border-[#1a1a1a] bg-black max-h-[400px] overflow-y-auto custom-scroll">
                                 <img id="img-b" src="" class="w-full h-auto block opacity-0 transition-opacity duration-700">
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- CSS DIFF LIST -->
+                    <div id="css-diff-section" class="bg-tech rounded-2xl overflow-hidden" style="display:none;">
+                        <div class="p-5 border-b border-[#1a1a1a] flex justify-between items-center">
+                            <div>
+                                <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Análisis CSS</span>
+                                <h3 class="font-title text-base font-bold text-white tracking-tight">Diferencias Detectadas</h3>
+                            </div>
+                            <span id="css-diff-count" class="font-mono text-[10px] bg-red-500/10 text-red-400 border border-red-500/20 px-3 py-1 rounded-full font-bold"></span>
+                        </div>
+                        <div id="css-diff-list" class="divide-y divide-[#111] max-h-[480px] overflow-y-auto custom-scroll">
                         </div>
                     </div>
 
@@ -236,6 +249,7 @@
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let allData = [];
+        let cssDiffsCache = {}; // guarda diffs por índice de auditoría
 
         async function init() {
             const { data: { user } } = await sb.auth.getUser();
@@ -260,6 +274,13 @@
                         body: JSON.stringify({ url_a: urlStage, url_b: urlProd, user_id: user.id })
                     });
                     if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
+                    // Capturar css_diffs de la respuesta del engine
+                    try {
+                        const engineData = await response.clone().json();
+                        if (engineData.css_diffs && engineData.css_diffs.length > 0) {
+                            sessionStorage.setItem('qavision_vrt_css_diffs', JSON.stringify(engineData.css_diffs));
+                        }
+                    } catch(_) {}
                     await new Promise(resolve => setTimeout(resolve, 2000));
                 } catch (error) {
                     const sh = document.getElementById('sub-header');
@@ -278,6 +299,11 @@
 
             if (!error && data) {
                 allData = data;
+                // Asociar css_diffs de sessionStorage a la auditoría más reciente (índice 0)
+                try {
+                    const raw = sessionStorage.getItem('qavision_vrt_css_diffs');
+                    if (raw) { cssDiffsCache[0] = JSON.parse(raw); }
+                } catch(_) {}
                 renderizarResultados(data);
             }
         }
@@ -299,14 +325,12 @@
             const imgA    = document.getElementById('img-a');
             const imgB    = document.getElementById('img-b');
 
-            // reset opacity
             [imgDiff, imgA, imgB].forEach(i => i.classList.replace('opacity-100', 'opacity-0'));
 
             setTimeout(() => {
                 imgDiff.src = item.img_diff_url || item.img_a_url || '';
                 imgA.src    = item.img_a_url || '';
                 imgB.src    = item.img_b_url || '';
-
                 [imgDiff, imgA, imgB].forEach(img => {
                     img.onload = () => img.classList.replace('opacity-0', 'opacity-100');
                 });
@@ -324,10 +348,58 @@
                 badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/30";
             }
 
-            // highlight selected in history
             document.querySelectorAll('.history-item').forEach((el, i) => {
                 el.classList.toggle('selected', i === idx);
             });
+
+            // Mostrar CSS diffs si están disponibles para este índice
+            renderCSSDiffs(cssDiffsCache[idx] || []);
+        }
+
+        function renderCSSDiffs(diffs) {
+            const section = document.getElementById('css-diff-section');
+            const list    = document.getElementById('css-diff-list');
+            const count   = document.getElementById('css-diff-count');
+
+            if (!diffs || diffs.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+            count.textContent = `${diffs.length} diferencia${diffs.length !== 1 ? 's' : ''}`;
+
+            list.innerHTML = diffs.map(d => {
+                if (d.tipo === 'cambio_css') {
+                    return `
+                    <div class="p-4 hover:bg-white/[0.02] transition">
+                        <div class="flex items-center gap-2 mb-2 flex-wrap">
+                            <span class="font-mono text-[10px] font-bold text-white bg-black border border-[#1a1a1a] px-2 py-0.5 rounded">${d.elemento}</span>
+                            <span class="font-mono text-[9px] text-[#505050]">${d.propiedad}</span>
+                        </div>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-mono text-[9px] text-[#505050] uppercase">Staging</span>
+                                <span class="font-mono text-[11px] font-bold text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">${d.staging}</span>
+                            </div>
+                            <span class="font-mono text-[9px] text-[#303030]">→</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-mono text-[9px] text-[#505050] uppercase">Prod</span>
+                                <span class="font-mono text-[11px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded">${d.produccion}</span>
+                            </div>
+                        </div>
+                    </div>`;
+                } else {
+                    const color = d.tipo === 'ausente_en_prod' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' : 'text-orange-400 bg-orange-500/10 border-orange-500/20';
+                    return `
+                    <div class="p-4 hover:bg-white/[0.02] transition">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-mono text-[10px] font-bold text-white bg-black border border-[#1a1a1a] px-2 py-0.5 rounded">${d.elemento}</span>
+                            <span class="font-mono text-[9px] ${color} border px-2 py-0.5 rounded">${d.descripcion}</span>
+                        </div>
+                    </div>`;
+                }
+            }).join('');
         }
 
         function renderizarHistorial(data) {
