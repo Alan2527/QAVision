@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>QAVision — User Control Tower</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: #000;
+            color: #e8e8e8;
+            overflow-x: hidden;
+        }
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.015'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 50;
+        }
+        .font-title { font-family: 'Syne', sans-serif; }
+        .font-mono { font-family: 'DM Mono', monospace; }
+        .bg-tech { background-color: #0d0d0d; border: 1px solid #1a1a1a; }
+    </style>
+</head>
+<!-- Arranca invisible para que nadie pueda leer datos antes de la verificación -->
+<body class="p-8 md:p-12 transition-opacity duration-150 opacity-0" id="admin-body">
+
+    <main class="max-w-5xl mx-auto relative z-10">
+        <header class="mb-10 flex justify-between items-center">
+            <div>
+                <span class="font-mono text-[10px] text-[#10b981] uppercase tracking-[0.3em] font-bold">Admin Central Station</span>
+                <h2 class="font-title text-3xl mt-2 font-extrabold tracking-tight">User Subscription <span class="text-gray-600">Tower</span></h2>
+            </div>
+            <a href="dashboard.html" class="font-mono text-[10px] uppercase text-gray-500 hover:text-white transition">← Volver</a>
+        </header>
+
+        <!-- Grilla de Usuarios -->
+        <div class="bg-tech rounded-2xl overflow-hidden shadow-2xl">
+            <div class="p-5 border-b border-[#1a1a1a] bg-black/20 flex justify-between items-center">
+                <span class="font-mono text-xs text-gray-400 uppercase tracking-widest font-bold">Células Registradas</span>
+                <span id="user-count" class="text-xs font-mono bg-zinc-900 px-2 py-0.5 rounded border border-zinc-800 text-zinc-400">0 Users</span>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-[#050505] border-b border-[#1a1a1a] font-mono text-[10px] text-gray-500 uppercase tracking-wider">
+                        <tr>
+                            <th class="p-4">Usuario / Email</th>
+                            <th class="p-4">Identificador único</th>
+                            <th class="p-4 text-center">Asignación de Plan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-usuarios" class="divide-y divide-zinc-900 font-mono text-xs text-gray-300">
+                        <tr>
+                            <td colspan="3" class="p-8 text-center text-gray-600">Consultando torre de control de Supabase...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+<script>
+    const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    async function verificarYCargarAdmin() {
+        // 1. Validar autenticación básica
+        const { data: { user } } = await sb.auth.getUser();
+        if (!user) { 
+            window.location.replace('login.html'); 
+            return; 
+        }
+
+        try {
+            // 2. Consultar el rol del usuario en la tabla de perfiles públicos
+            const { data: perfil, error } = await sb
+                .from('perfiles')
+                .select('plan')
+                .eq('id', user.id)
+                .maybeSingle();
+
+            // 3. Control de acceso estricto: si no existe o no es ADMIN, eyectar de inmediato
+            if (error || !perfil || perfil.plan !== 'ADMIN') {
+                console.warn("Intento de acceso no autorizado detectado.");
+                window.location.replace('dashboard.html');
+                return;
+            }
+
+            // 4. Si pasó la seguridad, mostramos el cuerpo de la página
+            document.getElementById('admin-body').classList.remove('opacity-0');
+
+            // 5. Descargar la lista completa de usuarios para el monitoreo
+            const { data: usuarios } = await sb
+                .from('perfiles')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            renderizarUsuarios(usuarios || []);
+
+        } catch (e) {
+            console.error("Falla en el control de acceso perimetral:", e);
+            window.location.replace('dashboard.html');
+        }
+    }
+
+    function renderizarUsuarios(usuarios) {
+        document.getElementById('user-count').innerText = `${usuarios.length} Users`;
+        const tabla = document.getElementById('tabla-usuarios');
+        
+        tabla.innerHTML = usuarios.map(u => `
+            <tr class="hover:bg-zinc-900/30 transition-colors">
+                <td class="p-4 font-sans font-bold text-white">${u.email}</td>
+                <td class="p-4 text-gray-500 text-[11px]">${u.id}</td>
+                <td class="p-4 text-center">
+                    <select onchange="actualizarPlan('${u.id}', this.value)" class="bg-black text-xs font-bold border border-zinc-800 rounded-lg p-2 focus:border-zinc-500 outline-none ${u.plan === 'ADMIN' ? 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5' : 'text-pink-400 border-zinc-800'}">
+                        <option value="DEMO" ${u.plan === 'DEMO' ? 'selected' : ''}>PLAN DEMO</option>
+                        <option value="ADMIN" ${u.plan === 'ADMIN' ? 'selected' : ''}>PERMISO ADMIN</option>
+                    </select>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function actualizarPlan(userId, nuevoPlan) {
+        const { error } = await sb
+            .from('perfiles')
+            .update({ plan: nuevoPlan })
+            .eq('id', userId);
+
+        if (error) {
+            alert(`Error al mitigar plan: ${error.message}`);
+        } else {
+            verificarYCargarAdmin(); // Recarga limpia para actualizar la UI
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', verificarYCargarAdmin);
+</script>
+</body>
+</html>
