@@ -168,7 +168,16 @@
                 <span class="hidden md:inline">Mass Execution</span>
             </a>
         </nav>
-
+            <!-- Línea divisoria y botón de configuración avanzada (Solo en Dashboard Principal) -->
+<div class="h-px bg-[#1a1a1a] my-4 mx-3"></div>
+<div class="px-3">
+    <button onclick="abrirModalCredenciales()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-[11px] text-zinc-500 hover:text-[#10b981] hover:bg-zinc-900/40 border border-transparent hover:border-zinc-800/60 transition group">
+        <svg class="w-3.5 h-3.5 text-zinc-600 group-hover:text-[#10b981] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+        Configurar Logins
+    </button>
+</div>
         <div class="mt-6 pt-4 border-t border-[#1a1a1a] space-y-3">
             <div class="hidden md:flex items-center gap-2 bg-black px-3 py-2 rounded-xl border border-[#1a1a1a]">
                 <div class="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse shrink-0"></div>
@@ -756,7 +765,49 @@
         renderSuiteRows();
         updateCountersPanel();
     }
+function abrirModalCredenciales() {
+    document.getElementById('modal-credenciales').classList.remove('hidden');
+    document.getElementById('modal-credenciales').classList.add('flex');
+}
 
+function cerrarModalCredenciales() {
+    document.getElementById('modal-credenciales').classList.remove('flex');
+    document.getElementById('modal-credenciales').classList.add('hidden');
+    document.getElementById('form-credenciales').reset();
+}
+
+async function guardarCredenciales(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-cred');
+    btn.disabled = true;
+
+    const { data: { user } } = await sb.auth.getUser(); // Usando tu cliente 'sb' activo
+    
+    // Contamos registros actuales para el nombre automático por defecto
+    const { count } = await sb.from('credenciales').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
+    
+    const nombreInput = document.getElementById('cred-nombre').value.trim();
+    const nombreFinal = nombreInput || `Credenciales ${ (count || 0) + 1 }`;
+
+    const payload = {
+        user_id: user.id,
+        nombre: nombreFinal,
+        usuario: document.getElementById('cred-usuario').value.trim(),
+        usuario_selector: document.getElementById('cred-user-selector').value.trim(),
+        clave: document.getElementById('cred-clave').value,
+        clave_selector: document.getElementById('cred-pass-selector').value.trim()
+    };
+
+    const { error } = await sb.from('credenciales').insert([payload]);
+
+    if (error) {
+        alert("Error al resguardar credenciales: " + error.message);
+    } else {
+        alert(`Ficha [${nombreFinal}] guardada con éxito.`);
+        cerrarModalCredenciales();
+    }
+    btn.disabled = false;
+}
     function updateCountersPanel() {
         const v = suiteStorage.vrt.length, s = suiteStorage.seo.length, p = suiteStorage.perf.length, l = suiteStorage.links.length;
         const globalCount = document.getElementById('suite-global-counter');
@@ -800,6 +851,56 @@
 
     window.addEventListener('DOMContentLoaded', inicializarPlataforma);
 </script>
+<!-- MODAL DE CONFIGURACIÓN DE CREDENCIALES COMPATIBLE CON LA HOJA DE ESTILOS -->
+<div id="modal-credenciales" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center z-50 p-4 animate-fade-in">
+    <div class="bg-[#0d0d0d] border border-[#1a1a1a] w-full max-w-lg rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col">
+        
+        <div class="p-6 border-b border-[#1a1a1a] flex justify-between items-center bg-black/20">
+            <div>
+                <span class="font-mono text-[8px] text-[#10b981] uppercase tracking-widest block mb-0.5">VAULT MANAGER //</span>
+                <h3 class="font-title text-base font-black text-white uppercase">Gestión de Credenciales</h3>
+            </div>
+            <button onclick="cerrarModalCredenciales()" class="font-mono text-[10px] text-zinc-500 hover:text-white px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded-md transition">✕ CLOSE</button>
+        </div>
 
+        <form id="form-credenciales" onsubmit="guardarCredenciales(event)" class="p-6 space-y-4">
+            <!-- Nombre Identificador -->
+            <div>
+                <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Nombre de la Credencial</label>
+                <input type="text" id="cred-nombre" placeholder="Ej: Credenciales 1 (Dejar vacío para correlativo automático)" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+            </div>
+
+            <!-- Fila 1: Usuario + Selector -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Usuario / Correo</label>
+                    <input type="text" id="cred-usuario" required placeholder="admin@test.com" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+                </div>
+                <div>
+                    <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Selector Usuario (CSS)</label>
+                    <input type="text" id="cred-user-selector" required value='input[type="email"]' class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+                </div>
+            </div>
+
+            <!-- Fila 2: Contraseña + Selector -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Contraseña</label>
+                    <input type="password" id="cred-clave" required placeholder="••••••••" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+                </div>
+                <div>
+                    <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Selector Clave (CSS)</label>
+                    <input type="text" id="cred-pass-selector" required value='input[type="password"]' class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" id="btn-save-cred" class="w-full bg-white hover:bg-zinc-200 text-black font-mono font-black py-3 rounded-lg text-[10px] tracking-wider uppercase transition shadow-md">
+                    Guardar en Bóveda
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 </body>
 </html>
