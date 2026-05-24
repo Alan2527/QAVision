@@ -779,34 +779,51 @@ function cerrarModalCredenciales() {
 async function guardarCredenciales(e) {
     e.preventDefault();
     const btn = document.getElementById('btn-save-cred');
-    btn.disabled = true;
+    if (btn) btn.disabled = true;
 
-    const { data: { user } } = await sb.auth.getUser(); // Usando tu cliente 'sb' activo
-    
-    // Contamos registros actuales para el nombre automático por defecto
-    const { count } = await sb.from('credenciales').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
-    
-    const nombreInput = document.getElementById('cred-nombre').value.trim();
-    const nombreFinal = nombreInput || `Credenciales ${ (count || 0) + 1 }`;
+    try {
+        if (!dashClient) {
+            alert("Error: El cliente de Supabase no está inicializado.");
+            return;
+        }
 
-    const payload = {
-        user_id: user.id,
-        nombre: nombreFinal,
-        usuario: document.getElementById('cred-usuario').value.trim(),
-        usuario_selector: document.getElementById('cred-user-selector').value.trim(),
-        clave: document.getElementById('cred-clave').value,
-        clave_selector: document.getElementById('cred-pass-selector').value.trim()
-    };
+        // 1. Cambiado sb por dashClient
+        const { data: { user }, error: authError } = await dashClient.auth.getUser(); 
+        if (authError || !user) {
+            alert("No hay una sesión de usuario activa.");
+            return;
+        }
 
-    const { error } = await sb.from('credenciales').insert([payload]);
+        // 2. Cambiado sb por dashClient
+        const { count } = await dashClient.from('credenciales').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
 
-    if (error) {
-        alert("Error al resguardar credenciales: " + error.message);
-    } else {
-        alert(`Ficha [${nombreFinal}] guardada con éxito.`);
-        cerrarModalCredenciales();
+        const nombreInput = document.getElementById('cred-nombre').value.trim();
+        const nombreFinal = nombreInput || `Credenciales ${ (count || 0) + 1 }`;
+
+        const payload = {
+            user_id: user.id,
+            nombre: nombreFinal,
+            usuario: document.getElementById('cred-usuario').value.trim(),
+            usuario_selector: document.getElementById('cred-user-selector').value.trim(),
+            clave: document.getElementById('cred-clave').value,
+            clave_selector: document.getElementById('cred-pass-selector').value.trim()
+        };
+
+        // 3. Cambiado sb por dashClient
+        const { error } = await dashClient.from('credenciales').insert([payload]);
+
+        if (error) {
+            alert("Error al resguardar credenciales: " + error.message);
+        } else {
+            alert(`Ficha [${nombreFinal}] guardada con éxito.`);
+            cerrarModalCredenciales();
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Falla crítica al guardar: " + err.message);
+    } finally {
+        if (btn) btn.disabled = false;
     }
-    btn.disabled = false;
 }
     function updateCountersPanel() {
         const v = suiteStorage.vrt.length, s = suiteStorage.seo.length, p = suiteStorage.perf.length, l = suiteStorage.links.length;
