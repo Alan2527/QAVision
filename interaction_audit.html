@@ -241,18 +241,25 @@
 
         if (shouldTrigger) {
             document.getElementById('url-auditada').textContent = '⏳ Ejecutando análisis de links...';
-            const url = sessionStorage.getItem('qavision_last_prod');
+            const url        = sessionStorage.getItem('qavision_last_prod');
+            const credId     = sessionStorage.getItem('qavision_selected_cred_id') || null;
+            const maxElem    = parseInt(sessionStorage.getItem('qavision_links_max') || '50');
+            const tiposRaw   = sessionStorage.getItem('qavision_links_tipos');
+            const tipos      = tiposRaw ? JSON.parse(tiposRaw) : ["a","button","role_button","role_link","input_submit","onclick"];
 
             sessionStorage.removeItem('qavision_last_prod');
             sessionStorage.removeItem('qavision_last_stage');
             sessionStorage.removeItem('qavision_trigger_test');
             sessionStorage.removeItem('qavision_user_id');
+            sessionStorage.removeItem('qavision_selected_cred_id');
+            sessionStorage.removeItem('qavision_links_max');
+            sessionStorage.removeItem('qavision_links_tipos');
 
             try {
                 const response = await fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url, user_id: user.id })
+                    body: JSON.stringify({ url, user_id: user.id, cred_id: credId, max_elementos: maxElem, tipos })
                 });
                 if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
                 await new Promise(resolve => setTimeout(resolve, 2000));
