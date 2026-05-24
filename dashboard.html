@@ -261,7 +261,7 @@
                             </div>
                         </div>
 
-                        <!-- 🛠️ ENTORNO PROTEGIDO SACADO AFUERA (Se corrigió su ubicación para que sea visible en cualquier módulo) -->
+                        <!-- CONTENEDOR DINÁMICO DE CREDENCIALES COMMAND CENTER (Arranca oculto) -->
                         <div id="auth-vault-container" class="hidden border-t border-[#1a1a1a] pt-5 mt-4 space-y-2.5">
                             <div class="flex justify-between items-center">
                                 <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold">// Forzar Entorno Protegido</span>
@@ -371,6 +371,17 @@
                             <button onclick="switchTab('links')" id="tab-links" class="font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap">04. Link Scan</button>
                         </div>
                         <div id="suite-inputs-container" class="space-y-3 max-h-[280px] overflow-y-auto custom-scroll pr-2"></div>
+                        
+                        <!-- CONTENEDOR DINÁMICO DE CREDENCIALES ADENTRO DEL SUITE MANAGER (NUEVO) -->
+                        <div id="suite-auth-vault-container" class="hidden border-t border-[#1a1a1a] pt-5 mt-4 space-y-2.5">
+                            <div class="flex justify-between items-center">
+                                <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold">// Forzar Entorno Protegido (Suite)</span>
+                                <span class="font-mono-custom text-[8px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/20 uppercase">Selección Única</span>
+                            </div>
+                            <!-- Los checkboxes se inyectan acá en paralelo -->
+                            <div id="suite-auth-checkboxes-grid" class="grid grid-cols-2 gap-3"></div>
+                        </div>
+
                     </div>
                     <div class="mt-4 pt-4 border-t border-[#1a1a1a] flex justify-between items-center">
                         <button onclick="addSuiteRow()" class="font-mono-custom text-xs font-bold text-gray-400 hover:text-white flex items-center gap-1.5 transition">
@@ -476,7 +487,7 @@
     async function verificarAccesoSaaS() {
         if (!dashClient) return;
         try {
-            const { data: { session }, error } = await dashClient.auth.getSession();
+            const { data: { session }, error = null } = await dashClient.auth.getSession();
             if (error || !session) { window.location.replace('login.html'); return; }
             currentUser = session.user;
             document.getElementById('user-email').innerText = session.user.email;
@@ -484,7 +495,7 @@
             await cargarAuditoriasRecientes();
             await cargarSaludEntorno();
             
-            // Línea agregada para dibujar tus checkboxes de la bóveda
+            // Dibuja de manera síncrona los checkboxes en ambos paneles (Command y Suite)
             await inicializarCheckboxesCredenciales();
             
         } catch (e) {
@@ -622,8 +633,8 @@
                 sessionStorage.setItem('qavision_links_tipos', JSON.stringify(ccTiposSeleccionados));
             }
 
-            // Líneas agregadas para pasarle el ID de la credencial elegida a la siguiente página
-            const checkedCred = document.querySelector('.qa-vault-checkbox:checked');
+            // Sincroniza la credencial marcada en el Command Center para el test individual
+            const checkedCred = document.querySelector('#auth-checkboxes-grid .qa-vault-checkbox:checked');
             if (checkedCred) {
                 sessionStorage.setItem('qavision_selected_cred_id', checkedCred.value);
             } else {
@@ -639,20 +650,25 @@
             btn.disabled = true;
             btn.className = "w-full bg-zinc-800 text-zinc-500 font-black py-3.5 rounded-xl font-mono text-xs tracking-wider uppercase cursor-not-allowed mt-4 animate-pulse";
             btn.innerText = `Procesando ${totalTests} análisis en batch...`;
+            
+            // Obtener credencial global del Suite Manager si estuviera seleccionada
+            const suiteCred = document.querySelector('#suite-auth-checkboxes-grid .qa-vault-checkbox:checked');
+            const credId = suiteCred ? suiteCred.value : null;
+
             try {
                 const { data: { session } } = await dashClient.auth.getSession();
                 const userId = session?.user?.id || null;
                 const batchId = generateSafeID();
                 const llamadas = [
-                    ...suiteStorage.vrt.map(r => fetch('https://qavision-qavision-engine.hf.space/api/comparar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url_a: r.stage, url_b: r.prod, user_id: userId, batch_id: batchId }) })),
-                    ...suiteStorage.seo.map(r => fetch('https://qavision-qavision-engine.hf.space/api/seo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId }) })),
-                    ...suiteStorage.perf.map(r => fetch('https://qavision-qavision-engine.hf.space/api/performance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId }) })),
-                    ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, max_elementos: r.maxElementos || 50, tipos: r.tipos || ["a","button","role_button","role_link","input_submit","onclick"] }) })),
+                    ...suiteStorage.vrt.map(r => fetch('https://qavision-qavision-engine.hf.space/api/comparar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url_a: r.stage, url_b: r.prod, user_id: userId, batch_id: batchId, cred_id: credId }) })),
+                    ...suiteStorage.seo.map(r => fetch('https://qavision-qavision-engine.hf.space/api/seo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, cred_id: credId }) })),
+                    ...suiteStorage.perf.map(r => fetch('https://qavision-qavision-engine.hf.space/api/performance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, cred_id: credId }) })),
+                    ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, max_elementos: r.maxElementos || 50, tipos: r.tipos || ["a","button","role_button","role_link","input_submit","onclick"], cred_id: credId }) })),
                 ];
                 await Promise.allSettled(llamadas);
                 window.location.href = 'mass_execution.html';
             } catch (error) {
-                console.error("Error disparando el batch:", error);
+                print("Error disparando el batch:", error);
                 btn.disabled = false;
                 btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl font-mono text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
                 btn.innerText = "Ejecutar Suite Completa";
@@ -828,6 +844,7 @@
             const payload = {
                 user_id: user.id,
                 nombre: nombreFinal,
+                login_url: document.getElementById('cred-login-url').value.trim() || '', // Manejo opcional
                 usuario: document.getElementById('cred-usuario').value.trim(),
                 usuario_selector: document.getElementById('cred-user-selector').value.trim(),
                 clave: document.getElementById('cred-clave').value,
@@ -841,21 +858,23 @@
             } else {
                 alert(`Ficha [${nombreFinal}] guardada con éxito.`);
                 cerrarModalCredenciales();
-                await inicializarCheckboxesCredenciales(); // Auto-refresca el Command Center al guardar
+                await inicializarCheckboxesCredenciales(); // Sincroniza dinámicamente ambos módulos
             }
         } catch (err) {
-            console.error(err);
+            print(err);
             alert("Falla crítica al guardar: " + err.message);
         } finally {
             if (btn) btn.disabled = false;
         }
     }
 
-    // Carga las credenciales guardadas y las transforma en checkboxes corporativos
+    // Carga las credenciales guardadas y las renderiza en Command Center y Suite Manager
     async function inicializarCheckboxesCredenciales() {
-        const grid = document.getElementById('auth-checkboxes-grid');
-        const container = document.getElementById('auth-vault-container');
-        if (!grid || !container || !currentUser) return;
+        const gridCC = document.getElementById('auth-checkboxes-grid');
+        const containerCC = document.getElementById('auth-vault-container');
+        const gridSM = document.getElementById('suite-auth-checkboxes-grid');
+        const containerSM = document.getElementById('suite-auth-vault-container');
+        if (!currentUser) return;
 
         try {
             const { data: credenciales, error } = await dashClient
@@ -867,13 +886,13 @@
             if (error) throw error;
 
             if (!credenciales || credenciales.length === 0) {
-                container.classList.add('hidden');
+                if (containerCC) containerCC.classList.add('hidden');
+                if (containerSM) containerSM.classList.add('hidden');
                 return;
             }
 
-            container.classList.remove('hidden');
-            
-            grid.innerHTML = credenciales.map(cred => `
+            // Generar string HTML unificado
+            const htmlContent = credenciales.map(cred => `
                 <label class="flex items-center gap-3 p-3 bg-black border border-[#1a1a1a] rounded-xl cursor-pointer hover:border-zinc-800 transition-all select-none group">
                     <input type="checkbox" 
                            value="${cred.id}" 
@@ -885,17 +904,33 @@
                 </label>
             `).join('');
 
+            // Inyectar en Command Center
+            if (containerCC && gridCC) {
+                containerCC.classList.remove('hidden');
+                gridCC.innerHTML = htmlContent;
+            }
+            
+            // Inyectar en Suite Manager
+            if (containerSM && gridSM) {
+                containerSM.classList.remove('hidden');
+                gridSM.innerHTML = htmlContent;
+            }
+
         } catch (err) {
-            console.error("Error al sincronizar checkboxes de accesos:", err);
+            print("Error al sincronizar checkboxes de accesos:", err);
         }
     }
 
+    // Aplica exclusividad local aislando los checkboxes de su propia grilla
     function controlarExclusividadCheckbox(checkboxActivo) {
         if (checkboxActivo.checked) {
-            const todosLosCheckboxes = document.querySelectorAll('.qa-vault-checkbox');
-            todosLosCheckboxes.forEach(cb => {
-                if (cb !== checkboxActivo) cb.checked = false;
-            });
+            const contenedorPadre = checkboxActivo.closest('.grid');
+            if (contenedorPadre) {
+                const todosLosCheckboxes = contenedorPadre.querySelectorAll('.qa-vault-checkbox');
+                todosLosCheckboxes.forEach(cb => {
+                    if (cb !== checkboxActivo) cb.checked = false;
+                });
+            }
         }
     }
     
@@ -960,6 +995,12 @@
             <div>
                 <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Nombre de la Credencial</label>
                 <input type="text" id="cred-nombre" placeholder="Ej: Credenciales 1 (Dejar vacío para correlativo automático)" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+            </div>
+
+            <!-- URL de Login (Opcional - NUEVO) -->
+            <div>
+                <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">URL de la página de Login (Opcional)</label>
+                <input type="url" id="cred-login-url" placeholder="Ej: https://qa.amv.travel/Login.aspx" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
             </div>
 
             <!-- Fila 1: Usuario + Selector -->
