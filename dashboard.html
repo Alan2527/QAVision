@@ -9,1031 +9,777 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --green: #10b981;
-            --surface: #070707;
-            --surface-2: #0d0d0d;
-            --border: #1a1a1a;
-            --text: #e8e8e8;
-            --muted: #505050;
-        }
-
+        :root { --green: #10b981; --surface: #070707; --surface-2: #0d0d0d; --border: #1a1a1a; --text: #e8e8e8; --muted: #505050; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: #000;
-            color: var(--text);
-            overflow-x: hidden;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
-            pointer-events: none;
-            z-index: 50;
-            opacity: 0.4;
-        }
-
-        .hero-grid {
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
-            mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 20%, transparent 100%);
-            z-index: 0;
-        }
-
-        .main-glow {
-            position: fixed;
-            top: -200px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 700px;
-            height: 500px;
-            background: radial-gradient(ellipse, rgba(16,185,129,0.06) 0%, transparent 70%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
+        body { font-family: 'DM Sans', sans-serif; background: #000; color: var(--text); overflow-x: hidden; }
+        body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events: none; z-index: 50; opacity: 0.4; }
+        .hero-grid { position: fixed; inset: 0; background-image: linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px); background-size: 40px 40px; mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 20%, transparent 100%); z-index: 0; }
+        .main-glow { position: fixed; top: -200px; left: 50%; transform: translateX(-50%); width: 700px; height: 500px; background: radial-gradient(ellipse, rgba(16,185,129,0.06) 0%, transparent 70%); pointer-events: none; z-index: 0; }
         .font-title { font-family: 'Syne', sans-serif; }
         .font-mono-custom { font-family: 'DM Mono', monospace; }
-
-        .bg-tech {
-            background-color: var(--surface-2);
-            border: 1px solid var(--border);
-            backdrop-filter: blur(10px);
-        }
-
+        .bg-tech { background-color: var(--surface-2); border: 1px solid var(--border); backdrop-filter: blur(10px); }
         .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
         .custom-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
-
-        .fade-field { transition: all 0.25s ease-in-out; }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 12px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: 700;
-            color: #505050;
-            transition: all 0.15s ease;
-            text-decoration: none;
-            font-family: 'DM Mono', monospace;
-            border: 1px solid transparent;
-        }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; font-size: 11px; font-weight: 700; color: #505050; transition: all 0.15s ease; text-decoration: none; font-family: 'DM Mono', monospace; border: 1px solid transparent; }
         .nav-item:hover { color: #10b981; background: rgba(16,185,129,0.07); }
         .nav-item.active { color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.15); }
-
         .main-scroll { overflow-y: auto; height: 100vh; }
         .main-scroll::-webkit-scrollbar { width: 5px; }
         .main-scroll::-webkit-scrollbar-track { background: transparent; }
         .main-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
         .main-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
-
-        /* Link Scanner controls */
-        .links-sel-btn {
-            flex: 1; min-width: 0;
-            padding: 6px 4px;
-            border-radius: 8px;
-            font-family: 'DM Mono', monospace;
-            font-size: 11px; font-weight: 700;
-            border: 1px solid #1a1a1a;
-            background: #000; color: #505050;
-            cursor: pointer; transition: all 0.15s; text-align: center;
-        }
+        .links-sel-btn { flex: 1; min-width: 0; padding: 6px 4px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700; border: 1px solid #1a1a1a; background: #000; color: #505050; cursor: pointer; transition: all 0.15s; text-align: center; }
         .links-sel-btn.active { border-color: rgba(16,185,129,0.4); color: #10b981; background: rgba(16,185,129,0.08); }
-
-        .links-tipo-check {
-            display: flex; align-items: center; gap: 6px;
-            padding: 6px 10px; border-radius: 8px;
-            border: 1px solid #1a1a1a; background: #000;
-            cursor: pointer; transition: all 0.15s;
-        }
+        .links-tipo-check { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 8px; border: 1px solid #1a1a1a; background: #000; cursor: pointer; transition: all 0.15s; }
         .links-tipo-check input[type="checkbox"] { accent-color: #10b981; width: 11px; height: 11px; }
         .links-tipo-check span { font-family: 'DM Mono', monospace; font-size: 10px; color: #505050; }
         .links-tipo-check.checked { border-color: rgba(16,185,129,0.3); }
         .links-tipo-check.checked span { color: #10b981; }
+        .cred-card { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #050505; border: 1px solid #1a1a1a; border-radius: 10px; transition: border-color 0.15s; }
+        .cred-card:hover { border-color: #2a2a2a; }
+        .cred-card-delete { font-size: 11px; color: #3a3a3a; background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; transition: all 0.15s; font-family: 'DM Mono', monospace; }
+        .cred-card-delete:hover { color: #ef4444; background: rgba(239,68,68,0.08); }
+        .modal-tab { padding: 6px 14px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; color: #505050; background: none; }
+        .modal-tab.active { color: #10b981; background: rgba(16,185,129,0.08); border-color: rgba(16,185,129,0.2); }
+        .modal-tab:not(.active):hover { color: #aaa; }
     </style>
 </head>
 <body class="min-h-screen flex">
-    <div class="hero-grid"></div>
-    <div class="main-glow"></div>
+<div class="hero-grid"></div>
+<div class="main-glow"></div>
 
-    <!-- SIDEBAR -->
-    <aside class="w-20 md:w-64 bg-black border-r border-[#1a1a1a] p-6 h-screen sticky top-0 flex flex-col z-10 shrink-0">
-        <div class="mb-8 hidden md:block">
-            <div class="flex items-center gap-2 mb-1">
-                <h1 class="font-title text-2xl font-black text-[#10b981] tracking-tighter italic">QAVision</h1>
-                <span class="font-mono-custom text-[9px] text-[#10b981]/60 bg-[#10b981]/10 border border-[#10b981]/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">Main</span>
+<!-- SIDEBAR -->
+<aside class="w-20 md:w-64 bg-black border-r border-[#1a1a1a] p-6 h-screen sticky top-0 flex flex-col z-10 shrink-0">
+    <div class="mb-8 hidden md:block">
+        <div class="flex items-center gap-2 mb-1">
+            <h1 class="font-title text-2xl font-black text-[#10b981] tracking-tighter italic">QAVision</h1>
+            <span class="font-mono-custom text-[9px] text-[#10b981]/60 bg-[#10b981]/10 border border-[#10b981]/20 px-1.5 py-0.5 rounded-full uppercase tracking-wider">Main</span>
+        </div>
+        <div class="h-px bg-gradient-to-r from-[#10b981]/50 to-transparent mt-1"></div>
+        <p class="font-mono-custom text-[9px] text-[#303030] mt-2 uppercase tracking-widest">Console v2.0</p>
+    </div>
+    <div class="mb-8 md:hidden flex justify-center"><span class="font-title text-lg font-black text-[#10b981] italic">Q</span></div>
+    <nav class="flex-1 space-y-1">
+        <a href="#" class="nav-item active"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg><span class="hidden md:inline">Panel Principal</span></a>
+        <a href="visual_regression.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg><span class="hidden md:inline">Visual Regression</span></a>
+        <a href="seo.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><span class="hidden md:inline">SEO Audit</span></a>
+        <a href="performance.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><span class="hidden md:inline">Performance CWV</span></a>
+        <a href="interaction_audit.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg><span class="hidden md:inline">Link Scanner</span></a>
+        <a href="mass_execution.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg><span class="hidden md:inline">Mass Execution</span></a>
+    </nav>
+    <div class="h-px bg-[#1a1a1a] my-4 mx-3"></div>
+    <div class="px-3">
+        <button onclick="abrirModalCredenciales()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-[11px] text-zinc-500 hover:text-[#10b981] hover:bg-zinc-900/40 border border-transparent hover:border-zinc-800/60 transition group">
+            <svg class="w-3.5 h-3.5 text-zinc-600 group-hover:text-[#10b981] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Configurar Logins
+        </button>
+    </div>
+    <div class="mt-6 pt-4 border-t border-[#1a1a1a] space-y-3">
+        <div class="hidden md:flex items-center gap-2 bg-black px-3 py-2 rounded-xl border border-[#1a1a1a]">
+            <div class="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse shrink-0"></div>
+            <span id="user-email" class="font-mono-custom text-[10px] text-gray-400 truncate">Cargando...</span>
+        </div>
+        <button id="btn-logout" class="w-full font-mono-custom text-[10px] font-bold text-red-400 hover:text-red-300 transition-colors bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 px-3 py-2 rounded-xl hidden md:block">// SALIR</button>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<main class="flex-1 main-scroll relative z-10">
+<div class="max-w-7xl w-full mx-auto p-6 md:p-10 space-y-8">
+
+    <header class="mb-2">
+        <span class="font-mono-custom text-[10px] text-[#10b981] uppercase tracking-[0.3em] font-bold">QAVision // Control Center</span>
+        <h2 class="font-title text-4xl mt-2 font-extrabold tracking-tight">Panel <span class="text-gray-600">Principal</span></h2>
+        <p class="font-mono-custom text-xs text-[#505050] mt-1">Hub central de operaciones — configurá, ejecutá y monitoreá todos tus módulos desde acá.</p>
+    </header>
+
+    <!-- TOP ROW -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-tech p-6 rounded-2xl relative overflow-hidden flex flex-col">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-[#10b981]/5 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="mb-5">
+                <span class="font-mono-custom text-[9px] text-[#10b981] uppercase tracking-[0.25em] font-bold block mb-1">// Ejecución Individual</span>
+                <h3 class="font-title text-xl font-extrabold text-white tracking-tight">Command Center</h3>
+                <p class="text-xs text-[#505050] mt-1">Configurá los entornos y lanzá ejecuciones manuales individuales en tiempo real.</p>
             </div>
-            <div class="h-px bg-gradient-to-r from-[#10b981]/50 to-transparent mt-1"></div>
-            <p class="font-mono-custom text-[9px] text-[#303030] mt-2 uppercase tracking-widest">Console v2.0</p>
-        </div>
-        <div class="mb-8 md:hidden flex justify-center">
-            <span class="font-title text-lg font-black text-[#10b981] italic">Q</span>
-        </div>
-
-        <nav class="flex-1 space-y-1">
-            <a href="#" class="nav-item active">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
-                <span class="hidden md:inline">Panel Principal</span>
-            </a>
-            <a href="visual_regression.html" class="nav-item">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                <span class="hidden md:inline">Visual Regression</span>
-            </a>
-            <a href="seo.html" class="nav-item">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                <span class="hidden md:inline">SEO Audit</span>
-            </a>
-            <a href="performance.html" class="nav-item">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                <span class="hidden md:inline">Performance CWV</span>
-            </a>
-            <a href="interaction_audit.html" class="nav-item">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
-                <span class="hidden md:inline">Link Scanner</span>
-            </a>
-            <a href="mass_execution.html" class="nav-item">
-                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
-                <span class="hidden md:inline">Mass Execution</span>
-            </a>
-        </nav>
-        
-        <!-- Línea divisoria y botón de configuración avanzada (Solo en Dashboard Principal) -->
-        <div class="h-px bg-[#1a1a1a] my-4 mx-3"></div>
-        <div class="px-3">
-            <button onclick="abrirModalCredenciales()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-mono text-[11px] text-zinc-500 hover:text-[#10b981] hover:bg-zinc-900/40 border border-transparent hover:border-zinc-800/60 transition group">
-                <svg class="w-3.5 h-3.5 text-zinc-600 group-hover:text-[#10b981] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                </svg>
-                Configurar Logins
-            </button>
-        </div>
-        
-        <div class="mt-6 pt-4 border-t border-[#1a1a1a] space-y-3">
-            <div class="hidden md:flex items-center gap-2 bg-black px-3 py-2 rounded-xl border border-[#1a1a1a]">
-                <div class="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse shrink-0"></div>
-                <span id="user-email" class="font-mono-custom text-[10px] text-gray-400 truncate">Cargando...</span>
-            </div>
-            <button id="btn-logout" class="w-full font-mono-custom text-[10px] font-bold text-red-400 hover:text-red-300 transition-colors bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 px-3 py-2 rounded-xl hidden md:block">
-                // SALIR
-            </button>
-        </div>
-    </aside>
-
-    <!-- MAIN CONTENT -->
-    <main class="flex-1 main-scroll relative z-10">
-        <div class="max-w-7xl w-full mx-auto p-6 md:p-10 space-y-8">
-
-            <!-- PAGE HEADER -->
-            <header class="mb-2">
-                <span class="font-mono-custom text-[10px] text-[#10b981] uppercase tracking-[0.3em] font-bold">QAVision // Control Center</span>
-                <h2 class="font-title text-4xl mt-2 font-extrabold tracking-tight">Panel <span class="text-gray-600">Principal</span></h2>
-                <p class="font-mono-custom text-xs text-[#505050] mt-1">Hub central de operaciones — configurá, ejecutá y monitoreá todos tus módulos desde acá.</p>
-            </header>
-
-            <!-- TOP ROW: Command Center + Quick Actions -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                <div class="lg:col-span-2 bg-tech p-6 rounded-2xl relative overflow-hidden flex flex-col">
-                    <div class="absolute top-0 right-0 w-64 h-64 bg-[#10b981]/5 rounded-full blur-3xl pointer-events-none"></div>
-                    <div class="mb-5">
-                        <span class="font-mono-custom text-[9px] text-[#10b981] uppercase tracking-[0.25em] font-bold block mb-1">// Ejecución Individual</span>
-                        <h3 class="font-title text-xl font-extrabold text-white tracking-tight">Command Center</h3>
-                        <p class="text-xs text-[#505050] mt-1">Configurá los entornos y lanzá ejecuciones manuales individuales en tiempo real.</p>
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div class="w-full">
+                        <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Módulo Core</label>
+                        <select id="new-test-type" class="w-full bg-black border border-[#1a1a1a] text-white text-xs rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block p-3 outline-none cursor-pointer font-mono-custom">
+                            <option value="visual_regression.html" selected>Visual Regression (VRT)</option>
+                            <option value="seo.html">Auditoría SEO</option>
+                            <option value="performance.html">Performance CWV</option>
+                            <option value="interaction_audit.html">Link Scanner</option>
+                        </select>
                     </div>
-
-                    <div class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                            <div class="w-full">
-                                <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Módulo Core</label>
-                                <select id="new-test-type" class="w-full bg-black border border-[#1a1a1a] text-white text-xs rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block p-3 outline-none cursor-pointer font-mono-custom">
-                                    <option value="visual_regression.html" selected>Visual Regression (VRT)</option>
-                                    <option value="seo.html">Auditoría SEO</option>
-                                    <option value="performance.html">Performance CWV</option>
-                                    <option value="interaction_audit.html">Link Scanner</option>
-                                </select>
-                            </div>
-                            <div id="container-url-prod" class="w-full md:col-span-2">
-                                <label id="label-url-prod" class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">URL de Producción</label>
-                                <input type="url" id="new-test-url-prod" class="w-full bg-black border border-[#1a1a1a] text-white text-xs rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block p-3 outline-none placeholder-[#333] font-mono-custom" placeholder="https://ejemplo.com">
-                            </div>
-                        </div>
-
-                        <div id="container-url-staging" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                            <div class="md:col-span-2 md:col-start-2">
-                                <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">URL de Staging / Branch Especial</label>
-                                <input type="url" id="new-test-url-stage" class="w-full bg-black border border-[#1a1a1a] text-white text-xs rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block p-3 outline-none placeholder-[#333] font-mono-custom" placeholder="https://staging.ejemplo.com">
-                            </div>
-                        </div>
-
-                        <!-- LINK SCANNER OPTIONS (visible solo cuando se elige Link Scanner) -->
-                        <div id="container-links-options" class="space-y-3" style="display:none;">
-                            <div>
-                                <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Elementos a auditar</label>
-                                <div class="flex gap-2" id="cc-selector-elementos">
-                                    <button onclick="ccSeleccionarElementos(50, this)"  class="links-sel-btn active">50</button>
-                                    <button onclick="ccSeleccionarElementos(100, this)" class="links-sel-btn">100</button>
-                                    <button onclick="ccSeleccionarElementos(150, this)" class="links-sel-btn">150</button>
-                                    <button onclick="ccSeleccionarElementos(200, this)" class="links-sel-btn">200</button>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Tipos a auditar</label>
-                                <div class="grid grid-cols-3 gap-1.5" id="cc-tipos-grid">
-                                    <label class="links-tipo-check checked"><input type="checkbox" value="a"            checked onchange="ccToggleTipo(this)"><span>Enlaces &lt;a&gt;</span></label>
-                                    <label class="links-tipo-check checked"><input type="checkbox" value="button"       checked onchange="ccToggleTipo(this)"><span>Botones</span></label>
-                                    <label class="links-tipo-check checked"><input type="checkbox" value="role_button"  checked onchange="ccToggleTipo(this)"><span>role=button</span></label>
-                                    <label class="links-tipo-check checked"><input type="checkbox" value="role_link"    checked onchange="ccToggleTipo(this)"><span>role=link</span></label>
-                                    <label class="links-tipo-check checked"><input type="checkbox" value="input_submit" checked onchange="ccToggleTipo(this)"><span>Submit</span></label>
-                                    <label class="links-tipo-check checked"><input type="checkbox" value="onclick"      checked onchange="ccToggleTipo(this)"><span>onclick</span></label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- CONTENEDOR DINÁMICO DE CREDENCIALES COMMAND CENTER (Arranca oculto) -->
-                        <div id="auth-vault-container" class="hidden border-t border-[#1a1a1a] pt-5 mt-4 space-y-2.5">
-                            <div class="flex justify-between items-center">
-                                <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold">// Forzar Entorno Protegido</span>
-                                <span class="font-mono-custom text-[8px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/20 uppercase">Selección Única</span>
-                            </div>
-                            <!-- Los checkboxes se inyectan acá en paralelo -->
-                            <div id="auth-checkboxes-grid" class="grid grid-cols-2 gap-3"></div>
-                        </div>
-
-                    </div>
-
-                    <div class="mt-5 pt-4 border-t border-[#1a1a1a] flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                        <p class="font-mono-custom text-[9px] text-[#505050]">* Variables operacionales se heredan dinámicamente.</p>
-                        <button id="btn-launch-test" class="bg-[#10b981] hover:bg-[#059669] text-black font-black px-8 py-3 rounded-lg transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] flex items-center justify-center gap-2 text-sm">
-                            <span>Lanzar Suite</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                        </button>
+                    <div id="container-url-prod" class="w-full md:col-span-2">
+                        <label id="label-url-prod" class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">URL de Producción</label>
+                        <input type="url" id="new-test-url-prod" class="w-full bg-black border border-[#1a1a1a] text-white text-xs rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block p-3 outline-none placeholder-[#333] font-mono-custom" placeholder="https://ejemplo.com">
                     </div>
                 </div>
-
-                <div class="bg-tech p-6 rounded-2xl flex flex-col justify-between">
+                <div id="container-url-staging" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div class="md:col-span-2 md:col-start-2">
+                        <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">URL de Staging / Branch Especial</label>
+                        <input type="url" id="new-test-url-stage" class="w-full bg-black border border-[#1a1a1a] text-white text-xs rounded-lg focus:ring-[#10b981] focus:border-[#10b981] block p-3 outline-none placeholder-[#333] font-mono-custom" placeholder="https://staging.ejemplo.com">
+                    </div>
+                </div>
+                <div id="container-links-options" class="space-y-3" style="display:none;">
                     <div>
-                        <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-1">// Atajos</span>
-                        <h3 class="font-title text-xl font-extrabold text-white tracking-tight mb-1">Quick Actions</h3>
-                        <p class="text-xs text-[#505050] mb-4">Re-ejecutar de inmediato los últimos análisis individuales registrados.</p>
-                    </div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button data-rerun="vrt" class="flex flex-col items-center justify-center p-4 bg-black rounded-xl border border-[#1a1a1a] hover:border-purple-500/40 hover:bg-purple-500/5 transition group">
-                            <span class="font-mono-custom text-xs font-bold text-white mb-1 group-hover:text-purple-400 transition">VRT</span>
-                            <span class="font-mono-custom text-[9px] text-[#505050] group-hover:text-purple-400 transition">RERUN</span>
-                        </button>
-                        <button data-rerun="seo" class="flex flex-col items-center justify-center p-4 bg-black rounded-xl border border-[#1a1a1a] hover:border-blue-500/40 hover:bg-blue-500/5 transition group">
-                            <span class="font-mono-custom text-xs font-bold text-white mb-1 group-hover:text-blue-400 transition">SEO</span>
-                            <span class="font-mono-custom text-[9px] text-[#505050] group-hover:text-blue-400 transition">RERUN</span>
-                        </button>
-                        <button data-rerun="perf" class="flex flex-col items-center justify-center p-4 bg-black rounded-xl border border-[#1a1a1a] hover:border-orange-500/40 hover:bg-orange-500/5 transition group">
-                            <span class="font-mono-custom text-xs font-bold text-white mb-1 group-hover:text-orange-400 transition">PERF</span>
-                            <span class="font-mono-custom text-[9px] text-[#505050] group-hover:text-orange-400 transition">RERUN</span>
-                        </button>
-                        <button data-rerun="links" class="flex flex-col items-center justify-center p-4 bg-black rounded-xl border border-[#1a1a1a] hover:border-pink-500/40 hover:bg-pink-500/5 transition group">
-                            <span class="font-mono-custom text-xs font-bold text-white mb-1 group-hover:text-pink-400 transition">LINKS</span>
-                            <span class="font-mono-custom text-[9px] text-[#505050] group-hover:text-pink-400 transition">RERUN</span>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECOND ROW: Recent Audits + Error Trend -->
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-
-                <div class="lg:col-span-3 bg-tech rounded-2xl flex flex-col overflow-hidden">
-                    <div class="p-6 border-b border-[#1a1a1a] flex justify-between items-center">
-                        <div>
-                            <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-1">// Historial</span>
-                            <h3 class="font-title text-lg font-bold text-white tracking-tight">Auditorías Recientes</h3>
-                            <p class="text-xs text-[#505050] mt-0.5">Consolidado multiplataforma.</p>
+                        <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Elementos a auditar</label>
+                        <div class="flex gap-2" id="cc-selector-elementos">
+                            <button onclick="ccSeleccionarElementos(50, this)"  class="links-sel-btn active">50</button>
+                            <button onclick="ccSeleccionarElementos(100, this)" class="links-sel-btn">100</button>
+                            <button onclick="ccSeleccionarElementos(150, this)" class="links-sel-btn">150</button>
+                            <button onclick="ccSeleccionarElementos(200, this)" class="links-sel-btn">200</button>
                         </div>
-                        <span class="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
                     </div>
-                    <div class="overflow-x-auto custom-scroll max-h-[220px]">
-                        <table id="tabla-auditorias" class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="bg-black/40 text-[#505050] font-mono-custom border-b border-[#1a1a1a]">
-                                    <th class="p-4 font-bold uppercase tracking-widest text-[10px]">Fecha</th>
-                                    <th class="p-4 font-bold uppercase tracking-widest text-[10px]">Target URL</th>
-                                    <th class="p-4 font-bold uppercase tracking-widest text-[10px]">Suite Type</th>
-                                    <th class="p-4 font-bold uppercase tracking-widest text-[10px] text-right">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-[#111] font-medium text-gray-300">
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="bg-tech p-6 rounded-2xl flex flex-col justify-between">
                     <div>
-                        <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-1">// Métricas</span>
-                        <h3 class="font-title text-base font-bold text-white tracking-tight">Tendencia de Errores</h3>
-                        <p class="text-xs text-[#505050] mt-0.5">Regresiones — últimos 7 días.</p>
+                        <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Tipos a auditar</label>
+                        <div class="grid grid-cols-3 gap-1.5" id="cc-tipos-grid">
+                            <label class="links-tipo-check checked"><input type="checkbox" value="a"            checked onchange="ccToggleTipo(this)"><span>Enlaces &lt;a&gt;</span></label>
+                            <label class="links-tipo-check checked"><input type="checkbox" value="button"       checked onchange="ccToggleTipo(this)"><span>Botones</span></label>
+                            <label class="links-tipo-check checked"><input type="checkbox" value="role_button"  checked onchange="ccToggleTipo(this)"><span>role=button</span></label>
+                            <label class="links-tipo-check checked"><input type="checkbox" value="role_link"    checked onchange="ccToggleTipo(this)"><span>role=link</span></label>
+                            <label class="links-tipo-check checked"><input type="checkbox" value="input_submit" checked onchange="ccToggleTipo(this)"><span>Submit</span></label>
+                            <label class="links-tipo-check checked"><input type="checkbox" value="onclick"      checked onchange="ccToggleTipo(this)"><span>onclick</span></label>
+                        </div>
                     </div>
-                    <div class="flex-1 mt-3 flex items-center justify-center relative min-h-[140px]">
-                        <canvas id="trendChart"></canvas>
+                </div>
+                <div id="auth-vault-container" class="hidden border-t border-[#1a1a1a] pt-5 mt-4 space-y-2.5">
+                    <div class="flex justify-between items-center">
+                        <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold">// Forzar Entorno Protegido</span>
+                        <span class="font-mono-custom text-[8px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/20 uppercase">Selección Única</span>
                     </div>
+                    <div id="auth-checkboxes-grid" class="grid grid-cols-2 gap-3"></div>
                 </div>
             </div>
-
-            <!-- THIRD ROW: Suite Manager + Health + Mass Execution -->
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-
-                <div class="lg:col-span-3 bg-tech p-6 rounded-2xl flex flex-col justify-between">
-                    <div>
-                        <div class="flex justify-between items-center mb-6 border-b border-[#1a1a1a] pb-4">
-                            <div>
-                                <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-1">// Automatización</span>
-                                <h3 class="font-title text-xl font-bold text-white tracking-tight">Suite Manager</h3>
-                                <p class="text-xs text-[#505050] mt-0.5">Almacená hasta 20 URLs por módulo para automatizar ejecuciones recurrentes.</p>
-                            </div>
-                            <span id="suite-global-counter" class="font-mono-custom text-[10px] bg-[#10b981]/10 text-[#10b981] px-3 py-1 rounded-full border border-[#10b981]/20 font-bold">
-                                Guardadas: 0 / 80
-                            </span>
-                        </div>
-                        <div class="flex gap-1 overflow-x-auto custom-scroll mb-6 border-b border-[#1a1a1a] pb-3">
-                            <button onclick="switchTab('vrt')" id="tab-vrt" class="font-mono-custom text-xs px-4 py-2 rounded-lg bg-black text-white border border-[#10b981]/30 font-bold transition whitespace-nowrap">01. VRT Mappings</button>
-                            <button onclick="switchTab('seo')" id="tab-seo" class="font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap">02. SEO List</button>
-                            <button onclick="switchTab('perf')" id="tab-perf" class="font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap">03. Performance</button>
-                            <button onclick="switchTab('links')" id="tab-links" class="font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap">04. Link Scan</button>
-                        </div>
-                        <div id="suite-inputs-container" class="space-y-3 max-h-[280px] overflow-y-auto custom-scroll pr-2"></div>
-                        
-                        <!-- CONTENEDOR DINÁMICO DE CREDENCIALES ADENTRO DEL SUITE MANAGER (NUEVO) -->
-                        <div id="suite-auth-vault-container" class="hidden border-t border-[#1a1a1a] pt-5 mt-4 space-y-2.5">
-                            <div class="flex justify-between items-center">
-                                <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold">// Forzar Entorno Protegido (Suite)</span>
-                                <span class="font-mono-custom text-[8px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/20 uppercase">Selección Única</span>
-                            </div>
-                            <!-- Los checkboxes se inyectan acá en paralelo -->
-                            <div id="suite-auth-checkboxes-grid" class="grid grid-cols-2 gap-3"></div>
-                        </div>
-
-                    </div>
-                    <div class="mt-4 pt-4 border-t border-[#1a1a1a] flex justify-between items-center">
-                        <button onclick="addSuiteRow()" class="font-mono-custom text-xs font-bold text-gray-400 hover:text-white flex items-center gap-1.5 transition">
-                            <span>+ Agregar nueva línea</span>
-                            <span id="tab-row-limit" class="text-[10px] text-[#505050]">(0/20)</span>
-                        </button>
-                        <button onclick="saveCurrentSuite()" class="bg-black hover:bg-[#111] border border-[#1a1a1a] hover:border-[#10b981]/30 text-white font-mono-custom text-xs font-bold px-4 py-2 rounded-lg transition">
-                            Guardar Módulo
-                        </button>
-                    </div>
-                </div>
-
-                <div class="space-y-6 flex flex-col">
-                    <div class="bg-tech p-6 rounded-2xl relative overflow-hidden">
-                        <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-1">// Cobertura</span>
-                        <h3 class="font-title text-base font-bold text-white tracking-tight mb-1">Salud del Entorno</h3>
-                        <p class="text-xs text-[#505050] mb-4">Volumen de regresión procesada esta semana.</p>
-                        <div class="flex items-baseline gap-2">
-                            <span id="salud-total" class="font-title text-5xl font-extrabold text-white tracking-tight">-</span>
-                            <span class="font-mono-custom text-[10px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/20">Páginas</span>
-                        </div>
-                    </div>
-
-                    <div class="bg-tech p-6 rounded-2xl border border-red-500/20 bg-gradient-to-b from-[#0d0d0d] to-[#110505] flex-1 flex flex-col justify-between relative overflow-hidden">
-                        <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl pointer-events-none"></div>
-                        <div>
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="font-mono-custom text-[9px] text-red-500/60 uppercase tracking-[0.25em] font-bold">// Batch Engine</span>
-                                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                            </div>
-                            <h3 class="font-title text-base font-bold text-white tracking-tight mb-3">Mass Execution</h3>
-                            <p class="text-xs text-gray-400 mb-4">Lanzamiento masivo en paralelo de todos los lotes configurados.</p>
-                            <div class="space-y-2 font-mono-custom text-[11px] text-[#505050] bg-black/50 p-4 rounded-xl border border-zinc-900/60">
-                                <div class="flex justify-between"><span>VRT Targets:</span><span id="mass-count-vrt" class="text-white font-bold">0 / 20</span></div>
-                                <div class="flex justify-between"><span>SEO Targets:</span><span id="mass-count-seo" class="text-white font-bold">0 / 20</span></div>
-                                <div class="flex justify-between"><span>Perf Targets:</span><span id="mass-count-perf" class="text-white font-bold">0 / 20</span></div>
-                                <div class="flex justify-between"><span>Link Scans:</span><span id="mass-count-links" class="text-white font-bold">0 / 20</span></div>
-                            </div>
-                        </div>
-                        <button id="btn-trigger-mass-run" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl font-mono-custom text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4">
-                            Ejecutar Suite Completa
-                        </button>
-                    </div>
-                </div>
+            <div class="mt-5 pt-4 border-t border-[#1a1a1a] flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <p class="font-mono-custom text-[9px] text-[#505050]">* Variables operacionales se heredan dinámicamente.</p>
+                <button id="btn-launch-test" class="bg-[#10b981] hover:bg-[#059669] text-black font-black px-8 py-3 rounded-lg transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] flex items-center justify-center gap-2 text-sm">
+                    <span>Lanzar Suite</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
             </div>
-
         </div>
-    </main>
+
+        <div class="bg-tech p-6 rounded-2xl flex flex-col justify-between">
+            <div>
+                <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-1">// Atajos</span>
+                <h3 class="font-title text-xl font-extrabold text-white tracking-tight mb-1">Quick Actions</h3>
+                <p class="text-xs text-[#505050] mb-4">Re-ejecutar de inmediato los últimos análisis individuales registrados.</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <button data-rerun="vrt"   class="flex flex-col items-center justify-center p-4 bg-black rounded-xl border border-[#1a1a1a] hover:border-purple-500/40 hover:bg-purple-500/5 transition group"><span class="font-mono-custom text-xs font-bold text-white mb-1 group-hover:text-purple-400 transition">VRT</span><span class="font-mono-custom text-[9px] text-[#505050] group-hover:text-purple-400 transition">RERUN</span></button>
+                <button data-rerun="seo"   class="flex flex-col items-center justify-center p-4 bg-black rounded-xl border border-[#1a1a1a] hover:border-blue-500/40 hover:bg-blue-500/5 transition group"><span class="font-mono-custom text-xs font-bold text-white mb-1 group-hover:text-blue-400 transition">SEO</span><span class="font-mono-custom text-[9px] text-[#505050] group-hover:text-blue-400 transition">RERUN</span></button>
+                <button data-rerun="perf"  class="flex flex-col items-center justify-center p-4 bg-black rounded-xl border border-[#1a1a1a] hover:border-orange-500/40 hover:bg-orange-500/5 transition group"><span class="font-mono-custom text-xs font-bold text-white mb-1 group-hover:text-orange-400 transition">PERF</span><span class="font-mono-custom text-[9px] text-[#505050] group-hover:text-orange-400 transition">RERUN</span></button>
+                <button data-rerun="links" class="flex flex-col items-center justify-center p-4 bg-black rounded-xl border border-[#1a1a1a] hover:border-pink-500/40 hover:bg-pink-500/5 transition group"><span class="font-mono-custom text-xs font-bold text-white mb-1 group-hover:text-pink-400 transition">LINKS</span><span class="font-mono-custom text-[9px] text-[#505050] group-hover:text-pink-400 transition">RERUN</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECOND ROW -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div class="lg:col-span-3 bg-tech rounded-2xl flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-[#1a1a1a] flex justify-between items-center">
+                <div>
+                    <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-1">// Historial</span>
+                    <h3 class="font-title text-lg font-bold text-white tracking-tight">Auditorías Recientes</h3>
+                    <p class="text-xs text-[#505050] mt-0.5">Consolidado multiplataforma.</p>
+                </div>
+                <span class="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
+            </div>
+            <div class="overflow-x-auto custom-scroll max-h-[220px]">
+                <table id="tabla-auditorias" class="w-full text-left border-collapse text-xs">
+                    <thead><tr class="bg-black/40 text-[#505050] font-mono-custom border-b border-[#1a1a1a]"><th class="p-4 font-bold uppercase tracking-widest text-[10px]">Fecha</th><th class="p-4 font-bold uppercase tracking-widest text-[10px]">Target URL</th><th class="p-4 font-bold uppercase tracking-widest text-[10px]">Suite Type</th><th class="p-4 font-bold uppercase tracking-widest text-[10px] text-right">Status</th></tr></thead>
+                    <tbody class="divide-y divide-[#111] font-medium text-gray-300"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="bg-tech p-6 rounded-2xl flex flex-col justify-between">
+            <div>
+                <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-1">// Métricas</span>
+                <h3 class="font-title text-base font-bold text-white tracking-tight">Tendencia de Errores</h3>
+                <p class="text-xs text-[#505050] mt-0.5">Regresiones — últimos 7 días.</p>
+            </div>
+            <div class="flex-1 mt-3 flex items-center justify-center relative min-h-[140px]"><canvas id="trendChart"></canvas></div>
+        </div>
+    </div>
+
+    <!-- THIRD ROW -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div class="lg:col-span-3 bg-tech p-6 rounded-2xl flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-center mb-6 border-b border-[#1a1a1a] pb-4">
+                    <div>
+                        <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-1">// Automatización</span>
+                        <h3 class="font-title text-xl font-bold text-white tracking-tight">Suite Manager</h3>
+                        <p class="text-xs text-[#505050] mt-0.5">Almacená hasta 20 URLs por módulo para automatizar ejecuciones recurrentes.</p>
+                    </div>
+                    <span id="suite-global-counter" class="font-mono-custom text-[10px] bg-[#10b981]/10 text-[#10b981] px-3 py-1 rounded-full border border-[#10b981]/20 font-bold">Guardadas: 0 / 80</span>
+                </div>
+                <div class="flex gap-1 overflow-x-auto custom-scroll mb-6 border-b border-[#1a1a1a] pb-3">
+                    <button onclick="switchTab('vrt')"   id="tab-vrt"   class="font-mono-custom text-xs px-4 py-2 rounded-lg bg-black text-white border border-[#10b981]/30 font-bold transition whitespace-nowrap">01. VRT Mappings</button>
+                    <button onclick="switchTab('seo')"   id="tab-seo"   class="font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap">02. SEO List</button>
+                    <button onclick="switchTab('perf')"  id="tab-perf"  class="font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap">03. Performance</button>
+                    <button onclick="switchTab('links')" id="tab-links" class="font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap">04. Link Scan</button>
+                </div>
+                <div id="suite-inputs-container" class="space-y-3 max-h-[280px] overflow-y-auto custom-scroll pr-2"></div>
+                <div id="suite-auth-vault-container" class="hidden border-t border-[#1a1a1a] pt-5 mt-4 space-y-2.5">
+                    <div class="flex justify-between items-center">
+                        <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold">// Forzar Entorno Protegido (Suite)</span>
+                        <span class="font-mono-custom text-[8px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/20 uppercase">Selección Única</span>
+                    </div>
+                    <div id="suite-auth-checkboxes-grid" class="grid grid-cols-2 gap-3"></div>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-[#1a1a1a] flex justify-between items-center">
+                <button onclick="addSuiteRow()" class="font-mono-custom text-xs font-bold text-gray-400 hover:text-white flex items-center gap-1.5 transition">
+                    <span>+ Agregar nueva línea</span>
+                    <span id="tab-row-limit" class="text-[10px] text-[#505050]">(0/20)</span>
+                </button>
+                <button onclick="saveCurrentSuite()" class="bg-black hover:bg-[#111] border border-[#1a1a1a] hover:border-[#10b981]/30 text-white font-mono-custom text-xs font-bold px-4 py-2 rounded-lg transition">Guardar Módulo</button>
+            </div>
+        </div>
+
+        <div class="space-y-6 flex flex-col">
+            <div class="bg-tech p-6 rounded-2xl relative overflow-hidden">
+                <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-1">// Cobertura</span>
+                <h3 class="font-title text-base font-bold text-white tracking-tight mb-1">Salud del Entorno</h3>
+                <p class="text-xs text-[#505050] mb-4">Volumen de regresión procesada esta semana.</p>
+                <div class="flex items-baseline gap-2">
+                    <span id="salud-total" class="font-title text-5xl font-extrabold text-white tracking-tight">-</span>
+                    <span class="font-mono-custom text-[10px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/20">Páginas</span>
+                </div>
+            </div>
+            <div class="bg-tech p-6 rounded-2xl border border-red-500/20 bg-gradient-to-b from-[#0d0d0d] to-[#110505] flex-1 flex flex-col justify-between relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-3xl pointer-events-none"></div>
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-mono-custom text-[9px] text-red-500/60 uppercase tracking-[0.25em] font-bold">// Batch Engine</span>
+                        <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                    </div>
+                    <h3 class="font-title text-base font-bold text-white tracking-tight mb-3">Mass Execution</h3>
+                    <p class="text-xs text-gray-400 mb-4">Lanzamiento masivo en paralelo de todos los lotes configurados.</p>
+                    <div class="space-y-2 font-mono-custom text-[11px] text-[#505050] bg-black/50 p-4 rounded-xl border border-zinc-900/60">
+                        <div class="flex justify-between"><span>VRT Targets:</span><span id="mass-count-vrt"   class="text-white font-bold">0 / 20</span></div>
+                        <div class="flex justify-between"><span>SEO Targets:</span><span id="mass-count-seo"   class="text-white font-bold">0 / 20</span></div>
+                        <div class="flex justify-between"><span>Perf Targets:</span><span id="mass-count-perf"  class="text-white font-bold">0 / 20</span></div>
+                        <div class="flex justify-between"><span>Link Scans:</span><span id="mass-count-links" class="text-white font-bold">0 / 20</span></div>
+                    </div>
+                </div>
+                <button id="btn-trigger-mass-run" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl font-mono-custom text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4">Ejecutar Suite Completa</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+</main>
 
 <script>
-    const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
-    let dashClient = null;
-    let currentActiveTab = 'vrt';
-    let currentUser = null;
-    let suiteStorage = { vrt: [], seo: [], perf: [], links: [] };
+const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+let dashClient = null;
+let currentActiveTab = 'vrt';
+let currentUser = null;
+let suiteStorage = { vrt: [], seo: [], perf: [], links: [] };
+let ccMaxElementos = 50;
+let ccTiposSeleccionados = ["a","button","role_button","role_link","input_submit","onclick"];
 
-    // Command Center — Link Scanner state
-    let ccMaxElementos = 50;
-    let ccTiposSeleccionados = ["a","button","role_button","role_link","input_submit","onclick"];
-
-    window.ccSeleccionarElementos = function(cantidad, btn) {
-        ccMaxElementos = cantidad;
-        document.querySelectorAll('#cc-selector-elementos .links-sel-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    };
-
-    window.ccToggleTipo = function(checkbox) {
-        const label = checkbox.closest('.links-tipo-check');
-        if (checkbox.checked) {
-            if (!ccTiposSeleccionados.includes(checkbox.value)) ccTiposSeleccionados.push(checkbox.value);
-            label.classList.add('checked');
-        } else {
-            ccTiposSeleccionados = ccTiposSeleccionados.filter(t => t !== checkbox.value);
-            label.classList.remove('checked');
-            if (ccTiposSeleccionados.length === 0) { checkbox.checked = true; ccTiposSeleccionados.push(checkbox.value); label.classList.add('checked'); }
-        }
-    };
-
-    function inicializarPlataforma() {
-        try {
-            if (typeof supabase === 'undefined') {
-                document.getElementById('user-email').innerText = "Offline Console";
-                configurarListenersBasicos();
-                return;
-            }
-            dashClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            verificarAccesoSaaS();
-            configurarListenersCompletos();
-            if (typeof Chart !== 'undefined') renderTrendChart();
-        } catch (err) {
-            console.error("Error general en inicialización:", err);
-        }
+window.ccSeleccionarElementos = function(cantidad, btn) {
+    ccMaxElementos = cantidad;
+    document.querySelectorAll('#cc-selector-elementos .links-sel-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+};
+window.ccToggleTipo = function(checkbox) {
+    const label = checkbox.closest('.links-tipo-check');
+    if (checkbox.checked) {
+        if (!ccTiposSeleccionados.includes(checkbox.value)) ccTiposSeleccionados.push(checkbox.value);
+        label.classList.add('checked');
+    } else {
+        ccTiposSeleccionados = ccTiposSeleccionados.filter(t => t !== checkbox.value);
+        label.classList.remove('checked');
+        if (ccTiposSeleccionados.length === 0) { checkbox.checked = true; ccTiposSeleccionados.push(checkbox.value); label.classList.add('checked'); }
     }
+};
 
-    function configurarListenersBasicos() {
+// ---- INIT ----
+function inicializarPlataforma() {
+    try {
+        if (typeof supabase === 'undefined') { document.getElementById('user-email').innerText = "Offline Console"; return; }
+        dashClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // FIX: logout se registra acá donde dashClient ya existe
         document.getElementById('btn-logout').addEventListener('click', async () => {
             await dashClient.auth.signOut();
             window.location.replace('login.html');
         });
-    }
+        verificarAccesoSaaS();
+        if (typeof Chart !== 'undefined') renderTrendChart();
+    } catch (err) { console.error("Error general en inicialización:", err); }
+}
 
-    async function verificarAccesoSaaS() {
-        if (!dashClient) return;
-        try {
-            const { data: { session }, error = null } = await dashClient.auth.getSession();
-            if (error || !session) { window.location.replace('login.html'); return; }
-            currentUser = session.user;
-            document.getElementById('user-email').innerText = session.user.email;
-            loadSuiteFromLocalStorage();
-            await cargarAuditoriasRecientes();
-            await cargarSaludEntorno();
-            
-            // Dibuja de manera síncrona los checkboxes en ambos paneles (Command y Suite)
-            await inicializarCheckboxesCredenciales();
-            
-        } catch (e) {
-            console.error("Error verificando credenciales:", e);
-        }
-    }
+async function verificarAccesoSaaS() {
+    if (!dashClient) return;
+    try {
+        const { data: { session }, error } = await dashClient.auth.getSession();
+        if (error || !session) { window.location.replace('login.html'); return; }
+        currentUser = session.user;
+        document.getElementById('user-email').innerText = session.user.email;
+        configurarListeners();
+        loadSuiteFromLocalStorage();
+        await cargarAuditoriasRecientes();
+        await cargarSaludEntorno();
+        await inicializarCheckboxesCredenciales();
+    } catch (e) { console.error("Error verificando credenciales:", e); }
+}
 
-    async function cargarAuditoriasRecientes() {
-        if (!currentUser) return;
-        const [vrt, seo, perf, links] = await Promise.all([
-            dashClient.from('pruebas_qa').select('creado_el, url_a, diferencias').eq('user_id', currentUser.id).order('creado_el', { ascending: false }).limit(5),
-            dashClient.from('seo_audits').select('created_at, url').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(5),
-            dashClient.from('performance_audits').select('created_at, url, fcp_ms').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(5),
-            dashClient.from('auditoria_links').select('created_at, url_auditada, reporte').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(5),
-        ]);
-        const rows = [
-            ...(vrt.data || []).map(r => ({ fecha: r.creado_el, url: r.url_a, tipo: 'VISUAL_VRT', fail: r.diferencias > 0 })),
-            ...(seo.data || []).map(r => ({ fecha: r.created_at, url: r.url, tipo: 'SEO_AUDIT', fail: false })),
-            ...(perf.data || []).map(r => ({ fecha: r.created_at, url: r.url, tipo: 'PERF_CWV', fail: r.fcp_ms > 3000 })),
-            ...(links.data || []).map(r => ({ fecha: r.created_at, url: r.url_auditada, tipo: 'LINK_SCAN', fail: (r.reporte || []).some(i => i.obstruido) })),
-        ].sort((a, b) => new Date(b.fecha) - new Date(a.fecha)).slice(0, 5);
+// ---- LISTENERS ----
+function configurarListeners() {
+    document.querySelectorAll('[data-rerun]').forEach(btn => btn.addEventListener('click', () => reejecutarUltimo(btn.dataset.rerun)));
 
-        const tbody = document.querySelector('#tabla-auditorias tbody');
-        if (!tbody) return;
-        if (rows.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-[#505050] font-mono text-xs">Sin auditorías registradas.</td></tr>`;
-            return;
-        }
-        tbody.innerHTML = rows.map(r => `
-            <tr class="hover:bg-zinc-900/40 transition">
-                <td class="p-4 font-mono text-gray-500 text-xs">${new Date(r.fecha).toLocaleDateString('es-AR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' })}</td>
-                <td class="p-4 truncate max-w-[200px] font-mono text-white text-xs">${r.url.replace('https://', '').replace('http://', '')}</td>
-                <td class="p-4"><span class="bg-black px-2 py-0.5 rounded border border-[#1a1a1a] text-[10px] font-mono text-[#505050]">${r.tipo}</span></td>
-                <td class="p-4 text-right">
-                    ${r.fail
-                        ? `<span class="bg-red-500/10 text-red-400 px-2 py-0.5 rounded text-[10px] font-black border border-red-500/20 font-mono">FAIL</span>`
-                        : `<span class="bg-[#10b981]/10 text-[#10b981] px-2 py-0.5 rounded text-[10px] font-black border border-[#10b981]/20 font-mono">PASS</span>`
-                    }
-                </td>
-            </tr>
-        `).join('');
-    }
+    const suiteSelector  = document.getElementById('new-test-type');
+    const stagingContainer = document.getElementById('container-url-staging');
+    const labelProd        = document.getElementById('label-url-prod');
+    const inputProd        = document.getElementById('new-test-url-prod');
+    const linksOpts        = document.getElementById('container-links-options');
 
-    async function cargarSaludEntorno() {
-        if (!currentUser) return;
-        const [vrt, seo, perf, links] = await Promise.all([
-            dashClient.from('pruebas_qa').select('id', { count: 'exact', head: true }).eq('user_id', currentUser.id),
-            dashClient.from('seo_audits').select('id', { count: 'exact', head: true }).eq('user_id', currentUser.id),
-            dashClient.from('performance_audits').select('id', { count: 'exact', head: true }).eq('user_id', currentUser.id),
-            dashClient.from('auditoria_links').select('id', { count: 'exact', head: true }).eq('user_id', currentUser.id),
-        ]);
-        const total = (vrt.count || 0) + (seo.count || 0) + (perf.count || 0) + (links.count || 0);
-        const el = document.getElementById('salud-total');
-        if (el) el.innerText = total;
-    }
+    // FIX: aplica estado inicial correcto al cargar
+    aplicarEstadoSelector(suiteSelector.value, stagingContainer, labelProd, inputProd, linksOpts);
+    suiteSelector.addEventListener('change', e => aplicarEstadoSelector(e.target.value, stagingContainer, labelProd, inputProd, linksOpts));
 
-    async function reejecutarUltimo(tipo) {
-        if (!currentUser) return;
-        let url = null, urlStage = null, destino = null;
-        if (tipo === 'vrt') {
-            const { data } = await dashClient.from('pruebas_qa').select('url_a, url_b').eq('user_id', currentUser.id).order('creado_el', { ascending: false }).limit(1);
-            if (!data?.length) { alert('No hay pruebas VRT anteriores.'); return; }
-            url = data[0].url_b; urlStage = data[0].url_a; destino = 'visual_regression.html';
-        } else if (tipo === 'seo') {
-            const { data } = await dashClient.from('seo_audits').select('url').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1);
-            if (!data?.length) { alert('No hay auditorías SEO anteriores.'); return; }
-            url = data[0].url; destino = 'seo.html';
-        } else if (tipo === 'perf') {
-            const { data } = await dashClient.from('performance_audits').select('url').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1);
-            if (!data?.length) { alert('No hay auditorías de performance anteriores.'); return; }
-            url = data[0].url; destino = 'performance.html';
-        } else if (tipo === 'links') {
-            const { data } = await dashClient.from('auditoria_links').select('url_auditada').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(1);
-            if (!data?.length) { alert('No hay auditorías de links anteriores.'); return; }
-            url = data[0].url_auditada; destino = 'interaction_audit.html';
-        }
-        sessionStorage.setItem('qavision_user_id', currentUser.id);
-        sessionStorage.setItem('qavision_last_prod', url);
-        sessionStorage.setItem('qavision_last_stage', urlStage || '');
+    document.getElementById('btn-launch-test').addEventListener('click', async function() {
+        const testType = document.getElementById('new-test-type').value;
+        const urlProd  = document.getElementById('new-test-url-prod').value.trim();
+        const urlStage = document.getElementById('new-test-url-stage').value.trim();
+        if (!urlProd) { alert('La URL de producción es obligatoria.'); return; }
+        const { data: { session } } = await dashClient.auth.getSession();
+        sessionStorage.setItem('qavision_user_id', session?.user?.id || '');
+        sessionStorage.setItem('qavision_last_prod', urlProd);
+        sessionStorage.setItem('qavision_last_stage', urlStage);
         sessionStorage.setItem('qavision_trigger_test', 'true');
-        window.location.href = destino;
-    }
-
-    function configurarListenersCompletos() {
-        configurarListenersBasicos();
-        document.querySelectorAll('[data-rerun]').forEach(btn => {
-            btn.addEventListener('click', () => reejecutarUltimo(btn.dataset.rerun));
-        });
-        const suiteSelector = document.getElementById('new-test-type');
-        const stagingContainer = document.getElementById('container-url-staging');
-        const labelProd = document.getElementById('label-url-prod');
-        const inputProd = document.getElementById('new-test-url-prod');
-        if (suiteSelector && suiteSelector.value !== 'visual_regression.html') {
-            if (stagingContainer) stagingContainer.style.display = 'none';
-            if (labelProd) labelProd.innerText = 'Target URL Analysis';
-            if (inputProd) inputProd.placeholder = 'https://ejemplo.com/pagina-a-auditar';
+        if (testType === 'interaction_audit.html') {
+            sessionStorage.setItem('qavision_links_max', ccMaxElementos);
+            sessionStorage.setItem('qavision_links_tipos', JSON.stringify(ccTiposSeleccionados));
         }
-        if (suiteSelector) {
-            suiteSelector.addEventListener('change', (e) => {
-                const isVRT   = e.target.value === "visual_regression.html";
-                const isLinks = e.target.value === "interaction_audit.html";
-                const linksOpts = document.getElementById('container-links-options');
+        const checkedCred = document.querySelector('#auth-checkboxes-grid .qa-vault-checkbox:checked');
+        checkedCred ? sessionStorage.setItem('qavision_selected_cred_id', checkedCred.value) : sessionStorage.removeItem('qavision_selected_cred_id');
+        window.location.href = testType;
+    });
 
-                if (isVRT) {
-                    if (stagingContainer) stagingContainer.style.display = 'grid';
-                    if (labelProd) labelProd.innerText = "URL de Producción";
-                    if (inputProd) inputProd.placeholder = "https://ejemplo.com";
-                    if (linksOpts) linksOpts.style.display = 'none';
-                } else if (isLinks) {
-                    if (stagingContainer) stagingContainer.style.display = 'none';
-                    if (labelProd) labelProd.innerText = "Target URL Analysis";
-                    if (inputProd) inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
-                    if (linksOpts) linksOpts.style.display = 'block';
-                } else {
-                    if (stagingContainer) stagingContainer.style.display = 'none';
-                    if (labelProd) labelProd.innerText = "Target URL Analysis";
-                    if (inputProd) inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
-                    if (linksOpts) linksOpts.style.display = 'none';
-                }
-            });
-        }
-        document.getElementById('btn-launch-test').addEventListener('click', async function () {
-            const testType = document.getElementById('new-test-type').value;
-            const urlProd = document.getElementById('new-test-url-prod').value.trim();
-            const urlStage = document.getElementById('new-test-url-stage').value.trim();
-            if (!urlProd) { alert('La URL de producción es obligatoria.'); return; }
-            const { data: { session } } = await dashClient.auth.getSession();
-            const userId = session?.user?.id || null;
-            sessionStorage.setItem('qavision_user_id', userId);
-            sessionStorage.setItem('qavision_last_prod', urlProd);
-            sessionStorage.setItem('qavision_last_stage', urlStage);
-            sessionStorage.setItem('qavision_trigger_test', 'true');
-            if (testType === 'interaction_audit.html') {
-                sessionStorage.setItem('qavision_links_max', ccMaxElementos);
-                sessionStorage.setItem('qavision_links_tipos', JSON.stringify(ccTiposSeleccionados));
-            }
+    document.getElementById('btn-trigger-mass-run').addEventListener('click', lanzarMassExecution);
+}
 
-            // Sincroniza la credencial marcada en el Command Center para el test individual
-            const checkedCred = document.querySelector('#auth-checkboxes-grid .qa-vault-checkbox:checked');
-            if (checkedCred) {
-                sessionStorage.setItem('qavision_selected_cred_id', checkedCred.value);
-            } else {
-                sessionStorage.removeItem('qavision_selected_cred_id');
-            }
-
-            window.location.href = testType;
-        });
-        document.getElementById('btn-trigger-mass-run').addEventListener('click', async () => {
-            const totalTests = suiteStorage.vrt.length + suiteStorage.seo.length + suiteStorage.perf.length + suiteStorage.links.length;
-            if (totalTests === 0) { alert("El Suite Manager está vacío."); return; }
-            const btn = document.getElementById('btn-trigger-mass-run');
-            btn.disabled = true;
-            btn.className = "w-full bg-zinc-800 text-zinc-500 font-black py-3.5 rounded-xl font-mono text-xs tracking-wider uppercase cursor-not-allowed mt-4 animate-pulse";
-            btn.innerText = `Procesando ${totalTests} análisis en batch...`;
-            
-            // Obtener credencial global del Suite Manager si estuviera seleccionada
-            const suiteCred = document.querySelector('#suite-auth-checkboxes-grid .qa-vault-checkbox:checked');
-            const credId = suiteCred ? suiteCred.value : null;
-
-            try {
-                const { data: { session } } = await dashClient.auth.getSession();
-                const userId = session?.user?.id || null;
-                const batchId = generateSafeID();
-                const llamadas = [
-                    ...suiteStorage.vrt.map(r => fetch('https://qavision-qavision-engine.hf.space/api/comparar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url_a: r.stage, url_b: r.prod, user_id: userId, batch_id: batchId, cred_id: credId }) })),
-                    ...suiteStorage.seo.map(r => fetch('https://qavision-qavision-engine.hf.space/api/seo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, cred_id: credId }) })),
-                    ...suiteStorage.perf.map(r => fetch('https://qavision-qavision-engine.hf.space/api/performance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, cred_id: credId }) })),
-                    ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, max_elementos: r.maxElementos || 50, tipos: r.tipos || ["a","button","role_button","role_link","input_submit","onclick"], cred_id: credId }) })),
-                ];
-                await Promise.allSettled(llamadas);
-                window.location.href = 'mass_execution.html';
-            } catch (error) {
-                print("Error disparando el batch:", error);
-                btn.disabled = false;
-                btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl font-mono text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
-                btn.innerText = "Ejecutar Suite Completa";
-                alert("Ocurrió un error al enviar las pruebas al motor.");
-            }
-        });
+function aplicarEstadoSelector(valor, stagingContainer, labelProd, inputProd, linksOpts) {
+    const isVRT   = valor === "visual_regression.html";
+    const isLinks = valor === "interaction_audit.html";
+    if (isVRT) {
+        stagingContainer.style.display = 'grid';
+        labelProd.innerText = "URL de Producción";
+        inputProd.placeholder = "https://ejemplo.com";
+        linksOpts.style.display = 'none';
+    } else if (isLinks) {
+        stagingContainer.style.display = 'none';
+        labelProd.innerText = "Target URL Analysis";
+        inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
+        linksOpts.style.display = 'block';
+    } else {
+        stagingContainer.style.display = 'none';
+        labelProd.innerText = "Target URL Analysis";
+        inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
+        linksOpts.style.display = 'none';
     }
+}
 
-    window.switchTab = function(tabId) {
-        currentActiveTab = tabId;
-        ['vrt', 'seo', 'perf', 'links'].forEach(t => {
-            const el = document.getElementById(`tab-${t}`);
-            if (el) {
-                el.className = t === tabId
-                    ? "font-mono-custom text-xs px-4 py-2 rounded-lg bg-black text-white border border-[#10b981]/30 font-bold transition whitespace-nowrap"
-                    : "font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap";
-            }
-        });
-        renderSuiteRows();
-    };
+// ---- MASS EXECUTION ----
+async function lanzarMassExecution() {
+    const totalTests = suiteStorage.vrt.length + suiteStorage.seo.length + suiteStorage.perf.length + suiteStorage.links.length;
+    if (totalTests === 0) { alert("El Suite Manager está vacío."); return; }
+    const btn = document.getElementById('btn-trigger-mass-run');
+    btn.disabled = true;
+    btn.className = "w-full bg-zinc-800 text-zinc-500 font-black py-3.5 rounded-xl font-mono text-xs tracking-wider uppercase cursor-not-allowed mt-4 animate-pulse";
+    btn.innerText = `Procesando ${totalTests} análisis en batch...`;
 
-    window.renderSuiteRows = function() {
-        const container = document.getElementById('suite-inputs-container');
-        if (!container) return;
-        const list = suiteStorage[currentActiveTab];
-        const limitEl = document.getElementById('tab-row-limit');
-        if (limitEl) limitEl.innerText = `(${list.length}/20)`;
-        if (list.length === 0) {
-            container.innerHTML = `<p class="text-xs text-[#505050] font-mono text-center py-10 border border-dashed border-[#1a1a1a] rounded-xl">No hay URLs configuradas para este módulo.</p>`;
+    const suiteCred = document.querySelector('#suite-auth-checkboxes-grid .qa-vault-checkbox:checked');
+    const credId = suiteCred ? suiteCred.value : null;
+
+    try {
+        const { data: { session } } = await dashClient.auth.getSession();
+        const userId  = session?.user?.id || null;
+        const batchId = generateSafeID();
+        // FIX: todos los módulos ahora pasan cred_id
+        const llamadas = [
+            ...suiteStorage.vrt.map(r   => fetch('https://qavision-qavision-engine.hf.space/api/comparar',      { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url_a: r.stage, url_b: r.prod, user_id: userId, batch_id: batchId, cred_id: credId }) })),
+            ...suiteStorage.seo.map(r   => fetch('https://qavision-qavision-engine.hf.space/api/seo',           { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, cred_id: credId }) })),
+            ...suiteStorage.perf.map(r  => fetch('https://qavision-qavision-engine.hf.space/api/performance',   { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, cred_id: credId }) })),
+            ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, max_elementos: r.maxElementos || 50, tipos: r.tipos || ["a","button","role_button","role_link","input_submit","onclick"], cred_id: credId }) })),
+        ];
+        await Promise.allSettled(llamadas);
+        window.location.href = 'mass_execution.html';
+    } catch (error) {
+        console.error("Error disparando el batch:", error);
+        btn.disabled = false;
+        btn.className = "w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl font-mono text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4";
+        btn.innerText = "Ejecutar Suite Completa";
+        alert("Ocurrió un error al enviar las pruebas al motor.");
+    }
+}
+
+// ---- AUDITORÍAS ----
+async function cargarAuditoriasRecientes() {
+    if (!currentUser) return;
+    const [vrt, seo, perf, links] = await Promise.all([
+        dashClient.from('pruebas_qa').select('creado_el, url_a, diferencias').eq('user_id', currentUser.id).order('creado_el', { ascending: false }).limit(5),
+        dashClient.from('seo_audits').select('created_at, url').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(5),
+        dashClient.from('performance_audits').select('created_at, url, fcp_ms').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(5),
+        dashClient.from('auditoria_links').select('created_at, url_auditada, reporte').eq('user_id', currentUser.id).order('created_at', { ascending: false }).limit(5),
+    ]);
+    const rows = [
+        ...(vrt.data||[]).map(r  => ({ fecha: r.creado_el,   url: r.url_a,          tipo: 'VISUAL_VRT', fail: r.diferencias > 0 })),
+        ...(seo.data||[]).map(r  => ({ fecha: r.created_at,  url: r.url,            tipo: 'SEO_AUDIT',  fail: false })),
+        ...(perf.data||[]).map(r => ({ fecha: r.created_at,  url: r.url,            tipo: 'PERF_CWV',   fail: r.fcp_ms > 3000 })),
+        ...(links.data||[]).map(r=> ({ fecha: r.created_at,  url: r.url_auditada,   tipo: 'LINK_SCAN',  fail: (r.reporte||[]).some(i => i.obstruido) })),
+    ].sort((a,b) => new Date(b.fecha)-new Date(a.fecha)).slice(0,5);
+
+    const tbody = document.querySelector('#tabla-auditorias tbody');
+    if (!tbody) return;
+    if (!rows.length) { tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-[#505050] font-mono text-xs">Sin auditorías registradas.</td></tr>`; return; }
+    tbody.innerHTML = rows.map(r => `
+        <tr class="hover:bg-zinc-900/40 transition">
+            <td class="p-4 font-mono text-gray-500 text-xs">${new Date(r.fecha).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+            <td class="p-4 truncate max-w-[200px] font-mono text-white text-xs">${r.url.replace('https://','').replace('http://','')}</td>
+            <td class="p-4"><span class="bg-black px-2 py-0.5 rounded border border-[#1a1a1a] text-[10px] font-mono text-[#505050]">${r.tipo}</span></td>
+            <td class="p-4 text-right">${r.fail
+                ? `<span class="bg-red-500/10 text-red-400 px-2 py-0.5 rounded text-[10px] font-black border border-red-500/20 font-mono">FAIL</span>`
+                : `<span class="bg-[#10b981]/10 text-[#10b981] px-2 py-0.5 rounded text-[10px] font-black border border-[#10b981]/20 font-mono">PASS</span>`
+            }</td>
+        </tr>`).join('');
+}
+
+async function cargarSaludEntorno() {
+    if (!currentUser) return;
+    const [vrt,seo,perf,links] = await Promise.all([
+        dashClient.from('pruebas_qa').select('id',{count:'exact',head:true}).eq('user_id',currentUser.id),
+        dashClient.from('seo_audits').select('id',{count:'exact',head:true}).eq('user_id',currentUser.id),
+        dashClient.from('performance_audits').select('id',{count:'exact',head:true}).eq('user_id',currentUser.id),
+        dashClient.from('auditoria_links').select('id',{count:'exact',head:true}).eq('user_id',currentUser.id),
+    ]);
+    const el = document.getElementById('salud-total');
+    if (el) el.innerText = (vrt.count||0)+(seo.count||0)+(perf.count||0)+(links.count||0);
+}
+
+// ---- QUICK ACTIONS RERUN ----
+async function reejecutarUltimo(tipo) {
+    if (!currentUser) return;
+    let url=null, urlStage=null, destino=null;
+    if (tipo==='vrt') {
+        const {data} = await dashClient.from('pruebas_qa').select('url_a,url_b').eq('user_id',currentUser.id).order('creado_el',{ascending:false}).limit(1);
+        if (!data?.length) { alert('No hay pruebas VRT anteriores.'); return; }
+        url=data[0].url_b; urlStage=data[0].url_a; destino='visual_regression.html';
+    } else if (tipo==='seo') {
+        const {data} = await dashClient.from('seo_audits').select('url').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(1);
+        if (!data?.length) { alert('No hay auditorías SEO anteriores.'); return; }
+        url=data[0].url; destino='seo.html';
+    } else if (tipo==='perf') {
+        const {data} = await dashClient.from('performance_audits').select('url').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(1);
+        if (!data?.length) { alert('No hay auditorías de performance anteriores.'); return; }
+        url=data[0].url; destino='performance.html';
+    } else if (tipo==='links') {
+        const {data} = await dashClient.from('auditoria_links').select('url_auditada').eq('user_id',currentUser.id).order('created_at',{ascending:false}).limit(1);
+        if (!data?.length) { alert('No hay auditorías de links anteriores.'); return; }
+        url=data[0].url_auditada; destino='interaction_audit.html';
+        // FIX: persistir parámetros de links también en rerun
+        sessionStorage.setItem('qavision_links_max', 50);
+        sessionStorage.setItem('qavision_links_tipos', JSON.stringify(["a","button","role_button","role_link","input_submit","onclick"]));
+    }
+    sessionStorage.setItem('qavision_user_id', currentUser.id);
+    sessionStorage.setItem('qavision_last_prod', url);
+    sessionStorage.setItem('qavision_last_stage', urlStage||'');
+    sessionStorage.setItem('qavision_trigger_test', 'true');
+    window.location.href = destino;
+}
+
+// ---- SUITE MANAGER ----
+window.switchTab = function(tabId) {
+    currentActiveTab = tabId;
+    ['vrt','seo','perf','links'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if (el) el.className = t===tabId
+            ? "font-mono-custom text-xs px-4 py-2 rounded-lg bg-black text-white border border-[#10b981]/30 font-bold transition whitespace-nowrap"
+            : "font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap";
+    });
+    renderSuiteRows();
+};
+
+window.renderSuiteRows = function() {
+    const container = document.getElementById('suite-inputs-container');
+    if (!container) return;
+    const list = suiteStorage[currentActiveTab];
+    const limitEl = document.getElementById('tab-row-limit');
+    if (limitEl) limitEl.innerText = `(${list.length}/20)`;
+    if (!list.length) { container.innerHTML = `<p class="text-xs text-[#505050] font-mono text-center py-10 border border-dashed border-[#1a1a1a] rounded-xl">No hay URLs configuradas para este módulo.</p>`; return; }
+    container.innerHTML = list.map((item, index) => {
+        if (currentActiveTab==='vrt') {
+            return `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative group">
+                <div><span class="font-mono text-[9px] text-[#505050] block mb-1">STAGING TARGET #${index+1}</span><input type="url" onchange="updateRowValue('${item.id}','stage',this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.stage||''}" placeholder="https://staging.site.com"></div>
+                <div class="relative pr-8"><span class="font-mono text-[9px] text-[#505050] block mb-1">PROD TARGET #${index+1}</span><input type="url" onchange="updateRowValue('${item.id}','prod',this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.prod||''}" placeholder="https://site.com"><button onclick="removeSuiteRow('${item.id}')" class="absolute right-1 bottom-2 text-xs text-red-500/60 hover:text-red-400 p-1">&#x2715;</button></div>
+            </div>`;
+        } else if (currentActiveTab==='links') {
+            const maxEl=item.maxElementos||50, tipos=item.tipos||["a","button","role_button","role_link","input_submit","onclick"];
+            const selBtns=[50,100,150,200].map(n=>`<button onclick="suiteSelElementos('${item.id}',${n},this)" class="links-sel-btn${maxEl===n?' active':''}">${n}</button>`).join('');
+            const tipoList=[{v:'a',l:'Enlaces &lt;a&gt;'},{v:'button',l:'Botones'},{v:'role_button',l:'role=button'},{v:'role_link',l:'role=link'},{v:'input_submit',l:'Submit'},{v:'onclick',l:'onclick'}];
+            const tipoChecks=tipoList.map(t=>{const ch=tipos.includes(t.v);return `<label class="links-tipo-check${ch?' checked':''}"><input type="checkbox" value="${t.v}"${ch?' checked':''} onchange="suiteToggleTipo('${item.id}',this)"><span>${t.l}</span></label>`;}).join('');
+            return `<div class="p-3 bg-black/40 rounded-xl border border-[#1a1a1a] space-y-3 relative">
+                <div class="flex items-center gap-3 pr-7"><div class="flex-1"><span class="font-mono text-[9px] text-[#505050] block mb-1">ANALYSIS TARGET #${index+1}</span><input type="url" onchange="updateRowValue('${item.id}','url',this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.url||''}" placeholder="https://site.com/subpage"></div><button onclick="removeSuiteRow('${item.id}')" class="absolute right-2 top-3 text-xs text-red-500/60 hover:text-red-400 p-1">&#x2715;</button></div>
+                <div><span class="font-mono text-[9px] text-[#505050] block mb-1.5">ELEMENTOS</span><div class="flex gap-1.5" id="suite-sel-${item.id}">${selBtns}</div></div>
+                <div><span class="font-mono text-[9px] text-[#505050] block mb-1.5">TIPOS</span><div class="grid grid-cols-3 gap-1" id="suite-tipos-${item.id}">${tipoChecks}</div></div>
+            </div>`;
+        } else {
+            return `<div class="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative pr-10">
+                <div class="flex-1"><span class="font-mono text-[9px] text-[#505050] block mb-1">ANALYSIS TARGET #${index+1}</span><input type="url" onchange="updateRowValue('${item.id}','url',this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.url||''}" placeholder="https://site.com/subpage"></div>
+                <button onclick="removeSuiteRow('${item.id}')" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-500/60 hover:text-red-400 p-1">&#x2715;</button>
+            </div>`;
+        }
+    }).join('');
+};
+
+function generateSafeID() { try{return crypto.randomUUID();}catch(e){return 'f_xxxxxx'.replace(/[x]/g,()=>(Math.random()*16|0).toString(16));} }
+window.addSuiteRow = function() {
+    if (suiteStorage[currentActiveTab].length>=20) { alert("Límite alcanzado: Máximo 20 configuraciones por módulo."); return; }
+    const newId=generateSafeID();
+    if (currentActiveTab==='vrt') suiteStorage.vrt.push({id:newId,stage:'',prod:''});
+    else if (currentActiveTab==='links') suiteStorage.links.push({id:newId,url:'',maxElementos:50,tipos:["a","button","role_button","role_link","input_submit","onclick"]});
+    else suiteStorage[currentActiveTab].push({id:newId,url:''});
+    renderSuiteRows(); updateCountersPanel();
+};
+window.suiteSelElementos = function(id,cantidad,btn) {
+    const row=suiteStorage.links.find(i=>i.id===id); if(row) row.maxElementos=cantidad;
+    const c=document.getElementById(`suite-sel-${id}`); if(c) c.querySelectorAll('.links-sel-btn').forEach(b=>b.classList.toggle('active',parseInt(b.textContent)===cantidad));
+};
+window.suiteToggleTipo = function(id,checkbox) {
+    const row=suiteStorage.links.find(i=>i.id===id); if(!row) return;
+    const label=checkbox.closest('.links-tipo-check');
+    if(checkbox.checked){if(!row.tipos.includes(checkbox.value))row.tipos.push(checkbox.value);label.classList.add('checked');}
+    else{row.tipos=row.tipos.filter(t=>t!==checkbox.value);label.classList.remove('checked');if(!row.tipos.length){checkbox.checked=true;row.tipos.push(checkbox.value);label.classList.add('checked');}}
+};
+window.removeSuiteRow = function(id) { suiteStorage[currentActiveTab]=suiteStorage[currentActiveTab].filter(i=>i.id!==id); renderSuiteRows(); updateCountersPanel(); };
+window.updateRowValue  = function(id,field,val) { const row=suiteStorage[currentActiveTab].find(i=>i.id===id); if(row) row[field]=val; };
+window.saveCurrentSuite = function() { localStorage.setItem('qavision_suite_storage',JSON.stringify(suiteStorage)); updateCountersPanel(); alert("Configuración guardada en este navegador."); };
+function loadSuiteFromLocalStorage() { const raw=localStorage.getItem('qavision_suite_storage'); if(raw){try{suiteStorage=JSON.parse(raw);}catch(e){}} renderSuiteRows(); updateCountersPanel(); }
+function updateCountersPanel() {
+    const v=suiteStorage.vrt.length,s=suiteStorage.seo.length,p=suiteStorage.perf.length,l=suiteStorage.links.length;
+    const gc=document.getElementById('suite-global-counter'); if(gc) gc.innerText=`Guardadas: ${v+s+p+l} / 80`;
+    ['vrt','seo','perf','links'].forEach((k,i)=>{ const el=document.getElementById(`mass-count-${k}`); if(el) el.innerText=`${[v,s,p,l][i]} / 20`; });
+    const btnMass=document.getElementById('btn-trigger-mass-run'); if(btnMass){const t=v+s+p+l;btnMass.innerText=t>0?`Ejecutar Suite Completa (${t} Tests)`:"Ejecutar Suite Completa";}
+}
+
+// ---- CHECKBOXES CREDENCIALES ----
+async function inicializarCheckboxesCredenciales() {
+    if (!currentUser) return;
+    try {
+        const { data: credenciales, error } = await dashClient.from('credenciales').select('id,nombre').eq('user_id',currentUser.id).order('created_at',{ascending:true});
+        if (error) throw error;
+        const containerCC=document.getElementById('auth-vault-container');
+        const gridCC=document.getElementById('auth-checkboxes-grid');
+        const containerSM=document.getElementById('suite-auth-vault-container');
+        const gridSM=document.getElementById('suite-auth-checkboxes-grid');
+        if (!credenciales||!credenciales.length) { containerCC?.classList.add('hidden'); containerSM?.classList.add('hidden'); return; }
+        const html=credenciales.map(c=>`
+            <label class="flex items-center gap-3 p-3 bg-black border border-[#1a1a1a] rounded-xl cursor-pointer hover:border-zinc-800 transition-all select-none group">
+                <input type="checkbox" value="${c.id}" class="qa-vault-checkbox shrink-0 w-3.5 h-3.5 rounded border-zinc-800 bg-black text-[#10b981] accent-[#10b981] focus:ring-0 focus:ring-offset-0" onchange="controlarExclusividadCheckbox(this)">
+                <span class="font-mono-custom text-[10px] text-gray-400 group-hover:text-gray-200 truncate transition-colors uppercase">${c.nombre}</span>
+            </label>`).join('');
+        if(containerCC&&gridCC){containerCC.classList.remove('hidden');gridCC.innerHTML=html;}
+        if(containerSM&&gridSM){containerSM.classList.remove('hidden');gridSM.innerHTML=html;}
+    } catch(err) { console.error("Error sincronizando checkboxes:", err); }
+}
+function controlarExclusividadCheckbox(checkboxActivo) {
+    if (checkboxActivo.checked) {
+        checkboxActivo.closest('.grid')?.querySelectorAll('.qa-vault-checkbox').forEach(cb=>{ if(cb!==checkboxActivo) cb.checked=false; });
+    }
+}
+
+// ---- MODAL CREDENCIALES ----
+let modalVistaActiva = 'guardadas';
+
+window.abrirModalCredenciales = function() {
+    document.getElementById('modal-credenciales').classList.remove('hidden');
+    document.getElementById('modal-credenciales').classList.add('flex');
+    cambiarVistaModal('guardadas');
+};
+window.cerrarModalCredenciales = function() {
+    document.getElementById('modal-credenciales').classList.remove('flex');
+    document.getElementById('modal-credenciales').classList.add('hidden');
+    document.getElementById('form-credenciales').reset();
+};
+window.cambiarVistaModal = function(vista) {
+    modalVistaActiva = vista;
+    document.getElementById('modal-tab-nueva').classList.toggle('active', vista==='nueva');
+    document.getElementById('modal-tab-guardadas').classList.toggle('active', vista==='guardadas');
+    document.getElementById('modal-panel-nueva').classList.toggle('hidden', vista!=='nueva');
+    document.getElementById('modal-panel-guardadas').classList.toggle('hidden', vista!=='guardadas');
+    if (vista==='guardadas') cargarListaCredencialesModal();
+};
+
+async function cargarListaCredencialesModal() {
+    const lista = document.getElementById('modal-lista-credenciales');
+    if (!lista||!currentUser) return;
+    lista.innerHTML = `<p class="font-mono-custom text-[10px] text-[#505050] text-center py-4">Cargando...</p>`;
+    try {
+        const {data,error} = await dashClient.from('credenciales').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:true});
+        if (error) throw error;
+        if (!data||!data.length) {
+            lista.innerHTML = `<div class="text-center py-8 border border-dashed border-[#1a1a1a] rounded-xl"><p class="font-mono-custom text-[10px] text-[#505050] mb-2">No hay credenciales guardadas todavía.</p><button onclick="cambiarVistaModal('nueva')" class="font-mono-custom text-[10px] text-[#10b981] hover:underline">+ Agregar la primera</button></div>`;
             return;
         }
-        container.innerHTML = list.map((item, index) => {
-            if (currentActiveTab === 'vrt') {
-                return `<div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative group">
-                    <div><span class="font-mono text-[9px] text-[#505050] block mb-1">STAGING TARGET #${index+1}</span><input type="url" onchange="updateRowValue('${item.id}', 'stage', this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.stage || ''}" placeholder="https://staging.site.com"></div>
-                    <div class="relative pr-8"><span class="font-mono text-[9px] text-[#505050] block mb-1">PROD TARGET #${index+1}</span><input type="url" onchange="updateRowValue('${item.id}', 'prod', this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.prod || ''}" placeholder="https://site.com"><button onclick="removeSuiteRow('${item.id}')" class="absolute right-1 bottom-2 text-xs text-red-500/60 hover:text-red-400 p-1">&#x2715;</button></div>
-                </div>`;
-            } else if (currentActiveTab === 'links') {
-                const maxEl = item.maxElementos || 50;
-                const tipos = item.tipos || ["a","button","role_button","role_link","input_submit","onclick"];
-                const selBtns = [50,100,150,200].map(n =>
-                    `<button onclick="suiteSelElementos('${item.id}',${n},this)" class="links-sel-btn${maxEl===n?' active':''}">${n}</button>`
-                ).join('');
-                const tipoList = [
-                    {v:'a', l:'Enlaces &lt;a&gt;'},
-                    {v:'button', l:'Botones'},
-                    {v:'role_button', l:'role=button'},
-                    {v:'role_link', l:'role=link'},
-                    {v:'input_submit', l:'Submit'},
-                    {v:'onclick', l:'onclick'},
-                ];
-                const tipoChecks = tipoList.map(t => {
-                    const ch = tipos.includes(t.v);
-                    return `<label class="links-tipo-check${ch?' checked':''}"><input type="checkbox" value="${t.v}"${ch?' checked':''} onchange="suiteToggleTipo('${item.id}',this)"><span>${t.l}</span></label>`;
-                }).join('');
-                return `<div class="p-3 bg-black/40 rounded-xl border border-[#1a1a1a] space-y-3 relative">
-                    <div class="flex items-center gap-3 pr-7">
-                        <div class="flex-1"><span class="font-mono text-[9px] text-[#505050] block mb-1">ANALYSIS TARGET #${index+1}</span>
-                        <input type="url" onchange="updateRowValue('${item.id}', 'url', this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.url || ''}" placeholder="https://site.com/subpage"></div>
-                        <button onclick="removeSuiteRow('${item.id}')" class="absolute right-2 top-3 text-xs text-red-500/60 hover:text-red-400 p-1">&#x2715;</button>
-                    </div>
-                    <div>
-                        <span class="font-mono text-[9px] text-[#505050] block mb-1.5">ELEMENTOS</span>
-                        <div class="flex gap-1.5" id="suite-sel-${item.id}">${selBtns}</div>
-                    </div>
-                    <div>
-                        <span class="font-mono text-[9px] text-[#505050] block mb-1.5">TIPOS</span>
-                        <div class="grid grid-cols-3 gap-1" id="suite-tipos-${item.id}">${tipoChecks}</div>
-                    </div>
-                </div>`;
-            } else {
-                return `<div class="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative pr-10">
-                    <div class="flex-1"><span class="font-mono text-[9px] text-[#505050] block mb-1">ANALYSIS TARGET #${index+1}</span><input type="url" onchange="updateRowValue('${item.id}', 'url', this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.url || ''}" placeholder="https://site.com/subpage"></div>
-                    <button onclick="removeSuiteRow('${item.id}')" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-500/60 hover:text-red-400 p-1">&#x2715;</button>
-                </div>`;
-            }
-        }).join('');
-    };
-
-    function generateSafeID() {
-        try { return crypto.randomUUID(); } catch (e) { return 'f_xxxxxx'.replace(/[x]/g, () => (Math.random() * 16 | 0).toString(16)); }
+        lista.innerHTML = data.map(cred => `
+            <div class="cred-card" id="cred-card-${cred.id}">
+                <div class="flex flex-col gap-0.5 min-w-0">
+                    <span class="font-mono-custom text-[11px] text-white font-bold truncate">${cred.nombre}</span>
+                    <span class="font-mono-custom text-[9px] text-[#505050] truncate">${cred.usuario}</span>
+                    ${cred.login_url ? `<span class="font-mono-custom text-[9px] text-[#303030] truncate">${cred.login_url.replace(/^https?:\/\//,'')}</span>` : ''}
+                </div>
+                <div class="flex items-center gap-2 shrink-0 ml-3">
+                    <span class="font-mono-custom text-[8px] text-[#303030] bg-black px-2 py-0.5 rounded border border-[#1a1a1a]">${cred.usuario_selector}</span>
+                    <button onclick="eliminarCredencial('${cred.id}')" class="cred-card-delete" title="Eliminar">✕</button>
+                </div>
+            </div>`).join('');
+    } catch(err) {
+        console.error("Error cargando lista de credenciales:", err);
+        lista.innerHTML = `<p class="font-mono-custom text-[10px] text-red-400 text-center py-4">Error al cargar credenciales.</p>`;
     }
+}
 
-    window.addSuiteRow = function() {
-        if (suiteStorage[currentActiveTab].length >= 20) { alert("Límite alcanzado: Máximo 20 configuraciones por módulo."); return; }
-        const newId = generateSafeID();
-        if (currentActiveTab === 'vrt') suiteStorage.vrt.push({ id: newId, stage: '', prod: '' });
-        else if (currentActiveTab === 'links') suiteStorage.links.push({ id: newId, url: '', maxElementos: 50, tipos: ["a","button","role_button","role_link","input_submit","onclick"] });
-        else suiteStorage[currentActiveTab].push({ id: newId, url: '' });
-        renderSuiteRows();
-        updateCountersPanel();
-    };
-
-    // Suite Manager — Link Scanner helpers
-    window.suiteSelElementos = function(id, cantidad, btn) {
-        const row = suiteStorage.links.find(i => i.id === id);
-        if (row) row.maxElementos = cantidad;
-        const container = document.getElementById(`suite-sel-${id}`);
-        if (container) container.querySelectorAll('.links-sel-btn').forEach(b => b.classList.toggle('active', parseInt(b.textContent) === cantidad));
-    };
-
-    window.suiteToggleTipo = function(id, checkbox) {
-        const row = suiteStorage.links.find(i => i.id === id);
-        if (!row) return;
-        const label = checkbox.closest('.links-tipo-check');
-        if (checkbox.checked) {
-            if (!row.tipos.includes(checkbox.value)) row.tipos.push(checkbox.value);
-            label.classList.add('checked');
-        } else {
-            row.tipos = row.tipos.filter(t => t !== checkbox.value);
-            label.classList.remove('checked');
-            if (row.tipos.length === 0) { checkbox.checked = true; row.tipos.push(checkbox.value); label.classList.add('checked'); }
-        }
-    };
-
-    window.removeSuiteRow = function(id) {
-        suiteStorage[currentActiveTab] = suiteStorage[currentActiveTab].filter(i => i.id !== id);
-        renderSuiteRows();
-        updateCountersPanel();
-    };
-
-    window.updateRowValue = function(id, field, val) {
-        const row = suiteStorage[currentActiveTab].find(i => i.id === id);
-        if (row) row[field] = val;
-    };
-
-    window.saveCurrentSuite = function() {
-        localStorage.setItem('qavision_suite_storage', JSON.stringify(suiteStorage));
-        updateCountersPanel();
-        alert("Configuración guardada en este navegador.");
-    };
-
-    function loadSuiteFromLocalStorage() {
-        const raw = localStorage.getItem('qavision_suite_storage');
-        if (raw) { try { suiteStorage = JSON.parse(raw); } catch(e) {} }
-        renderSuiteRows();
-        updateCountersPanel();
+window.eliminarCredencial = async function(credId) {
+    if (!confirm('¿Eliminar esta credencial? Esta acción no se puede deshacer.')) return;
+    try {
+        const {error} = await dashClient.from('credenciales').delete().eq('id',credId).eq('user_id',currentUser.id);
+        if (error) throw error;
+        document.getElementById(`cred-card-${credId}`)?.remove();
+        await inicializarCheckboxesCredenciales();
+        const lista = document.getElementById('modal-lista-credenciales');
+        if (lista && !lista.querySelector('.cred-card')) cargarListaCredencialesModal();
+    } catch(err) {
+        console.error("Error eliminando credencial:", err);
+        alert("No se pudo eliminar la credencial: " + err.message);
     }
+};
 
-    function abrirModalCredenciales() {
-        document.getElementById('modal-credenciales').classList.remove('hidden');
-        document.getElementById('modal-credenciales').classList.add('flex');
-    }
-
-    function cerrarModalCredenciales() {
-        document.getElementById('modal-credenciales').classList.remove('flex');
-        document.getElementById('modal-credenciales').classList.add('hidden');
+window.guardarCredenciales = async function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-save-cred');
+    if (btn) btn.disabled = true;
+    try {
+        if (!dashClient) { alert("El cliente de Supabase no está inicializado."); return; }
+        const {data:{user},error:authError} = await dashClient.auth.getUser();
+        if (authError||!user) { alert("No hay una sesión de usuario activa."); return; }
+        const {count} = await dashClient.from('credenciales').select('*',{count:'exact',head:true}).eq('user_id',user.id);
+        const nombreInput = document.getElementById('cred-nombre').value.trim();
+        const nombreFinal = nombreInput || `Credenciales ${(count||0)+1}`;
+        const payload = {
+            user_id:          user.id,
+            nombre:           nombreFinal,
+            login_url:        document.getElementById('cred-login-url').value.trim()||'',
+            usuario:          document.getElementById('cred-usuario').value.trim(),
+            usuario_selector: document.getElementById('cred-user-selector').value.trim(),
+            clave:            document.getElementById('cred-clave').value,
+            clave_selector:   document.getElementById('cred-pass-selector').value.trim()
+        };
+        const {error} = await dashClient.from('credenciales').insert([payload]);
+        if (error) { alert("Error al guardar: " + error.message); return; }
         document.getElementById('form-credenciales').reset();
+        await inicializarCheckboxesCredenciales();
+        cambiarVistaModal('guardadas'); // redirige a la lista con la nueva credencial visible
+    } catch(err) {
+        console.error(err);
+        alert("Falla crítica al guardar: " + err.message);
+    } finally {
+        if (btn) btn.disabled = false;
     }
+};
 
-    async function guardarCredenciales(e) {
-        e.preventDefault();
-        const btn = document.getElementById('btn-save-cred');
-        if (btn) btn.disabled = true;
+// ---- TREND CHART ----
+async function renderTrendChart() {
+    if (!currentUser) { setTimeout(renderTrendChart, 500); return; }
+    const {data} = await dashClient.from('pruebas_qa').select('creado_el,diferencias').eq('user_id',currentUser.id).order('creado_el',{ascending:false}).limit(14);
+    const porDia={};
+    (data||[]).forEach(r=>{const dia=new Date(r.creado_el).toLocaleDateString('es-AR',{weekday:'short',day:'numeric'});porDia[dia]=(porDia[dia]||0)+(r.diferencias||0);});
+    const labels=Object.keys(porDia).reverse(), valores=labels.map(d=>porDia[d]);
+    const ctx=document.getElementById('trendChart')?.getContext('2d'); if(!ctx) return;
+    new Chart(ctx,{type:'line',data:{labels:labels.length?labels:['Sin datos'],datasets:[{label:'Errores',data:valores.length?valores:[0],borderColor:'#ef4444',borderWidth:2,pointBackgroundColor:'#070707',pointBorderColor:'#ef4444',pointBorderWidth:2,pointRadius:3,tension:0.4,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#505050',font:{size:9,family:'DM Mono, monospace'}}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#505050',font:{size:9,family:'DM Mono, monospace'}}}}}});
+}
 
-        try {
-            if (!dashClient) {
-                alert("Error: El cliente de Supabase no está inicializado.");
-                return;
-            }
-
-            const { data: { user }, error: authError } = await dashClient.auth.getUser(); 
-            if (authError || !user) {
-                alert("No hay una sesión de usuario activa.");
-                return;
-            }
-
-            const { count } = await dashClient.from('credenciales').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
-
-            const nombreInput = document.getElementById('cred-nombre').value.trim();
-            const nombreFinal = nombreInput || `Credenciales ${ (count || 0) + 1 }`;
-
-            const payload = {
-                user_id: user.id,
-                nombre: nombreFinal,
-                login_url: document.getElementById('cred-login-url').value.trim() || '', // Manejo opcional
-                usuario: document.getElementById('cred-usuario').value.trim(),
-                usuario_selector: document.getElementById('cred-user-selector').value.trim(),
-                clave: document.getElementById('cred-clave').value,
-                clave_selector: document.getElementById('cred-pass-selector').value.trim()
-            };
-
-            const { error } = await dashClient.from('credenciales').insert([payload]);
-
-            if (error) {
-                alert("Error al resguardar credenciales: " + error.message);
-            } else {
-                alert(`Ficha [${nombreFinal}] guardada con éxito.`);
-                cerrarModalCredenciales();
-                await inicializarCheckboxesCredenciales(); // Sincroniza dinámicamente ambos módulos
-            }
-        } catch (err) {
-            print(err);
-            alert("Falla crítica al guardar: " + err.message);
-        } finally {
-            if (btn) btn.disabled = false;
-        }
-    }
-
-    // Carga las credenciales guardadas y las renderiza en Command Center y Suite Manager
-    async function inicializarCheckboxesCredenciales() {
-        const gridCC = document.getElementById('auth-checkboxes-grid');
-        const containerCC = document.getElementById('auth-vault-container');
-        const gridSM = document.getElementById('suite-auth-checkboxes-grid');
-        const containerSM = document.getElementById('suite-auth-vault-container');
-        if (!currentUser) return;
-
-        try {
-            const { data: credenciales, error } = await dashClient
-                .from('credenciales')
-                .select('id, nombre')
-                .eq('user_id', currentUser.id)
-                .order('created_at', { ascending: true });
-
-            if (error) throw error;
-
-            if (!credenciales || credenciales.length === 0) {
-                if (containerCC) containerCC.classList.add('hidden');
-                if (containerSM) containerSM.classList.add('hidden');
-                return;
-            }
-
-            // Generar string HTML unificado
-            const htmlContent = credenciales.map(cred => `
-                <label class="flex items-center gap-3 p-3 bg-black border border-[#1a1a1a] rounded-xl cursor-pointer hover:border-zinc-800 transition-all select-none group">
-                    <input type="checkbox" 
-                           value="${cred.id}" 
-                           class="qa-vault-checkbox shrink-0 w-3.5 h-3.5 rounded border-zinc-800 bg-black text-[#10b981] accent-[#10b981] focus:ring-0 focus:ring-offset-0"
-                           onchange="controlarExclusividadCheckbox(this)">
-                    <span class="font-mono-custom text-[10px] text-gray-400 group-hover:text-gray-200 truncate transition-colors uppercase">
-                        ${cred.nombre}
-                    </span>
-                </label>
-            `).join('');
-
-            // Inyectar en Command Center
-            if (containerCC && gridCC) {
-                containerCC.classList.remove('hidden');
-                gridCC.innerHTML = htmlContent;
-            }
-            
-            // Inyectar en Suite Manager
-            if (containerSM && gridSM) {
-                containerSM.classList.remove('hidden');
-                gridSM.innerHTML = htmlContent;
-            }
-
-        } catch (err) {
-            print("Error al sincronizar checkboxes de accesos:", err);
-        }
-    }
-
-    // Aplica exclusividad local aislando los checkboxes de su propia grilla
-    function controlarExclusividadCheckbox(checkboxActivo) {
-        if (checkboxActivo.checked) {
-            const contenedorPadre = checkboxActivo.closest('.grid');
-            if (contenedorPadre) {
-                const todosLosCheckboxes = contenedorPadre.querySelectorAll('.qa-vault-checkbox');
-                todosLosCheckboxes.forEach(cb => {
-                    if (cb !== checkboxActivo) cb.checked = false;
-                });
-            }
-        }
-    }
-    
-    function updateCountersPanel() {
-        const v = suiteStorage.vrt.length, s = suiteStorage.seo.length, p = suiteStorage.perf.length, l = suiteStorage.links.length;
-        const globalCount = document.getElementById('suite-global-counter');
-        if (globalCount) globalCount.innerText = `Guardadas: ${v+s+p+l} / 80`;
-        if (document.getElementById('mass-count-vrt')) document.getElementById('mass-count-vrt').innerText = `${v} / 20`;
-        if (document.getElementById('mass-count-seo')) document.getElementById('mass-count-seo').innerText = `${s} / 20`;
-        if (document.getElementById('mass-count-perf')) document.getElementById('mass-count-perf').innerText = `${p} / 20`;
-        if (document.getElementById('mass-count-links')) document.getElementById('mass-count-links').innerText = `${l} / 20`;
-        const btnMass = document.getElementById('btn-trigger-mass-run');
-        if (btnMass) { const total = v+s+p+l; btnMass.innerText = total > 0 ? `Ejecutar Suite Completa (${total} Tests)` : "Ejecutar Suite Completa"; }
-    }
-
-    async function renderTrendChart() {
-        if (!currentUser) { setTimeout(renderTrendChart, 500); return; }
-        const { data } = await dashClient.from('pruebas_qa').select('creado_el, diferencias').eq('user_id', currentUser.id).order('creado_el', { ascending: false }).limit(14);
-        const porDia = {};
-        (data || []).forEach(r => {
-            const dia = new Date(r.creado_el).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric' });
-            porDia[dia] = (porDia[dia] || 0) + (r.diferencias || 0);
-        });
-        const labels = Object.keys(porDia).reverse();
-        const valores = labels.map(d => porDia[d]);
-        const ctx = document.getElementById('trendChart').getContext('2d');
-        if (!ctx) return;
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels.length ? labels : ['Sin datos'],
-                datasets: [{ label: 'Errores', data: valores.length ? valores : [0], borderColor: '#ef4444', borderWidth: 2, pointBackgroundColor: '#070707', pointBorderColor: '#ef4444', pointBorderWidth: 2, pointRadius: 3, tension: 0.4, fill: false }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { grid: { display: false }, ticks: { color: '#505050', font: { size: 9, family: 'DM Mono, monospace' } } },
-                    y: { grid: { color: '#1a1a1a' }, ticks: { color: '#505050', font: { size: 9, family: 'DM Mono, monospace' } } }
-                }
-            }
-        });
-    }
-
-    window.addEventListener('DOMContentLoaded', inicializarPlataforma);
+window.addEventListener('DOMContentLoaded', inicializarPlataforma);
 </script>
 
-<!-- MODAL DE CONFIGURACIÓN DE CREDENCIALES COMPATIBLE CON LA HOJA DE ESTILOS -->
-<div id="modal-credenciales" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center z-50 p-4 animate-fade-in">
-    <div class="bg-[#0d0d0d] border border-[#1a1a1a] w-full max-w-lg rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col">
-        
-        <div class="p-6 border-b border-[#1a1a1a] flex justify-between items-center bg-black/20">
+<!-- MODAL CREDENCIALES -->
+<div id="modal-credenciales" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center z-50 p-4">
+    <div class="bg-[#0d0d0d] border border-[#1a1a1a] w-full max-w-lg rounded-2xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] flex flex-col max-h-[90vh]">
+
+        <!-- Header -->
+        <div class="p-5 border-b border-[#1a1a1a] flex justify-between items-center bg-black/20 shrink-0">
             <div>
                 <span class="font-mono text-[8px] text-[#10b981] uppercase tracking-widest block mb-0.5">VAULT MANAGER //</span>
                 <h3 class="font-title text-base font-black text-white uppercase">Gestión de Credenciales</h3>
             </div>
-            <button onclick="cerrarModalCredenciales()" class="font-mono text-[10px] text-zinc-500 hover:text-white px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded-md transition">✕ CLOSE</button>
+            <button onclick="cerrarModalCredenciales()" class="font-mono text-[10px] text-zinc-500 hover:text-white px-2.5 py-1 bg-zinc-900 border border-zinc-800 rounded-md transition">✕</button>
         </div>
 
-        <form id="form-credenciales" onsubmit="guardarCredenciales(event)" class="p-6 space-y-4">
-            <!-- Nombre Identificador -->
-            <div>
-                <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Nombre de la Credencial</label>
-                <input type="text" id="cred-nombre" placeholder="Ej: Credenciales 1 (Dejar vacío para correlativo automático)" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
-            </div>
+        <!-- Tabs -->
+        <div class="flex gap-2 px-5 pt-4 shrink-0 border-b border-[#1a1a1a] pb-3">
+            <button id="modal-tab-guardadas" class="modal-tab active"  onclick="cambiarVistaModal('guardadas')">Guardadas</button>
+            <button id="modal-tab-nueva"     class="modal-tab"         onclick="cambiarVistaModal('nueva')">+ Nueva credencial</button>
+        </div>
 
-            <!-- URL de Login (Opcional - NUEVO) -->
-            <div>
-                <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">URL de la página de Login (Opcional)</label>
-                <input type="url" id="cred-login-url" placeholder="Ej: https://qa.amv.travel/Login.aspx" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+        <!-- Panel: Guardadas -->
+        <div id="modal-panel-guardadas" class="flex-1 overflow-y-auto custom-scroll p-5">
+            <div id="modal-lista-credenciales" class="space-y-2">
+                <p class="font-mono-custom text-[10px] text-[#505050] text-center py-4">Cargando...</p>
             </div>
+        </div>
 
-            <!-- Fila 1: Usuario + Selector -->
-            <div class="grid grid-cols-2 gap-4">
+        <!-- Panel: Nueva -->
+        <div id="modal-panel-nueva" class="hidden flex-1 overflow-y-auto custom-scroll">
+            <form id="form-credenciales" onsubmit="guardarCredenciales(event)" class="p-5 space-y-4">
                 <div>
-                    <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Usuario / Correo</label>
-                    <input type="text" id="cred-usuario" required placeholder="admin@test.com" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+                    <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Nombre de la Credencial</label>
+                    <input type="text" id="cred-nombre" placeholder="Ej: Staging AMV (vacío = correlativo automático)" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
                 </div>
                 <div>
-                    <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Selector Usuario (CSS)</label>
-                    <input type="text" id="cred-user-selector" required value='input[type="email"]' class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+                    <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">URL de la página de Login <span class="text-[#303030]">(Opcional)</span></label>
+                    <input type="url" id="cred-login-url" placeholder="Ej: https://qa.amv.travel/Login.aspx" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
                 </div>
-            </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Usuario / Correo</label>
+                        <input type="text" id="cred-usuario" required placeholder="admin@test.com" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+                    </div>
+                    <div>
+                        <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Selector Usuario (CSS)</label>
+                        <input type="text" id="cred-user-selector" required value='input[type="email"]' class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Contraseña</label>
+                        <input type="password" id="cred-clave" required placeholder="••••••••" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+                    </div>
+                    <div>
+                        <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Selector Clave (CSS)</label>
+                        <input type="text" id="cred-pass-selector" required value='input[type="password"]' class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
+                    </div>
+                </div>
+                <div class="pt-1">
+                    <button type="submit" id="btn-save-cred" class="w-full bg-white hover:bg-zinc-200 text-black font-mono font-black py-3 rounded-lg text-[10px] tracking-wider uppercase transition shadow-md disabled:opacity-40 disabled:cursor-not-allowed">
+                        Guardar en Bóveda
+                    </button>
+                </div>
+            </form>
+        </div>
 
-            <!-- Fila 2: Contraseña + Selector -->
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Contraseña</label>
-                    <input type="password" id="cred-clave" required placeholder="••••••••" class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
-                </div>
-                <div>
-                    <label class="block font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-500 mb-1.5">Selector Clave (CSS)</label>
-                    <input type="text" id="cred-pass-selector" required value='input[type="password"]' class="w-full bg-[#050505] border border-[#1a1a1a] text-xs font-mono text-white p-3 rounded-lg outline-none focus:border-zinc-700 transition">
-                </div>
-            </div>
-
-            <div class="pt-2">
-                <button type="submit" id="btn-save-cred" class="w-full bg-white hover:bg-zinc-200 text-black font-mono font-black py-3 rounded-lg text-[10px] tracking-wider uppercase transition shadow-md">
-                    Guardar en Bóveda
-                </button>
-            </div>
-        </form>
     </div>
 </div>
+
 </body>
 </html>
