@@ -257,6 +257,15 @@
                                     <label class="links-tipo-check checked"><input type="checkbox" value="onclick"      checked onchange="ccToggleTipo(this)"><span>onclick</span></label>
                                 </div>
                             </div>
+                            <!-- CONTENEDOR DINÁMICO DE CREDENCIALES (Arranca oculto) -->
+                    <div id="auth-vault-container" class="hidden border-t border-[#1a1a1a] pt-5 mt-4 space-y-2.5">
+                        <div class="flex justify-between items-center">
+                            <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold">// Forzar Entorno Protegido</span>
+                            <span class="font-mono-custom text-[8px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/20 uppercase">Selección Única</span>
+                        </div>
+                        <!-- Los checkboxes se inyectan acá en paralelo -->
+                        <div id="auth-checkboxes-grid" class="grid grid-cols-2 gap-3"></div>
+                    </div>
                         </div>
                     </div>
 
