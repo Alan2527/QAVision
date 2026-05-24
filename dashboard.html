@@ -479,6 +479,10 @@
             loadSuiteFromLocalStorage();
             await cargarAuditoriasRecientes();
             await cargarSaludEntorno();
+            
+            // Línea agregada para dibujar tus checkboxes de la bóveda
+            await inicializarCheckboxesCredenciales();
+            
         } catch (e) {
             console.error("Error verificando credenciales:", e);
         }
@@ -598,7 +602,7 @@
                 }
             });
         }
-        document.getElementById('btn-launch-test').addEventListener('click', async function () {
+            document.getElementById('btn-launch-test').addEventListener('click', async function () {
             const testType = document.getElementById('new-test-type').value;
             const urlProd = document.getElementById('new-test-url-prod').value.trim();
             const urlStage = document.getElementById('new-test-url-stage').value.trim();
@@ -613,6 +617,15 @@
                 sessionStorage.setItem('qavision_links_max', ccMaxElementos);
                 sessionStorage.setItem('qavision_links_tipos', JSON.stringify(ccTiposSeleccionados));
             }
+
+            // Líneas agregadas para pasarle el ID de la credencial elegida a la siguiente página
+            const checkedCred = document.querySelector('.qa-vault-checkbox:checked');
+            if (checkedCred) {
+                sessionStorage.setItem('qavision_selected_cred_id', checkedCred.value);
+            } else {
+                sessionStorage.removeItem('qavision_selected_cred_id');
+            }
+
             window.location.href = testType;
         });
         document.getElementById('btn-trigger-mass-run').addEventListener('click', async () => {
@@ -834,6 +847,57 @@ async function guardarCredenciales(e) {
         if (btn) btn.disabled = false;
     }
 }
+    // Carga las credenciales guardadas y las transforma en checkboxes corporativos
+async function inicializarCheckboxesCredenciales() {
+    const grid = document.getElementById('auth-checkboxes-grid');
+    const container = document.getElementById('auth-vault-container');
+    if (!grid || !container || !currentUser) return;
+
+    try {
+        const { data: credenciales, error } = await dashClient
+            .from('credenciales')
+            .select('id, nombre')
+            .eq('user_id', currentUser.id)
+            .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        // Si la bóveda está vacía, el panel permanece totalmente invisible
+        if (!credenciales || credenciales.length === 0) {
+            container.classList.add('hidden');
+            return;
+        }
+
+        // Si existen credenciales, revelamos el layout
+        container.classList.remove('hidden');
+        
+        grid.innerHTML = credenciales.map(cred => `
+            <label class="flex items-center gap-3 p-3 bg-black border border-[#1a1a1a] rounded-xl cursor-pointer hover:border-zinc-800 transition-all select-none group">
+                <input type="checkbox" 
+                       value="${cred.id}" 
+                       class="qa-vault-checkbox shrink-0 w-3.5 h-3.5 rounded border-zinc-800 bg-black text-[#10b981] accent-[#10b981] focus:ring-0 focus:ring-offset-0"
+                       onchange="controlarExclusividadCheckbox(this)">
+                <span class="font-mono-custom text-[10px] text-gray-400 group-hover:text-gray-200 truncate transition-colors uppercase">
+                    ${cred.nombre}
+                </span>
+            </label>
+        `).join('');
+
+    } catch (err) {
+        console.error("Error al sincronizar checkboxes de accesos:", err);
+    }
+}
+
+// Fuerza a que actúen como un Radio Button: si marcás uno, se desmarcan los demás
+function controlarExclusividadCheckbox(checkboxActivo) {
+    if (checkboxActivo.checked) {
+        const todosLosCheckboxes = document.querySelectorAll('.qa-vault-checkbox');
+        todosLosCheckboxes.forEach(cb => {
+            if (cb !== checkboxActivo) cb.checked = false;
+        });
+    }
+}
+    
     function updateCountersPanel() {
         const v = suiteStorage.vrt.length, s = suiteStorage.seo.length, p = suiteStorage.perf.length, l = suiteStorage.links.length;
         const globalCount = document.getElementById('suite-global-counter');
