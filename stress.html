@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QAVision — Stress Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --green: #10b981; --surface-2: #0d0d0d; --border: #1a1a1a; --text: #e8e8e8; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'DM Sans', sans-serif; background: #000; color: var(--text); overflow-x: hidden; }
+        body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E"); pointer-events: none; z-index: 50; opacity: 0.4; }
+        .hero-grid { position: fixed; inset: 0; background-image: linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px); background-size: 40px 40px; mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 20%, transparent 100%); z-index: 0; }
+        .font-title { font-family: 'Syne', sans-serif; }
+        .font-mono  { font-family: 'DM Mono', monospace; }
+        .bg-tech { background-color: var(--surface-2); border: 1px solid var(--border); }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; font-size: 11px; font-weight: 700; color: #505050; transition: all 0.15s ease; text-decoration: none; font-family: 'DM Mono', monospace; border: 1px solid transparent; }
+        .nav-item:hover { color: #10b981; background: rgba(16,185,129,0.07); }
+        .nav-item.active { color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.15); }
+        .main-scroll { overflow-y: auto; height: 100vh; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
+        .sel-btn { flex: 1; padding: 8px 4px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 700; border: 1px solid #1a1a1a; background: #000; color: #505050; cursor: pointer; transition: all 0.15s; text-align: center; }
+        .sel-btn.active { border-color: rgba(16,185,129,0.4); color: #10b981; background: rgba(16,185,129,0.08); }
+        .flujo-btn { flex: 1; padding: 8px 6px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 700; border: 1px solid #1a1a1a; background: #000; color: #505050; cursor: pointer; transition: all 0.15s; text-align: center; white-space: nowrap; }
+        .flujo-btn.active { border-color: rgba(16,185,129,0.4); color: #10b981; background: rgba(16,185,129,0.08); }
+        .metric-card { background: #050505; border: 1px solid #1a1a1a; border-radius: 12px; padding: 16px; }
+        .metric-val { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; color: #fff; }
+        .metric-label { font-family: 'DM Mono', monospace; font-size: 9px; color: #505050; text-transform: uppercase; letter-spacing: 0.15em; margin-top: 2px; }
+        .history-item { cursor: pointer; transition: all 0.15s ease; }
+        .history-item:hover { border-color: rgba(16,185,129,0.3) !important; }
+        .history-item.selected { border-color: rgba(16,185,129,0.5) !important; background: rgba(16,185,129,0.04); }
+        .log-line { font-family: 'DM Mono', monospace; font-size: 10px; padding: 2px 0; border-bottom: 1px solid #0a0a0a; }
+
+        /* Animated progress bar */
+        @keyframes progress-pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+        .progress-running { animation: progress-pulse 1.5s ease-in-out infinite; }
+    </style>
+</head>
+<body class="min-h-screen flex">
+<div class="hero-grid"></div>
+
+<!-- SIDEBAR -->
+<aside class="w-20 md:w-64 bg-black border-r border-[#1a1a1a] p-6 h-screen sticky top-0 flex flex-col z-10 shrink-0">
+    <div class="mb-8 hidden md:block">
+        <div class="flex items-center gap-2 mb-1">
+            <h1 class="font-title text-2xl font-black text-[#10b981] tracking-tighter italic">QAVision</h1>
+        </div>
+        <div class="h-px bg-gradient-to-r from-[#10b981]/50 to-transparent mt-1"></div>
+        <p class="font-mono text-[9px] text-[#303030] mt-2 uppercase tracking-widest">Console v2.0</p>
+    </div>
+    <div class="mb-8 md:hidden flex justify-center"><span class="font-title text-lg font-black text-[#10b981] italic">Q</span></div>
+    <nav class="flex-1 space-y-1">
+        <a href="dashboard.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg><span class="hidden md:inline">Panel Principal</span></a>
+        <a href="visual_regression.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg><span class="hidden md:inline">Visual Regression</span></a>
+        <a href="seo.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><span class="hidden md:inline">SEO Audit</span></a>
+        <a href="performance.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><span class="hidden md:inline">Performance CWV</span></a>
+        <a href="interaction_audit.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg><span class="hidden md:inline">Link Scanner</span></a>
+        <a href="mass_execution.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg><span class="hidden md:inline">Mass Execution</span></a>
+        <a href="stress.html" class="nav-item active"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12a8 8 0 01-8 8m8-8a8 8 0 00-8-8m8 8H4"/></svg><span class="hidden md:inline">Stress Test</span></a>
+    </nav>
+    <div class="mt-6 pt-4 border-t border-[#1a1a1a]">
+        <a href="dashboard.html" class="hidden md:flex items-center gap-2 font-mono text-[10px] font-bold text-gray-500 hover:text-[#10b981] transition-colors">
+            <span>&#9666;</span> Volver al Panel
+        </a>
+    </div>
+</aside>
+
+<!-- MAIN -->
+<main class="flex-1 main-scroll relative z-10">
+<div class="max-w-7xl mx-auto p-6 md:p-10 space-y-8">
+
+    <!-- HEADER -->
+    <header>
+        <span class="font-mono text-[10px] text-[#10b981] uppercase tracking-[0.3em] font-bold">QAVision // Stress Engine</span>
+        <div class="flex items-start justify-between mt-2 flex-wrap gap-4">
+            <div>
+                <h2 class="font-title text-4xl font-extrabold tracking-tight">Stress <span class="text-gray-600">Test</span></h2>
+                <div class="flex items-center gap-2 mt-2">
+                    <span id="status-dot" class="w-2 h-2 rounded-full bg-[#505050]"></span>
+                    <p id="sub-header" class="font-mono text-xs text-[#505050]">Configurá y lanzá un test de carga.</p>
+                </div>
+            </div>
+            <span id="badge" class="font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest border border-transparent hidden self-start"></span>
+        </div>
+    </header>
+
+    <!-- TOP ROW: Config + Metrics -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- CONFIG PANEL -->
+        <div class="lg:col-span-2 bg-tech p-6 rounded-2xl relative overflow-hidden flex flex-col gap-5">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-[#10b981]/5 rounded-full blur-3xl pointer-events-none"></div>
+            <div>
+                <span class="font-mono text-[9px] text-[#10b981] uppercase tracking-[0.25em] font-bold block mb-1">// Configuración</span>
+                <h3 class="font-title text-xl font-extrabold text-white tracking-tight">Parámetros del Test</h3>
+            </div>
+
+            <!-- URLs -->
+            <div>
+                <label class="block font-mono text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">URLs a recorrer</label>
+                <div id="urls-container" class="space-y-2"></div>
+                <button onclick="agregarURL()" class="font-mono text-[9px] text-[#10b981] hover:underline mt-2 block">+ agregar URL</button>
+            </div>
+
+            <!-- Flujo -->
+            <div>
+                <label class="block font-mono text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Tipo de flujo</label>
+                <div class="flex gap-2" id="flujo-btns">
+                    <button onclick="selFlujo('get', this)"         class="flujo-btn active">GET Simple</button>
+                    <button onclick="selFlujo('login_get', this)"   class="flujo-btn">Login + GET</button>
+                    <button onclick="selFlujo('login_nav', this)"   class="flujo-btn">Login + Navegación</button>
+                </div>
+            </div>
+
+            <!-- VUs y Duración -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block font-mono text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Usuarios virtuales (VUs)</label>
+                    <div class="flex gap-1.5" id="vus-btns">
+                        <button onclick="selVus(10,  this)" class="sel-btn active">10</button>
+                        <button onclick="selVus(50,  this)" class="sel-btn">50</button>
+                        <button onclick="selVus(100, this)" class="sel-btn">100</button>
+                        <button onclick="selVus(200, this)" class="sel-btn">200</button>
+                    </div>
+                    <input id="vus-custom" type="number" min="1" max="500" placeholder="Custom..."
+                        class="mt-2 w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono"
+                        onchange="selVusCustom(this.value)">
+                </div>
+                <div>
+                    <label class="block font-mono text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Duración</label>
+                    <div class="flex gap-1.5" id="dur-btns">
+                        <button onclick="selDur('30s', this)" class="sel-btn">30s</button>
+                        <button onclick="selDur('1m',  this)" class="sel-btn active">1m</button>
+                        <button onclick="selDur('5m',  this)" class="sel-btn">5m</button>
+                    </div>
+                    <input id="dur-custom" type="text" placeholder="Ej: 2m30s"
+                        class="mt-2 w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono"
+                        onchange="selDurCustom(this.value)">
+                </div>
+            </div>
+
+            <!-- Ramp-up -->
+            <div>
+                <label class="block font-mono text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Ramp-up</label>
+                <div class="flex gap-2" id="ramp-btns">
+                    <button onclick="selRamp('instant', this)" class="flujo-btn active">Inmediato</button>
+                    <button onclick="selRamp('gradual',  this)" class="flujo-btn">Gradual (30s)</button>
+                    <button onclick="selRamp('steps',    this)" class="flujo-btn">Escalonado</button>
+                </div>
+            </div>
+
+            <!-- Credenciales -->
+            <div id="auth-vault-container" class="hidden border-t border-[#1a1a1a] pt-4 space-y-2.5">
+                <div class="flex justify-between items-center">
+                    <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold">// Forzar Entorno Protegido</span>
+                    <span class="font-mono text-[8px] text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded border border-[#10b981]/20 uppercase">Selección Única</span>
+                </div>
+                <div id="auth-checkboxes-grid" class="grid grid-cols-2 gap-3"></div>
+            </div>
+
+            <!-- Launch -->
+            <div class="pt-2 border-t border-[#1a1a1a] flex justify-between items-center">
+                <p class="font-mono text-[9px] text-[#505050]">* k6 OSS — carga distribuida sin límite de VUs.</p>
+                <button id="btn-launch" onclick="lanzarTest()"
+                    class="bg-[#10b981] hover:bg-[#059669] text-black font-black px-8 py-3 rounded-lg transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] flex items-center gap-2 text-sm">
+                    <span>Lanzar Test</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- LIVE METRICS -->
+        <div class="flex flex-col gap-4">
+            <div class="grid grid-cols-2 gap-3">
+                <div class="metric-card">
+                    <div id="m-rps" class="metric-val">—</div>
+                    <div class="metric-label">Req/seg</div>
+                </div>
+                <div class="metric-card">
+                    <div id="m-vus" class="metric-val">—</div>
+                    <div class="metric-label">VUs activos</div>
+                </div>
+                <div class="metric-card">
+                    <div id="m-p95" class="metric-val">—</div>
+                    <div class="metric-label">p95 (ms)</div>
+                </div>
+                <div class="metric-card">
+                    <div id="m-errors" class="metric-val text-red-400">—</div>
+                    <div class="metric-label">Errores %</div>
+                </div>
+                <div class="metric-card">
+                    <div id="m-p50" class="metric-val">—</div>
+                    <div class="metric-label">p50 (ms)</div>
+                </div>
+                <div class="metric-card">
+                    <div id="m-p99" class="metric-val">—</div>
+                    <div class="metric-label">p99 (ms)</div>
+                </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="bg-tech p-4 rounded-xl">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-mono text-[9px] text-[#505050] uppercase tracking-widest">Progreso</span>
+                    <span id="progress-label" class="font-mono text-[9px] text-[#505050]">—</span>
+                </div>
+                <div class="w-full bg-black rounded-full h-1.5 border border-[#1a1a1a]">
+                    <div id="progress-bar" class="bg-[#10b981] h-1.5 rounded-full transition-all duration-1000" style="width:0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="bg-tech p-6 rounded-2xl">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Tiempo Real</span>
+                <h3 class="font-title text-base font-bold text-white tracking-tight">Respuesta bajo carga</h3>
+            </div>
+            <div class="flex gap-3 font-mono text-[9px] text-[#505050]">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#10b981] inline-block"></span>p50</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-yellow-400 inline-block"></span>p95</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span>Errores%</span>
+            </div>
+        </div>
+        <div class="relative" style="height:220px;">
+            <canvas id="liveChart"></canvas>
+        </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="bg-tech rounded-2xl overflow-hidden">
+        <div class="p-5 border-b border-[#1a1a1a] flex justify-between items-center">
+            <div>
+                <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-0.5">// Historial</span>
+                <h3 class="font-title text-base font-bold text-white tracking-tight">Tests anteriores</h3>
+            </div>
+            <span class="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
+        </div>
+        <div id="historial" class="overflow-y-auto custom-scroll p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 max-h-[240px]">
+            <p class="font-mono text-[10px] text-[#505050] text-center py-8 col-span-full">Cargando historial...</p>
+        </div>
+    </div>
+
+</div>
+</main>
+
+<script>
+const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
+const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
+const ENGINE_API  = "https://qavision-qavision-engine.hf.space";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ---- Estado ----
+let config = { urls: [''], flujo: 'get', vus: 10, duracion: '1m', ramp: 'instant' };
+let currentUser  = null;
+let pollInterval = null;
+let liveChart    = null;
+let chartLabels  = [], chartP50 = [], chartP95 = [], chartErrors = [];
+let testStartTime = null;
+let totalDurSecs  = 60;
+
+// ---- Init ----
+async function init() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) { window.location.href = 'login.html'; return; }
+    currentUser = user;
+
+    renderURLs();
+    initChart();
+    await cargarCredenciales();
+    await cargarHistorial();
+
+    // Si viene lanzado desde dashboard
+    if (sessionStorage.getItem('qavision_trigger_test') === 'true') {
+        const urls   = JSON.parse(sessionStorage.getItem('qavision_stress_urls') || '[""]');
+        const vus    = parseInt(sessionStorage.getItem('qavision_stress_vus') || '50');
+        const dur    = sessionStorage.getItem('qavision_stress_dur') || '1m';
+        const flujo  = sessionStorage.getItem('qavision_stress_flujo') || 'get';
+        const credId = sessionStorage.getItem('qavision_selected_cred_id') || null;
+        sessionStorage.removeItem('qavision_trigger_test');
+        sessionStorage.removeItem('qavision_stress_urls');
+        sessionStorage.removeItem('qavision_stress_vus');
+        sessionStorage.removeItem('qavision_stress_dur');
+        sessionStorage.removeItem('qavision_stress_flujo');
+        sessionStorage.removeItem('qavision_selected_cred_id');
+        config.urls = urls; config.vus = vus; config.duracion = dur; config.flujo = flujo;
+        renderURLs();
+        await lanzarTest(credId);
+    }
+}
+
+// ---- URL management ----
+function renderURLs() {
+    const cont = document.getElementById('urls-container');
+    cont.innerHTML = config.urls.map((u, i) => `
+        <div class="flex items-center gap-2">
+            <input type="url" value="${u}"
+                onchange="config.urls[${i}] = this.value"
+                class="flex-1 bg-black border border-[#1a1a1a] text-xs text-white p-3 rounded-lg outline-none focus:border-[#10b981] font-mono"
+                placeholder="https://sitio.com/pagina">
+            ${i > 0 ? `<button onclick="quitarURL(${i})" class="text-xs text-red-500/60 hover:text-red-400 px-2 py-1">✕</button>` : ''}
+        </div>`).join('');
+}
+function agregarURL() { config.urls.push(''); renderURLs(); }
+function quitarURL(i) { config.urls.splice(i, 1); renderURLs(); }
+
+// ---- Selectors ----
+function selFlujo(v, btn) {
+    config.flujo = v;
+    document.querySelectorAll('#flujo-btns .flujo-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+function selVus(v, btn) {
+    config.vus = v;
+    document.getElementById('vus-custom').value = '';
+    document.querySelectorAll('#vus-btns .sel-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+function selVusCustom(v) {
+    const n = parseInt(v);
+    if (n > 0) {
+        config.vus = n;
+        document.querySelectorAll('#vus-btns .sel-btn').forEach(b => b.classList.remove('active'));
+    }
+}
+function selDur(v, btn) {
+    config.duracion = v;
+    document.getElementById('dur-custom').value = '';
+    document.querySelectorAll('#dur-btns .sel-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+function selDurCustom(v) {
+    if (v.trim()) {
+        config.duracion = v.trim();
+        document.querySelectorAll('#dur-btns .sel-btn').forEach(b => b.classList.remove('active'));
+    }
+}
+function selRamp(v, btn) {
+    config.ramp = v;
+    document.querySelectorAll('#ramp-btns .flujo-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+// ---- Credenciales ----
+async function cargarCredenciales() {
+    const { data, error } = await sb.from('credenciales').select('id, nombre')
+        .eq('user_id', currentUser.id).order('created_at', { ascending: true });
+    if (error || !data || !data.length) return;
+
+    const container = document.getElementById('auth-vault-container');
+    const grid      = document.getElementById('auth-checkboxes-grid');
+    container.classList.remove('hidden');
+    grid.innerHTML = data.map(c => `
+        <label class="flex items-center gap-3 p-3 bg-black border border-[#1a1a1a] rounded-xl cursor-pointer hover:border-zinc-800 transition-all select-none group">
+            <input type="checkbox" value="${c.id}"
+                class="qa-vault-checkbox shrink-0 w-3.5 h-3.5 accent-[#10b981]"
+                onchange="exclusivoCheckbox(this)">
+            <span class="font-mono text-[10px] text-gray-400 group-hover:text-gray-200 truncate uppercase">${c.nombre}</span>
+        </label>`).join('');
+}
+function exclusivoCheckbox(cb) {
+    if (cb.checked) document.querySelectorAll('.qa-vault-checkbox').forEach(c => { if (c !== cb) c.checked = false; });
+}
+
+// ---- Chart ----
+function initChart() {
+    const ctx = document.getElementById('liveChart').getContext('2d');
+    liveChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartLabels,
+            datasets: [
+                { label: 'p50', data: chartP50, borderColor: '#10b981', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: false, yAxisID: 'y' },
+                { label: 'p95', data: chartP95, borderColor: '#facc15', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: false, yAxisID: 'y' },
+                { label: 'Errores%', data: chartErrors, borderColor: '#ef4444', borderWidth: 2, pointRadius: 0, tension: 0.4, fill: false, yAxisID: 'y2' },
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false, animation: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: '#111' }, ticks: { color: '#505050', font: { size: 9, family: 'DM Mono' }, maxTicksLimit: 10 } },
+                y: { grid: { color: '#111' }, ticks: { color: '#505050', font: { size: 9, family: 'DM Mono' } }, title: { display: true, text: 'ms', color: '#505050', font: { size: 9 } } },
+                y2: { position: 'right', grid: { display: false }, ticks: { color: '#ef4444', font: { size: 9 } }, title: { display: true, text: 'err%', color: '#ef4444', font: { size: 9 } }, min: 0, max: 100 }
+            }
+        }
+    });
+}
+
+function resetChart() {
+    chartLabels.length = 0; chartP50.length = 0; chartP95.length = 0; chartErrors.length = 0;
+    liveChart.update();
+}
+
+function pushChartPoint(label, p50, p95, errPct) {
+    chartLabels.push(label); chartP50.push(p50); chartP95.push(p95); chartErrors.push(errPct);
+    if (chartLabels.length > 60) { chartLabels.shift(); chartP50.shift(); chartP95.shift(); chartErrors.shift(); }
+    liveChart.update('none');
+}
+
+// ---- Launch ----
+async function lanzarTest(forcedCredId = null) {
+    const urls = config.urls.filter(u => u.trim());
+    if (!urls.length) { alert('Agregá al menos una URL.'); return; }
+
+    const credId = forcedCredId ||
+        document.querySelector('.qa-vault-checkbox:checked')?.value || null;
+
+    // Calcular duración en segundos para la barra de progreso
+    const durStr = config.duracion;
+    totalDurSecs = durStr.endsWith('m') ? parseInt(durStr) * 60 :
+                   durStr.endsWith('s') ? parseInt(durStr) :
+                   durStr.includes('m') ? (parseInt(durStr.split('m')[0]) * 60 + parseInt(durStr.split('m')[1] || 0)) :
+                   60;
+
+    const btn = document.getElementById('btn-launch');
+    btn.disabled = true;
+    btn.className = "bg-zinc-800 text-zinc-500 font-black px-8 py-3 rounded-lg flex items-center gap-2 text-sm cursor-not-allowed";
+    btn.innerHTML = '<span>Corriendo...</span>';
+
+    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-[#10b981] animate-pulse";
+    document.getElementById('sub-header').textContent = `⏳ Iniciando test — ${config.vus} VUs × ${config.duracion}`;
+    document.getElementById('badge').className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 self-start";
+    document.getElementById('badge').textContent = "RUNNING";
+    document.getElementById('badge').classList.remove('hidden');
+
+    resetChart();
+    testStartTime = Date.now();
+
+    try {
+        const response = await fetch(`${ENGINE_API}/api/stress`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                urls,
+                vus:      config.vus,
+                duracion: config.duracion,
+                ramp:     config.ramp,
+                flujo:    config.flujo,
+                cred_id:  credId,
+                user_id:  currentUser.id,
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.detail || `Error ${response.status}`);
+        }
+
+        const { test_id } = await response.json();
+        document.getElementById('sub-header').textContent = `⏳ Test en curso — ID: ${test_id}`;
+        iniciarPolling(test_id);
+
+    } catch (err) {
+        console.error(err);
+        setEstadoError(err.message);
+    }
+}
+
+// ---- Polling ----
+function iniciarPolling(testId) {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(() => pollStatus(testId), 2000);
+}
+
+async function pollStatus(testId) {
+    try {
+        const res = await fetch(`${ENGINE_API}/api/stress/status/${testId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // Actualizar métricas en vivo
+        const m = data.metrics || {};
+        document.getElementById('m-rps').textContent    = m.rps    != null ? m.rps.toFixed(1)    : '—';
+        document.getElementById('m-vus').textContent    = m.vus    != null ? m.vus               : '—';
+        document.getElementById('m-p50').textContent    = m.p50    != null ? Math.round(m.p50)   : '—';
+        document.getElementById('m-p95').textContent    = m.p95    != null ? Math.round(m.p95)   : '—';
+        document.getElementById('m-p99').textContent    = m.p99    != null ? Math.round(m.p99)   : '—';
+        const errPct = m.error_rate != null ? (m.error_rate * 100).toFixed(1) : null;
+        document.getElementById('m-errors').textContent = errPct != null ? `${errPct}%` : '—';
+
+        // Barra de progreso
+        const elapsed = (Date.now() - testStartTime) / 1000;
+        const pct = Math.min(100, (elapsed / totalDurSecs) * 100);
+        document.getElementById('progress-bar').style.width = `${pct.toFixed(1)}%`;
+        document.getElementById('progress-label').textContent =
+            `${Math.round(elapsed)}s / ${totalDurSecs}s`;
+
+        // Chart
+        if (m.p50 != null) {
+            const label = `${Math.round(elapsed)}s`;
+            pushChartPoint(label, Math.round(m.p50), Math.round(m.p95 || 0), parseFloat(errPct || 0));
+        }
+
+        // Fin del test
+        if (data.status === 'done') {
+            clearInterval(pollInterval);
+            pollInterval = null;
+            setEstadoFin(data.result || m);
+            await cargarHistorial();
+        } else if (data.status === 'error') {
+            clearInterval(pollInterval);
+            pollInterval = null;
+            setEstadoError(data.error || 'Error desconocido en el engine k6');
+        }
+
+    } catch (e) {
+        console.error('Poll error:', e);
+    }
+}
+
+function setEstadoFin(result) {
+    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-[#10b981]";
+    document.getElementById('sub-header').textContent = `✓ Test completado — ${new Date().toLocaleTimeString()}`;
+    document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('progress-label').textContent = 'Completado';
+
+    const errPct = result.error_rate != null ? (result.error_rate * 100).toFixed(1) : 0;
+    const badge = document.getElementById('badge');
+    if (parseFloat(errPct) > 5) {
+        badge.textContent = `${errPct}% Errores`;
+        badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 self-start";
+    } else {
+        badge.textContent = "Test OK ✓";
+        badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 self-start";
+    }
+
+    const btn = document.getElementById('btn-launch');
+    btn.disabled = false;
+    btn.className = "bg-[#10b981] hover:bg-[#059669] text-black font-black px-8 py-3 rounded-lg transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] flex items-center gap-2 text-sm";
+    btn.innerHTML = '<span>Lanzar Test</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>';
+}
+
+function setEstadoError(msg) {
+    document.getElementById('status-dot').className = "w-2 h-2 rounded-full bg-red-500";
+    document.getElementById('sub-header').textContent = `❌ Error: ${msg}`;
+    const badge = document.getElementById('badge');
+    badge.textContent = "ERROR";
+    badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 self-start";
+    const btn = document.getElementById('btn-launch');
+    btn.disabled = false;
+    btn.className = "bg-[#10b981] hover:bg-[#059669] text-black font-black px-8 py-3 rounded-lg transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] flex items-center gap-2 text-sm";
+    btn.innerHTML = '<span>Lanzar Test</span><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>';
+}
+
+// ---- Historial ----
+async function cargarHistorial() {
+    const { data, error } = await sb.from('stress_tests')
+        .select('*').eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false }).limit(20);
+
+    const cont = document.getElementById('historial');
+    if (error || !data || !data.length) {
+        cont.innerHTML = '<p class="font-mono text-[10px] text-[#505050] text-center py-8 col-span-full">Sin tests registrados.</p>';
+        return;
+    }
+
+    cont.innerHTML = data.map(item => {
+        const errPct = item.error_rate != null ? (item.error_rate * 100).toFixed(1) : 0;
+        const fail   = parseFloat(errPct) > 5;
+        return `<div class="history-item p-3 bg-black/50 rounded-xl border border-[#1a1a1a]">
+            <div class="flex justify-between items-start mb-1.5">
+                <span class="font-mono text-[9px] text-[#505050]">${new Date(item.created_at).toLocaleDateString()}</span>
+                <span class="w-1.5 h-1.5 rounded-full ${fail ? 'bg-red-500' : 'bg-[#10b981]'}"></span>
+            </div>
+            <p class="font-mono text-[11px] font-bold mb-1 ${fail ? 'text-red-400' : 'text-[#10b981]'}">
+                p95: ${item.p95 != null ? Math.round(item.p95) + 'ms' : '—'}
+            </p>
+            <p class="font-mono text-[9px] text-[#505050]">${item.vus} VUs × ${item.duracion}</p>
+            <p class="font-mono text-[9px] text-[#505050] truncate">${(item.urls||[])[0]?.replace('https://','') || '—'}</p>
+        </div>`;
+    }).join('');
+}
+
+init();
+</script>
+</body>
+</html>
