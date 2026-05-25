@@ -68,6 +68,7 @@
         <a href="performance.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg><span class="hidden md:inline">Performance CWV</span></a>
         <a href="interaction_audit.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg><span class="hidden md:inline">Link Scanner</span></a>
         <a href="mass_execution.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg><span class="hidden md:inline">Mass Execution</span></a>
+            <a href="stress.html" class="nav-item"><svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12a8 8 0 01-8 8m8-8a8 8 0 00-8-8m8 8H4"/></svg><span class="hidden md:inline">Stress Test</span></a>
     </nav>
     <div class="h-px bg-[#1a1a1a] my-4 mx-3"></div>
     <div class="px-3">
@@ -225,6 +226,7 @@
                     <button onclick="switchTab('seo')"   id="tab-seo"   class="font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap">02. SEO List</button>
                     <button onclick="switchTab('perf')"  id="tab-perf"  class="font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap">03. Performance</button>
                     <button onclick="switchTab('links')" id="tab-links" class="font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap">04. Link Scan</button>
+                    <button onclick="switchTab('stress')" id="tab-stress" class="font-mono-custom text-xs px-4 py-2 rounded-lg text-[#505050] hover:text-white transition whitespace-nowrap">05. Stress Test</button>
                 </div>
                 <div id="suite-inputs-container" class="space-y-3 max-h-[280px] overflow-y-auto custom-scroll pr-2"></div>
                 <div id="suite-auth-vault-container" class="hidden border-t border-[#1a1a1a] pt-5 mt-4 space-y-2.5">
@@ -268,6 +270,7 @@
                         <div class="flex justify-between"><span>SEO Targets:</span><span id="mass-count-seo"   class="text-white font-bold">0 / 20</span></div>
                         <div class="flex justify-between"><span>Perf Targets:</span><span id="mass-count-perf"  class="text-white font-bold">0 / 20</span></div>
                         <div class="flex justify-between"><span>Link Scans:</span><span id="mass-count-links" class="text-white font-bold">0 / 20</span></div>
+                        <div class="flex justify-between"><span>Stress Tests:</span><span id="mass-count-stress" class="text-white font-bold">0 / 20</span></div>
                     </div>
                 </div>
                 <button id="btn-trigger-mass-run" class="w-full bg-red-600 hover:bg-red-700 text-white font-black py-3.5 rounded-xl font-mono-custom text-xs tracking-wider uppercase transition shadow-[0_0_20px_rgba(239,68,68,0.15)] mt-4">Ejecutar Suite Completa</button>
@@ -284,7 +287,7 @@ const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
 let dashClient = null;
 let currentActiveTab = 'vrt';
 let currentUser = null;
-let suiteStorage = { vrt: [], seo: [], perf: [], links: [] };
+let suiteStorage = { vrt: [], seo: [], perf: [], links: [], stress: [] };
 let ccMaxElementos = 50;
 let ccTiposSeleccionados = ["a","button","role_button","role_link","input_submit","onclick"];
 
@@ -414,6 +417,7 @@ async function lanzarMassExecution() {
             ...suiteStorage.seo.map(r   => fetch('https://qavision-qavision-engine.hf.space/api/seo',           { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, cred_id: credId }) })),
             ...suiteStorage.perf.map(r  => fetch('https://qavision-qavision-engine.hf.space/api/performance',   { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, cred_id: credId }) })),
             ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, max_elementos: r.maxElementos || 50, tipos: r.tipos || ["a","button","role_button","role_link","input_submit","onclick"], cred_id: credId }) })),
+            ...suiteStorage.stress.map(r => fetch('https://qavision-qavision-engine.hf.space/api/stress', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ urls: r.urls || [], vus: r.vus || 50, duracion: r.duracion || '60s', flujo: r.flujo || 'get', user_id: userId, batch_id: batchId, cred_id: credId }) })),
         ];
         await Promise.allSettled(llamadas);
         window.location.href = 'mass_execution.html';
@@ -503,7 +507,7 @@ async function reejecutarUltimo(tipo) {
 // ---- SUITE MANAGER ----
 window.switchTab = function(tabId) {
     currentActiveTab = tabId;
-    ['vrt','seo','perf','links'].forEach(t => {
+    ['vrt','seo','perf','links','stress'].forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         if (el) el.className = t===tabId
             ? "font-mono-custom text-xs px-4 py-2 rounded-lg bg-black text-white border border-[#10b981]/30 font-bold transition whitespace-nowrap"
@@ -535,6 +539,30 @@ window.renderSuiteRows = function() {
                 <div><span class="font-mono text-[9px] text-[#505050] block mb-1.5">ELEMENTOS</span><div class="flex gap-1.5" id="suite-sel-${item.id}">${selBtns}</div></div>
                 <div><span class="font-mono text-[9px] text-[#505050] block mb-1.5">TIPOS</span><div class="grid grid-cols-3 gap-1" id="suite-tipos-${item.id}">${tipoChecks}</div></div>
             </div>`;
+        } else if (currentActiveTab==='stress') {
+            const vus = item.vus || 50;
+            const dur = item.duracion || '60s';
+            const flujo = item.flujo || 'get';
+            const vuOpts = [10,50,100,200].map(n=>`<button onclick="stressSel('${item.id}','vus',${n},this)" class="links-sel-btn${vus===n?' active':''}">${n}</button>`).join('');
+            const durOpts = ['30s','1m','5m'].map(d=>`<button onclick="stressSel('${item.id}','duracion','${d}',this)" class="links-sel-btn${dur===d?' active':''}">${d}</button>`).join('');
+            const flujoOpts = [
+                {v:'get',l:'GET Simple'},
+                {v:'login_get',l:'Login + GET'},
+                {v:'login_nav',l:'Login + Nav'},
+            ].map(f=>`<button onclick="stressSel('${item.id}','flujo','${f.v}',this)" class="links-sel-btn${flujo===f.v?' active':''}">${f.l}</button>`).join('');
+            const urlsHtml = (item.urls||['']).map((u,ui)=>`
+                <div class="flex items-center gap-2">
+                    <input type="url" value="${u}" onchange="stressUpdateUrl('${item.id}',${ui},this.value)" class="flex-1 bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" placeholder="https://site.com/pagina">
+                    ${ui>0?`<button onclick="stressRemoveUrl('${item.id}',${ui})" class="text-xs text-red-500/60 hover:text-red-400 px-1">✕</button>`:''}
+                </div>`).join('');
+            return `<div class="p-3 bg-black/40 rounded-xl border border-[#1a1a1a] space-y-3 relative">
+                <button onclick="removeSuiteRow('${item.id}')" class="absolute right-2 top-2 text-xs text-red-500/60 hover:text-red-400 p-1">&#x2715;</button>
+                <div><span class="font-mono text-[9px] text-[#505050] block mb-1.5">TARGET #${index+1} — URLs a recorrer</span><div class="space-y-1.5">${urlsHtml}</div>
+                <button onclick="stressAddUrl('${item.id}')" class="font-mono text-[9px] text-[#10b981] hover:underline mt-1.5 block">+ agregar URL</button></div>
+                <div><span class="font-mono text-[9px] text-[#505050] block mb-1.5">USUARIOS VIRTUALES</span><div class="flex gap-1.5" id="stress-vus-${item.id}">${vuOpts}</div></div>
+                <div><span class="font-mono text-[9px] text-[#505050] block mb-1.5">DURACIÓN</span><div class="flex gap-1.5" id="stress-dur-${item.id}">${durOpts}</div></div>
+                <div><span class="font-mono text-[9px] text-[#505050] block mb-1.5">FLUJO</span><div class="flex gap-1.5" id="stress-flujo-${item.id}">${flujoOpts}</div></div>
+            </div>`;
         } else {
             return `<div class="flex items-center gap-4 p-3 bg-black/40 rounded-xl border border-[#1a1a1a] relative pr-10">
                 <div class="flex-1"><span class="font-mono text-[9px] text-[#505050] block mb-1">ANALYSIS TARGET #${index+1}</span><input type="url" onchange="updateRowValue('${item.id}','url',this.value)" class="w-full bg-black border border-[#1a1a1a] text-xs text-white p-2 rounded outline-none focus:border-[#10b981] font-mono" value="${item.url||''}" placeholder="https://site.com/subpage"></div>
@@ -550,6 +578,7 @@ window.addSuiteRow = function() {
     const newId=generateSafeID();
     if (currentActiveTab==='vrt') suiteStorage.vrt.push({id:newId,stage:'',prod:''});
     else if (currentActiveTab==='links') suiteStorage.links.push({id:newId,url:'',maxElementos:50,tipos:["a","button","role_button","role_link","input_submit","onclick"]});
+    else if (currentActiveTab==='stress') suiteStorage.stress.push({id:newId,urls:[''],vus:50,duracion:'60s',flujo:'get'});
     else suiteStorage[currentActiveTab].push({id:newId,url:''});
     renderSuiteRows(); updateCountersPanel();
 };
@@ -568,10 +597,10 @@ window.updateRowValue  = function(id,field,val) { const row=suiteStorage[current
 window.saveCurrentSuite = function() { localStorage.setItem('qavision_suite_storage',JSON.stringify(suiteStorage)); updateCountersPanel(); alert("Configuración guardada en este navegador."); };
 function loadSuiteFromLocalStorage() { const raw=localStorage.getItem('qavision_suite_storage'); if(raw){try{suiteStorage=JSON.parse(raw);}catch(e){}} renderSuiteRows(); updateCountersPanel(); }
 function updateCountersPanel() {
-    const v=suiteStorage.vrt.length,s=suiteStorage.seo.length,p=suiteStorage.perf.length,l=suiteStorage.links.length;
-    const gc=document.getElementById('suite-global-counter'); if(gc) gc.innerText=`Guardadas: ${v+s+p+l} / 80`;
-    ['vrt','seo','perf','links'].forEach((k,i)=>{ const el=document.getElementById(`mass-count-${k}`); if(el) el.innerText=`${[v,s,p,l][i]} / 20`; });
-    const btnMass=document.getElementById('btn-trigger-mass-run'); if(btnMass){const t=v+s+p+l;btnMass.innerText=t>0?`Ejecutar Suite Completa (${t} Tests)`:"Ejecutar Suite Completa";}
+    const v=suiteStorage.vrt.length,s=suiteStorage.seo.length,p=suiteStorage.perf.length,l=suiteStorage.links.length,st=suiteStorage.stress.length;
+    const gc=document.getElementById('suite-global-counter'); if(gc) gc.innerText=`Guardadas: ${v+s+p+l+st} / 100`;
+    ['vrt','seo','perf','links','stress'].forEach((k,i)=>{ const el=document.getElementById(`mass-count-${k}`); if(el) el.innerText=`${[v,s,p,l,st][i]} / 20`; });
+    const btnMass=document.getElementById('btn-trigger-mass-run'); if(btnMass){const t=v+s+p+l+st;btnMass.innerText=t>0?`Ejecutar Suite Completa (${t} Tests)`:"Ejecutar Suite Completa";}
 }
 
 // ---- CHECKBOXES CREDENCIALES ----
@@ -709,6 +738,28 @@ async function renderTrendChart() {
     const ctx=document.getElementById('trendChart')?.getContext('2d'); if(!ctx) return;
     new Chart(ctx,{type:'line',data:{labels:labels.length?labels:['Sin datos'],datasets:[{label:'Errores',data:valores.length?valores:[0],borderColor:'#ef4444',borderWidth:2,pointBackgroundColor:'#070707',pointBorderColor:'#ef4444',pointBorderWidth:2,pointRadius:3,tension:0.4,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#505050',font:{size:9,family:'DM Mono, monospace'}}},y:{grid:{color:'#1a1a1a'},ticks:{color:'#505050',font:{size:9,family:'DM Mono, monospace'}}}}}});
 }
+
+// ---- STRESS SUITE HELPERS ----
+window.stressSel = function(id, campo, valor, btn) {
+    const row = suiteStorage.stress.find(i => i.id === id);
+    if (row) row[campo] = valor;
+    const container = document.getElementById(`stress-${campo}-${id}`);
+    if (container) container.querySelectorAll('.links-sel-btn').forEach(b => {
+        b.classList.toggle('active', b.textContent === String(valor) || b.getAttribute('onclick').includes(`'${valor}'`));
+    });
+};
+window.stressAddUrl = function(id) {
+    const row = suiteStorage.stress.find(i => i.id === id);
+    if (row) { row.urls = row.urls || ['']; row.urls.push(''); renderSuiteRows(); }
+};
+window.stressRemoveUrl = function(id, idx) {
+    const row = suiteStorage.stress.find(i => i.id === id);
+    if (row && row.urls.length > 1) { row.urls.splice(idx, 1); renderSuiteRows(); }
+};
+window.stressUpdateUrl = function(id, idx, val) {
+    const row = suiteStorage.stress.find(i => i.id === id);
+    if (row) { row.urls = row.urls || ['']; row.urls[idx] = val; }
+};
 
 window.addEventListener('DOMContentLoaded', inicializarPlataforma);
 </script>
