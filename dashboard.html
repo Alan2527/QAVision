@@ -318,8 +318,9 @@ function inicializarPlataforma() {
             await dashClient.auth.signOut();
             window.location.replace('login.html');
         });
+        // renderTrendChart se llama dentro de verificarAccesoSaaS
+        // una vez que currentUser ya está disponible
         verificarAccesoSaaS();
-        if (typeof Chart !== 'undefined') renderTrendChart();
     } catch (err) { console.error("Error general en inicialización:", err); }
 }
 
@@ -335,6 +336,7 @@ async function verificarAccesoSaaS() {
         await cargarAuditoriasRecientes();
         await cargarSaludEntorno();
         await inicializarCheckboxesCredenciales();
+        if (typeof Chart !== 'undefined') renderTrendChart();
     } catch (e) { console.error("Error verificando credenciales:", e); }
 }
 
@@ -595,7 +597,24 @@ window.suiteToggleTipo = function(id,checkbox) {
 window.removeSuiteRow = function(id) { suiteStorage[currentActiveTab]=suiteStorage[currentActiveTab].filter(i=>i.id!==id); renderSuiteRows(); updateCountersPanel(); };
 window.updateRowValue  = function(id,field,val) { const row=suiteStorage[currentActiveTab].find(i=>i.id===id); if(row) row[field]=val; };
 window.saveCurrentSuite = function() { localStorage.setItem('qavision_suite_storage',JSON.stringify(suiteStorage)); updateCountersPanel(); alert("Configuración guardada en este navegador."); };
-function loadSuiteFromLocalStorage() { const raw=localStorage.getItem('qavision_suite_storage'); if(raw){try{suiteStorage=JSON.parse(raw);}catch(e){}} renderSuiteRows(); updateCountersPanel(); }
+function loadSuiteFromLocalStorage() {
+    const raw = localStorage.getItem('qavision_suite_storage');
+    if (raw) {
+        try {
+            const parsed = JSON.parse(raw);
+            // Migración: garantizar que todas las keys existan aunque el storage sea viejo
+            suiteStorage = {
+                vrt:    parsed.vrt    || [],
+                seo:    parsed.seo    || [],
+                perf:   parsed.perf   || [],
+                links:  parsed.links  || [],
+                stress: parsed.stress || [],
+            };
+        } catch(e) {}
+    }
+    renderSuiteRows();
+    updateCountersPanel();
+}
 function updateCountersPanel() {
     const v=suiteStorage.vrt.length,s=suiteStorage.seo.length,p=suiteStorage.perf.length,l=suiteStorage.links.length,st=suiteStorage.stress.length;
     const gc=document.getElementById('suite-global-counter'); if(gc) gc.innerText=`Guardadas: ${v+s+p+l+st} / 100`;
