@@ -114,6 +114,7 @@
                             <option value="seo.html">Auditoría SEO</option>
                             <option value="performance.html">Performance CWV</option>
                             <option value="interaction_audit.html">Link Scanner</option>
+                            <option value="stress.html">Stress Test</option>
                         </select>
                     </div>
                     <div id="container-url-prod" class="w-full md:col-span-2">
@@ -137,6 +138,51 @@
                             <button onclick="ccSeleccionarElementos(200, this)" class="links-sel-btn">200</button>
                         </div>
                     </div>
+                        <!-- STRESS TEST OPTIONS -->
+                        <div id="container-stress-options" class="space-y-4" style="display:none;">
+                            <div>
+                                <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">URLs a recorrer</label>
+                                <div id="cc-stress-urls" class="space-y-2">
+                                    <input type="url" id="cc-stress-url-0" class="w-full bg-black border border-[#1a1a1a] text-white text-xs rounded-lg p-3 outline-none focus:border-[#10b981] font-mono-custom" placeholder="https://sitio.com/pagina">
+                                </div>
+                                <button onclick="ccAgregarStressURL()" class="font-mono-custom text-[9px] text-[#10b981] hover:underline mt-2 block">+ agregar URL</button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Usuarios Virtuales</label>
+                                    <div class="flex gap-1.5" id="cc-stress-vus-btns">
+                                        <button onclick="ccSelStress('vus',10,this)"  class="links-sel-btn active">10</button>
+                                        <button onclick="ccSelStress('vus',50,this)"  class="links-sel-btn">50</button>
+                                        <button onclick="ccSelStress('vus',100,this)" class="links-sel-btn">100</button>
+                                        <button onclick="ccSelStress('vus',200,this)" class="links-sel-btn">200</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Duración</label>
+                                    <div class="flex gap-1.5" id="cc-stress-dur-btns">
+                                        <button onclick="ccSelStress('dur','30s',this)" class="links-sel-btn">30s</button>
+                                        <button onclick="ccSelStress('dur','1m',this)"  class="links-sel-btn active">1m</button>
+                                        <button onclick="ccSelStress('dur','5m',this)"  class="links-sel-btn">5m</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Tipo de flujo</label>
+                                <div class="flex gap-2" id="cc-stress-flujo-btns">
+                                    <button onclick="ccSelStress('flujo','get',this)"       class="links-sel-btn active" style="flex:none;padding:6px 10px;">GET Simple</button>
+                                    <button onclick="ccSelStress('flujo','login_get',this)" class="links-sel-btn" style="flex:none;padding:6px 10px;">Login + GET</button>
+                                    <button onclick="ccSelStress('flujo','login_nav',this)" class="links-sel-btn" style="flex:none;padding:6px 10px;">Login + Nav</button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Ramp-up</label>
+                                <div class="flex gap-2" id="cc-stress-ramp-btns">
+                                    <button onclick="ccSelStress('ramp','instant',this)" class="links-sel-btn active" style="flex:none;padding:6px 10px;">Inmediato</button>
+                                    <button onclick="ccSelStress('ramp','gradual',this)" class="links-sel-btn" style="flex:none;padding:6px 10px;">Gradual</button>
+                                    <button onclick="ccSelStress('ramp','steps',this)"   class="links-sel-btn" style="flex:none;padding:6px 10px;">Escalonado</button>
+                                </div>
+                            </div>
+                        </div>
                     <div>
                         <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Tipos a auditar</label>
                         <div class="grid grid-cols-3 gap-1.5" id="cc-tipos-grid">
@@ -290,6 +336,23 @@ let currentUser = null;
 let suiteStorage = { vrt: [], seo: [], perf: [], links: [], stress: [] };
 let ccMaxElementos = 50;
 let ccTiposSeleccionados = ["a","button","role_button","role_link","input_submit","onclick"];
+let ccStress = { vus: 10, dur: '1m', flujo: 'get', ramp: 'instant' };
+
+window.ccSelStress = function(campo, valor, btn) {
+    ccStress[campo] = valor;
+    const groupId = campo === 'vus' ? 'cc-stress-vus-btns' : campo === 'dur' ? 'cc-stress-dur-btns' : campo === 'flujo' ? 'cc-stress-flujo-btns' : 'cc-stress-ramp-btns';
+    document.querySelectorAll(`#${groupId} .links-sel-btn`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+};
+
+window.ccAgregarStressURL = function() {
+    const cont = document.getElementById('cc-stress-urls');
+    const idx  = cont.querySelectorAll('input').length;
+    const div  = document.createElement('div');
+    div.className = 'flex items-center gap-2';
+    div.innerHTML = `<input type="url" class="flex-1 bg-black border border-[#1a1a1a] text-white text-xs rounded-lg p-3 outline-none focus:border-[#10b981] font-mono-custom" placeholder="https://sitio.com/pagina"><button onclick="this.parentElement.remove()" class="text-xs text-red-500/60 hover:text-red-400 px-2">✕</button>`;
+    cont.appendChild(div);
+};
 
 window.ccSeleccionarElementos = function(cantidad, btn) {
     ccMaxElementos = cantidad;
@@ -356,20 +419,34 @@ function configurarListeners() {
 
     document.getElementById('btn-launch-test').addEventListener('click', async function() {
         const testType = document.getElementById('new-test-type').value;
+        const { data: { session } } = await dashClient.auth.getSession();
+        const checkedCred = document.querySelector('#auth-checkboxes-grid .qa-vault-checkbox:checked');
+        checkedCred ? sessionStorage.setItem('qavision_selected_cred_id', checkedCred.value) : sessionStorage.removeItem('qavision_selected_cred_id');
+        sessionStorage.setItem('qavision_user_id', session?.user?.id || '');
+        sessionStorage.setItem('qavision_trigger_test', 'true');
+
+        if (testType === 'stress.html') {
+            const urls = Array.from(document.querySelectorAll('#cc-stress-urls input'))
+                .map(i => i.value.trim()).filter(Boolean);
+            if (!urls.length) { alert('Agregá al menos una URL para el stress test.'); return; }
+            sessionStorage.setItem('qavision_stress_urls',  JSON.stringify(urls));
+            sessionStorage.setItem('qavision_stress_vus',   ccStress.vus);
+            sessionStorage.setItem('qavision_stress_dur',   ccStress.dur);
+            sessionStorage.setItem('qavision_stress_flujo', ccStress.flujo);
+            sessionStorage.setItem('qavision_stress_ramp',  ccStress.ramp);
+            window.location.href = testType;
+            return;
+        }
+
         const urlProd  = document.getElementById('new-test-url-prod').value.trim();
         const urlStage = document.getElementById('new-test-url-stage').value.trim();
         if (!urlProd) { alert('La URL de producción es obligatoria.'); return; }
-        const { data: { session } } = await dashClient.auth.getSession();
-        sessionStorage.setItem('qavision_user_id', session?.user?.id || '');
         sessionStorage.setItem('qavision_last_prod', urlProd);
         sessionStorage.setItem('qavision_last_stage', urlStage);
-        sessionStorage.setItem('qavision_trigger_test', 'true');
         if (testType === 'interaction_audit.html') {
             sessionStorage.setItem('qavision_links_max', ccMaxElementos);
             sessionStorage.setItem('qavision_links_tipos', JSON.stringify(ccTiposSeleccionados));
         }
-        const checkedCred = document.querySelector('#auth-checkboxes-grid .qa-vault-checkbox:checked');
-        checkedCred ? sessionStorage.setItem('qavision_selected_cred_id', checkedCred.value) : sessionStorage.removeItem('qavision_selected_cred_id');
         window.location.href = testType;
     });
 
@@ -377,23 +454,34 @@ function configurarListeners() {
 }
 
 function aplicarEstadoSelector(valor, stagingContainer, labelProd, inputProd, linksOpts) {
-    const isVRT   = valor === "visual_regression.html";
-    const isLinks = valor === "interaction_audit.html";
+    const isVRT    = valor === "visual_regression.html";
+    const isLinks  = valor === "interaction_audit.html";
+    const isStress = valor === "stress.html";
+    const stressOpts = document.getElementById('container-stress-options');
+    const urlProdContainer = document.getElementById('container-url-prod');
+
+    // Reset todos
+    stagingContainer.style.display = 'none';
+    linksOpts.style.display = 'none';
+    if (stressOpts) stressOpts.style.display = 'none';
+    if (urlProdContainer) urlProdContainer.style.display = 'block';
+
     if (isVRT) {
         stagingContainer.style.display = 'grid';
         labelProd.innerText = "URL de Producción";
         inputProd.placeholder = "https://ejemplo.com";
-        linksOpts.style.display = 'none';
     } else if (isLinks) {
-        stagingContainer.style.display = 'none';
         labelProd.innerText = "Target URL Analysis";
         inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
         linksOpts.style.display = 'block';
-    } else {
+    } else if (isStress) {
+        // Stress usa su propio gestor de URLs — ocultar el campo único
+        if (urlProdContainer) urlProdContainer.style.display = 'none';
         stagingContainer.style.display = 'none';
+        if (stressOpts) stressOpts.style.display = 'block';
+    } else {
         labelProd.innerText = "Target URL Analysis";
         inputProd.placeholder = "https://ejemplo.com/pagina-a-auditar";
-        linksOpts.style.display = 'none';
     }
 }
 
