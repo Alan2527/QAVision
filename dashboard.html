@@ -911,7 +911,12 @@ window.stressUpdateUrl = function(id, idx, val) {
     if (row) { row.urls = row.urls || ['']; row.urls[idx] = val; }
 };
 
-window.addEventListener('DOMContentLoaded', inicializarPlataforma);
+window.addEventListener('DOMContentLoaded', function() {
+    // Aplicar estado del selector inmediatamente al cargar
+    const sel = document.getElementById('new-test-type');
+    if (sel) cambiarModuloInmediato(sel.value);
+    inicializarPlataforma();
+});
 </script>
 
 <!-- MODAL CREDENCIALES -->
