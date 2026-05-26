@@ -138,7 +138,21 @@
                             <button onclick="ccSeleccionarElementos(200, this)" class="links-sel-btn">200</button>
                         </div>
                     </div>
-                        <!-- STRESS TEST OPTIONS -->
+                        
+                    <div>
+                        <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Tipos a auditar</label>
+                        <div class="grid grid-cols-3 gap-1.5" id="cc-tipos-grid">
+                            <label class="links-tipo-check checked"><input type="checkbox" value="a"            checked onchange="ccToggleTipo(this)"><span>Enlaces &lt;a&gt;</span></label>
+                            <label class="links-tipo-check checked"><input type="checkbox" value="button"       checked onchange="ccToggleTipo(this)"><span>Botones</span></label>
+                            <label class="links-tipo-check checked"><input type="checkbox" value="role_button"  checked onchange="ccToggleTipo(this)"><span>role=button</span></label>
+                            <label class="links-tipo-check checked"><input type="checkbox" value="role_link"    checked onchange="ccToggleTipo(this)"><span>role=link</span></label>
+                            <label class="links-tipo-check checked"><input type="checkbox" value="input_submit" checked onchange="ccToggleTipo(this)"><span>Submit</span></label>
+                            <label class="links-tipo-check checked"><input type="checkbox" value="onclick"      checked onchange="ccToggleTipo(this)"><span>onclick</span></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STRESS TEST OPTIONS -->
                         <div id="container-stress-options" class="space-y-4" style="display:none;">
                             <div>
                                 <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">URLs a recorrer</label>
@@ -183,18 +197,6 @@
                                 </div>
                             </div>
                         </div>
-                    <div>
-                        <label class="block font-mono-custom text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-2">Tipos a auditar</label>
-                        <div class="grid grid-cols-3 gap-1.5" id="cc-tipos-grid">
-                            <label class="links-tipo-check checked"><input type="checkbox" value="a"            checked onchange="ccToggleTipo(this)"><span>Enlaces &lt;a&gt;</span></label>
-                            <label class="links-tipo-check checked"><input type="checkbox" value="button"       checked onchange="ccToggleTipo(this)"><span>Botones</span></label>
-                            <label class="links-tipo-check checked"><input type="checkbox" value="role_button"  checked onchange="ccToggleTipo(this)"><span>role=button</span></label>
-                            <label class="links-tipo-check checked"><input type="checkbox" value="role_link"    checked onchange="ccToggleTipo(this)"><span>role=link</span></label>
-                            <label class="links-tipo-check checked"><input type="checkbox" value="input_submit" checked onchange="ccToggleTipo(this)"><span>Submit</span></label>
-                            <label class="links-tipo-check checked"><input type="checkbox" value="onclick"      checked onchange="ccToggleTipo(this)"><span>onclick</span></label>
-                        </div>
-                    </div>
-                </div>
                 <div id="auth-vault-container" class="hidden border-t border-[#1a1a1a] pt-5 mt-4 space-y-2.5">
                     <div class="flex justify-between items-center">
                         <span class="font-mono-custom text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold">// Forzar Entorno Protegido</span>
@@ -912,9 +914,11 @@ window.stressUpdateUrl = function(id, idx, val) {
 };
 
 window.addEventListener('DOMContentLoaded', function() {
-    // Aplicar estado del selector inmediatamente al cargar
-    const sel = document.getElementById('new-test-type');
-    if (sel) cambiarModuloInmediato(sel.value);
+    // Mostrar panel correcto según módulo seleccionado, sin esperar auth
+    setTimeout(function() {
+        const sel = document.getElementById('new-test-type');
+        if (sel) cambiarModuloInmediato(sel.value);
+    }, 50);
     inicializarPlataforma();
 });
 </script>
