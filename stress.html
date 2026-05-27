@@ -186,33 +186,27 @@ async function init() {
     const shouldTrigger = sessionStorage.getItem('qavision_trigger_test') === 'true';
     const urlsRaw = sessionStorage.getItem('qavision_stress_urls');
 
-    // Limpiar sessionStorage corrupto: si trigger=true pero no hay URLs, ignorar
-    if (shouldTrigger && (!urlsRaw || JSON.parse(urlsRaw).filter(Boolean).length === 0)) {
-        sessionStorage.removeItem('qavision_trigger_test');
-        sessionStorage.removeItem('qavision_stress_urls');
-        sessionStorage.removeItem('qavision_stress_vus');
-        sessionStorage.removeItem('qavision_stress_dur');
-        sessionStorage.removeItem('qavision_stress_flujo');
-        sessionStorage.removeItem('qavision_stress_ramp');
-        sessionStorage.removeItem('qavision_selected_cred_id');
-    }
+    // Parsear URLs con protección total contra sessionStorage corrupto
+    let urlsParsed = [];
+    try { urlsParsed = urlsRaw ? JSON.parse(urlsRaw).filter(Boolean) : []; } catch(e) { urlsParsed = []; }
 
-    if (shouldTrigger && urlsRaw && JSON.parse(urlsRaw).filter(Boolean).length > 0) {
-        const urls   = JSON.parse(urlsRaw);
-        const vus    = parseInt(sessionStorage.getItem('qavision_stress_vus')    || '50');
+    // Limpiar siempre el sessionStorage antes de hacer cualquier cosa
+    sessionStorage.removeItem('qavision_trigger_test');
+    sessionStorage.removeItem('qavision_stress_urls');
+    sessionStorage.removeItem('qavision_stress_vus');
+    sessionStorage.removeItem('qavision_stress_dur');
+    sessionStorage.removeItem('qavision_stress_flujo');
+    sessionStorage.removeItem('qavision_stress_ramp');
+    sessionStorage.removeItem('qavision_selected_cred_id');
+    sessionStorage.removeItem('qavision_user_id');
+
+    if (shouldTrigger && urlsParsed.length > 0) {
+        const urls   = urlsParsed;
+        const vus    = parseInt(sessionStorage.getItem('qavision_stress_vus')    || '') || 50;
         const dur    = sessionStorage.getItem('qavision_stress_dur')   || '1m';
         const flujo  = sessionStorage.getItem('qavision_stress_flujo') || 'get';
         const ramp   = sessionStorage.getItem('qavision_stress_ramp')  || 'instant';
         const credId = sessionStorage.getItem('qavision_selected_cred_id') || null;
-
-        sessionStorage.removeItem('qavision_trigger_test');
-        sessionStorage.removeItem('qavision_stress_urls');
-        sessionStorage.removeItem('qavision_stress_vus');
-        sessionStorage.removeItem('qavision_stress_dur');
-        sessionStorage.removeItem('qavision_stress_flujo');
-        sessionStorage.removeItem('qavision_stress_ramp');
-        sessionStorage.removeItem('qavision_selected_cred_id');
-        sessionStorage.removeItem('qavision_user_id');
 
         // Calcular duración en segundos para la barra
         totalDurSecs = dur.endsWith('m') ? parseInt(dur) * 60 :
