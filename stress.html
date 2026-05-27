@@ -184,9 +184,21 @@ async function init() {
     if (!user) { window.location.href = 'login.html'; return; }
 
     const shouldTrigger = sessionStorage.getItem('qavision_trigger_test') === 'true';
+    const urlsRaw = sessionStorage.getItem('qavision_stress_urls');
 
-    if (shouldTrigger) {
-        const urls   = JSON.parse(sessionStorage.getItem('qavision_stress_urls')  || '[]');
+    // Limpiar sessionStorage corrupto: si trigger=true pero no hay URLs, ignorar
+    if (shouldTrigger && (!urlsRaw || JSON.parse(urlsRaw).filter(Boolean).length === 0)) {
+        sessionStorage.removeItem('qavision_trigger_test');
+        sessionStorage.removeItem('qavision_stress_urls');
+        sessionStorage.removeItem('qavision_stress_vus');
+        sessionStorage.removeItem('qavision_stress_dur');
+        sessionStorage.removeItem('qavision_stress_flujo');
+        sessionStorage.removeItem('qavision_stress_ramp');
+        sessionStorage.removeItem('qavision_selected_cred_id');
+    }
+
+    if (shouldTrigger && urlsRaw && JSON.parse(urlsRaw).filter(Boolean).length > 0) {
+        const urls   = JSON.parse(urlsRaw);
         const vus    = parseInt(sessionStorage.getItem('qavision_stress_vus')    || '50');
         const dur    = sessionStorage.getItem('qavision_stress_dur')   || '1m';
         const flujo  = sessionStorage.getItem('qavision_stress_flujo') || 'get';
@@ -228,7 +240,7 @@ async function init() {
         return;
     }
 
-    // Sin trigger: mostrar último resultado guardado
+    // Sin trigger o sessionStorage limpio: mostrar último resultado guardado
     await cargarUltimoReporte(user.id);
 }
 
