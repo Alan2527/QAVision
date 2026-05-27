@@ -106,53 +106,110 @@
     <!-- RESULTADO FINAL -->
     <div id="result-panel" class="hidden space-y-6">
 
-        <!-- Métricas principales -->
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div class="metric-card">
-                <div id="m-p50"    class="metric-val text-[#10b981]">—</div>
-                <div class="metric-label">p50 ms</div>
+        <!-- Resumen ejecutivo -->
+        <div id="summary-card" class="rounded-2xl p-6 border">
+            <div class="flex items-start justify-between flex-wrap gap-4">
+                <div>
+                    <span class="font-mono text-[9px] uppercase tracking-[0.25em] font-bold block mb-1 text-[#505050]">// Resumen</span>
+                    <h3 id="summary-title" class="font-title text-2xl font-extrabold text-white">—</h3>
+                    <p id="summary-desc" class="font-mono text-xs text-[#505050] mt-1 max-w-lg">—</p>
+                </div>
+                <div id="summary-icon" class="text-5xl">—</div>
             </div>
+        </div>
+
+        <!-- Métricas en lenguaje humano -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+            <!-- Velocidad típica -->
             <div class="metric-card">
-                <div id="m-p95"    class="metric-val text-yellow-400">—</div>
-                <div class="metric-label">p95 ms</div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-mono text-[9px] text-[#505050] uppercase tracking-widest">Velocidad típica</span>
+                    <span id="icon-p50" class="text-lg">—</span>
+                </div>
+                <div id="m-p50" class="metric-val">—</div>
+                <div class="font-mono text-[9px] text-[#505050] mt-1">milisegundos por página</div>
+                <div id="label-p50" class="font-mono text-[10px] font-bold mt-2">—</div>
+                <p class="font-mono text-[9px] text-[#404040] mt-1">La mitad de los usuarios experimentó esta velocidad o mejor.</p>
             </div>
+
+            <!-- Velocidad bajo presión -->
             <div class="metric-card">
-                <div id="m-p99"    class="metric-val text-orange-400">—</div>
-                <div class="metric-label">p99 ms</div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-mono text-[9px] text-[#505050] uppercase tracking-widest">Bajo presión máxima</span>
+                    <span id="icon-p95" class="text-lg">—</span>
+                </div>
+                <div id="m-p95" class="metric-val">—</div>
+                <div class="font-mono text-[9px] text-[#505050] mt-1">milisegundos por página</div>
+                <div id="label-p95" class="font-mono text-[10px] font-bold mt-2">—</div>
+                <p class="font-mono text-[9px] text-[#404040] mt-1">9 de cada 10 usuarios cargaron en este tiempo o menos.</p>
             </div>
+
+            <!-- Tasa de errores -->
             <div class="metric-card">
-                <div id="m-errors" class="metric-val text-red-400">—</div>
-                <div class="metric-label">Error %</div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-mono text-[9px] text-[#505050] uppercase tracking-widest">Tasa de errores</span>
+                    <span id="icon-errors" class="text-lg">—</span>
+                </div>
+                <div id="m-errors" class="metric-val">—</div>
+                <div class="font-mono text-[9px] text-[#505050] mt-1">de las solicitudes fallaron</div>
+                <div id="label-errors" class="font-mono text-[10px] font-bold mt-2">—</div>
+                <p class="font-mono text-[9px] text-[#404040] mt-1">Porcentaje de páginas que no cargaron correctamente.</p>
             </div>
-            <div class="metric-card">
-                <div id="m-reqs"   class="metric-val text-white">—</div>
-                <div class="metric-label">Total Req</div>
+        </div>
+
+        <!-- Estadísticas secundarias -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="bg-black/50 border border-[#1a1a1a] rounded-xl p-4">
+                <div class="font-mono text-[9px] text-[#505050] uppercase mb-1">Caso extremo</div>
+                <div id="m-p99" class="font-title text-2xl font-black text-white">—</div>
+                <div class="font-mono text-[9px] text-[#505050]">ms — el peor 1%</div>
             </div>
-            <div class="metric-card">
-                <div id="m-vus"    class="metric-val text-white">—</div>
-                <div class="metric-label">VUs</div>
+            <div class="bg-black/50 border border-[#1a1a1a] rounded-xl p-4">
+                <div class="font-mono text-[9px] text-[#505050] uppercase mb-1">Total solicitudes</div>
+                <div id="m-reqs" class="font-title text-2xl font-black text-white">—</div>
+                <div class="font-mono text-[9px] text-[#505050]">páginas procesadas</div>
+            </div>
+            <div class="bg-black/50 border border-[#1a1a1a] rounded-xl p-4">
+                <div class="font-mono text-[9px] text-[#505050] uppercase mb-1">Usuarios simulados</div>
+                <div id="m-vus" class="font-title text-2xl font-black text-white">—</div>
+                <div class="font-mono text-[9px] text-[#505050]">navegando en simultáneo</div>
+            </div>
+            <div class="bg-black/50 border border-[#1a1a1a] rounded-xl p-4">
+                <div class="font-mono text-[9px] text-[#505050] uppercase mb-1">Duración del test</div>
+                <div id="cfg-dur-badge" class="font-title text-2xl font-black text-white">—</div>
+                <div class="font-mono text-[9px] text-[#505050]">de carga continua</div>
             </div>
         </div>
 
         <!-- Config del test -->
         <div class="bg-tech p-5 rounded-2xl">
-            <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-3">// Configuración ejecutada</span>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 font-mono text-xs">
-                <div><span class="text-[#505050] block text-[9px] uppercase mb-1">Duración</span><span id="cfg-dur" class="text-white font-bold">—</span></div>
-                <div><span class="text-[#505050] block text-[9px] uppercase mb-1">Flujo</span><span id="cfg-flujo" class="text-white font-bold">—</span></div>
-                <div><span class="text-[#505050] block text-[9px] uppercase mb-1">Ramp-up</span><span id="cfg-ramp" class="text-white font-bold">—</span></div>
-                <div><span class="text-[#505050] block text-[9px] uppercase mb-1">Fecha</span><span id="cfg-fecha" class="text-white font-bold">—</span></div>
+            <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-3">// Detalles de la ejecución</span>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 font-mono text-xs">
+                <div>
+                    <span class="text-[#505050] block text-[9px] uppercase mb-1">Tipo de prueba</span>
+                    <span id="cfg-flujo" class="text-white font-bold">—</span>
+                </div>
+                <div>
+                    <span class="text-[#505050] block text-[9px] uppercase mb-1">Arranque de carga</span>
+                    <span id="cfg-ramp" class="text-white font-bold">—</span>
+                </div>
+                <div>
+                    <span class="text-[#505050] block text-[9px] uppercase mb-1">Ejecutado el</span>
+                    <span id="cfg-fecha" class="text-white font-bold">—</span>
+                </div>
             </div>
-            <div class="mt-3">
-                <span class="text-[#505050] block font-mono text-[9px] uppercase mb-1">URLs</span>
-                <div id="cfg-urls" class="space-y-1"></div>
+            <div class="mt-4">
+                <span class="text-[#505050] block font-mono text-[9px] uppercase mb-2">URLs testeadas</span>
+                <div id="cfg-urls" class="flex flex-wrap gap-2"></div>
             </div>
         </div>
 
         <!-- Chart histórico -->
         <div class="bg-tech p-5 rounded-2xl">
-            <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-1">// Historial</span>
-            <h3 class="font-title text-base font-bold text-white mb-4">p95 — últimos 10 tests</h3>
+            <span class="font-mono text-[9px] text-[#505050] uppercase tracking-[0.25em] font-bold block mb-1">// Evolución histórica</span>
+            <h3 class="font-title text-base font-bold text-white mb-1">Velocidad bajo presión — últimos 10 tests</h3>
+            <p class="font-mono text-[9px] text-[#505050] mb-4">Tiempo de respuesta del 95% de los usuarios en cada ejecución. Verde = óptimo · Amarillo = acceptable · Rojo = crítico.</p>
             <div style="height:180px"><canvas id="histChart"></canvas></div>
         </div>
 
@@ -186,27 +243,33 @@ async function init() {
     const shouldTrigger = sessionStorage.getItem('qavision_trigger_test') === 'true';
     const urlsRaw = sessionStorage.getItem('qavision_stress_urls');
 
-    // Parsear URLs con protección total contra sessionStorage corrupto
-    let urlsParsed = [];
-    try { urlsParsed = urlsRaw ? JSON.parse(urlsRaw).filter(Boolean) : []; } catch(e) { urlsParsed = []; }
+    // Limpiar sessionStorage corrupto: si trigger=true pero no hay URLs, ignorar
+    if (shouldTrigger && (!urlsRaw || JSON.parse(urlsRaw).filter(Boolean).length === 0)) {
+        sessionStorage.removeItem('qavision_trigger_test');
+        sessionStorage.removeItem('qavision_stress_urls');
+        sessionStorage.removeItem('qavision_stress_vus');
+        sessionStorage.removeItem('qavision_stress_dur');
+        sessionStorage.removeItem('qavision_stress_flujo');
+        sessionStorage.removeItem('qavision_stress_ramp');
+        sessionStorage.removeItem('qavision_selected_cred_id');
+    }
 
-    // Limpiar siempre el sessionStorage antes de hacer cualquier cosa
-    sessionStorage.removeItem('qavision_trigger_test');
-    sessionStorage.removeItem('qavision_stress_urls');
-    sessionStorage.removeItem('qavision_stress_vus');
-    sessionStorage.removeItem('qavision_stress_dur');
-    sessionStorage.removeItem('qavision_stress_flujo');
-    sessionStorage.removeItem('qavision_stress_ramp');
-    sessionStorage.removeItem('qavision_selected_cred_id');
-    sessionStorage.removeItem('qavision_user_id');
-
-    if (shouldTrigger && urlsParsed.length > 0) {
-        const urls   = urlsParsed;
-        const vus    = parseInt(sessionStorage.getItem('qavision_stress_vus')    || '') || 50;
+    if (shouldTrigger && urlsRaw && JSON.parse(urlsRaw).filter(Boolean).length > 0) {
+        const urls   = JSON.parse(urlsRaw);
+        const vus    = parseInt(sessionStorage.getItem('qavision_stress_vus')    || '50');
         const dur    = sessionStorage.getItem('qavision_stress_dur')   || '1m';
         const flujo  = sessionStorage.getItem('qavision_stress_flujo') || 'get';
         const ramp   = sessionStorage.getItem('qavision_stress_ramp')  || 'instant';
         const credId = sessionStorage.getItem('qavision_selected_cred_id') || null;
+
+        sessionStorage.removeItem('qavision_trigger_test');
+        sessionStorage.removeItem('qavision_stress_urls');
+        sessionStorage.removeItem('qavision_stress_vus');
+        sessionStorage.removeItem('qavision_stress_dur');
+        sessionStorage.removeItem('qavision_stress_flujo');
+        sessionStorage.removeItem('qavision_stress_ramp');
+        sessionStorage.removeItem('qavision_selected_cred_id');
+        sessionStorage.removeItem('qavision_user_id');
 
         // Calcular duración en segundos para la barra
         totalDurSecs = dur.endsWith('m') ? parseInt(dur) * 60 :
@@ -254,33 +317,97 @@ function setUIResult(r) {
     document.getElementById('result-panel').classList.remove('hidden');
     document.getElementById('empty-panel').classList.add('hidden');
 
-    document.getElementById('m-p50').textContent    = r.p50    != null ? Math.round(r.p50)    : '—';
-    document.getElementById('m-p95').textContent    = r.p95    != null ? Math.round(r.p95)    : '—';
-    document.getElementById('m-p99').textContent    = r.p99    != null ? Math.round(r.p99)    : '—';
-    document.getElementById('m-reqs').textContent   = r.total_reqs ?? '—';
-    document.getElementById('m-vus').textContent    = r.vus    ?? '—';
-    const errPct = r.error_rate != null ? (r.error_rate * 100).toFixed(1) + '%' : '—';
-    document.getElementById('m-errors').textContent = errPct;
+    const p50  = r.p50  != null ? Math.round(r.p50)  : null;
+    const p95  = r.p95  != null ? Math.round(r.p95)  : null;
+    const p99  = r.p99  != null ? Math.round(r.p99)  : null;
+    const errNum = r.error_rate != null ? r.error_rate * 100 : 0;
 
-    document.getElementById('cfg-dur').textContent   = r.duracion || '—';
-    document.getElementById('cfg-ramp').textContent  = r.ramp    || '—';
-    document.getElementById('cfg-fecha').textContent = r.created_at ? new Date(r.created_at).toLocaleString('es-AR') : '—';
-    const flujoMap = { get: 'GET Simple', login_get: 'Login + GET', login_nav: 'Login + Nav' };
+    // --- Semáforo p50 ---
+    const p50Color = p50 == null ? 'text-white' : p50 < 500 ? 'text-[#10b981]' : p50 < 1500 ? 'text-yellow-400' : 'text-red-400';
+    const p50Icon  = p50 == null ? '—' : p50 < 500 ? '🟢' : p50 < 1500 ? '🟡' : '🔴';
+    const p50Label = p50 == null ? '—' : p50 < 500 ? 'Excelente — carga muy rápida' : p50 < 1500 ? 'Aceptable — algo lento en horas pico' : 'Crítico — los usuarios abandonan la página';
+    document.getElementById('m-p50').textContent    = p50 != null ? p50 + ' ms' : '—';
+    document.getElementById('m-p50').className      = 'metric-val ' + p50Color;
+    document.getElementById('icon-p50').textContent = p50Icon;
+    document.getElementById('label-p50').textContent = p50Label;
+    document.getElementById('label-p50').className  = 'font-mono text-[10px] font-bold mt-2 ' + p50Color;
+
+    // --- Semáforo p95 ---
+    const p95Color = p95 == null ? 'text-white' : p95 < 1000 ? 'text-[#10b981]' : p95 < 3000 ? 'text-yellow-400' : 'text-red-400';
+    const p95Icon  = p95 == null ? '—' : p95 < 1000 ? '🟢' : p95 < 3000 ? '🟡' : '🔴';
+    const p95Label = p95 == null ? '—' : p95 < 1000 ? 'Excelente — soporta bien la carga' : p95 < 3000 ? 'Aceptable — revisar en picos de tráfico' : 'Crítico — el servidor no soporta esta carga';
+    document.getElementById('m-p95').textContent    = p95 != null ? p95 + ' ms' : '—';
+    document.getElementById('m-p95').className      = 'metric-val ' + p95Color;
+    document.getElementById('icon-p95').textContent = p95Icon;
+    document.getElementById('label-p95').textContent = p95Label;
+    document.getElementById('label-p95').className  = 'font-mono text-[10px] font-bold mt-2 ' + p95Color;
+
+    // --- Semáforo errores ---
+    const errColor = errNum < 1 ? 'text-[#10b981]' : errNum < 5 ? 'text-yellow-400' : 'text-red-400';
+    const errIcon  = errNum < 1 ? '🟢' : errNum < 5 ? '🟡' : '🔴';
+    const errLabel = errNum < 1 ? 'Sin errores — todo funcionó correctamente' : errNum < 5 ? 'Errores menores — revisar logs del servidor' : 'Demasiados errores — el sitio falla bajo carga';
+    document.getElementById('m-errors').textContent  = errNum.toFixed(1) + '%';
+    document.getElementById('m-errors').className    = 'metric-val ' + errColor;
+    document.getElementById('icon-errors').textContent = errIcon;
+    document.getElementById('label-errors').textContent = errLabel;
+    document.getElementById('label-errors').className = 'font-mono text-[10px] font-bold mt-2 ' + errColor;
+
+    // --- Métricas secundarias ---
+    document.getElementById('m-p99').textContent         = p99 != null ? p99 + ' ms' : '—';
+    document.getElementById('m-reqs').textContent        = r.total_reqs ?? '—';
+    document.getElementById('m-vus').textContent         = r.vus ?? '—';
+    document.getElementById('cfg-dur-badge').textContent = r.duracion || '—';
+
+    // --- Config ---
+    const flujoMap = { get: 'Solo navegación (GET)', login_get: 'Con login previo + GET', login_nav: 'Con login + navegación completa' };
+    const rampMap  = { instant: 'Todos los usuarios a la vez', gradual: 'Gradual (30s de rampa)', steps: 'Escalonado' };
     document.getElementById('cfg-flujo').textContent = flujoMap[r.flujo] || r.flujo || '—';
+    document.getElementById('cfg-ramp').textContent  = rampMap[r.ramp]  || r.ramp  || '—';
+    document.getElementById('cfg-fecha').textContent = r.created_at ? new Date(r.created_at).toLocaleString('es-AR') : '—';
 
     const urlsEl = document.getElementById('cfg-urls');
     urlsEl.innerHTML = (r.urls || []).map(u =>
-        `<span class="font-mono text-[10px] text-[#10b981] bg-[#10b981]/5 border border-[#10b981]/20 px-2 py-0.5 rounded inline-block">${u}</span>`
+        `<span class="font-mono text-[10px] text-[#10b981] bg-[#10b981]/5 border border-[#10b981]/20 px-2 py-1 rounded">${u}</span>`
     ).join('');
 
-    const errNum = r.error_rate != null ? r.error_rate * 100 : 0;
+    // --- Resumen ejecutivo ---
+    const summaryCard = document.getElementById('summary-card');
+    let summaryTitle, summaryDesc, summaryIcon, summaryBorder, summaryBg;
+    if (errNum >= 5 || (p95 != null && p95 >= 3000)) {
+        summaryTitle = 'El sitio no soporta esta carga';
+        summaryDesc  = `Con ${r.vus} usuarios simultáneos el servidor presenta fallas críticas. Se recomienda optimizar antes de un lanzamiento masivo.`;
+        summaryIcon  = '🚨';
+        summaryBorder = 'border-red-500/30';
+        summaryBg    = 'bg-red-500/5';
+    } else if (errNum >= 1 || (p95 != null && p95 >= 1000)) {
+        summaryTitle = 'Rendimiento aceptable con advertencias';
+        summaryDesc  = `El sitio funciona bajo carga de ${r.vus} usuarios pero hay margen de mejora. Monitorear en horas pico.`;
+        summaryIcon  = '⚠️';
+        summaryBorder = 'border-yellow-500/30';
+        summaryBg    = 'bg-yellow-500/5';
+    } else {
+        summaryTitle = 'El sitio maneja la carga sin problemas';
+        summaryDesc  = `Con ${r.vus} usuarios simultáneos el sitio respondió de forma óptima. Tiempo típico de respuesta: ${p50}ms.`;
+        summaryIcon  = '✅';
+        summaryBorder = 'border-[#10b981]/30';
+        summaryBg    = 'bg-[#10b981]/5';
+    }
+    summaryCard.className    = `rounded-2xl p-6 border ${summaryBorder} ${summaryBg}`;
+    document.getElementById('summary-title').textContent = summaryTitle;
+    document.getElementById('summary-desc').textContent  = summaryDesc;
+    document.getElementById('summary-icon').textContent  = summaryIcon;
+
+    // --- Badge header ---
     const badge = document.getElementById('status-badge');
     badge.classList.remove('hidden');
-    if (errNum > 5) {
-        badge.textContent = `${errNum.toFixed(1)}% Errores`;
+    if (errNum > 5 || (p95 != null && p95 >= 3000)) {
+        badge.textContent = 'Carga Crítica ⚠';
         badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 self-start";
+    } else if (errNum >= 1 || (p95 != null && p95 >= 1000)) {
+        badge.textContent = 'Carga Aceptable';
+        badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 self-start";
     } else {
-        badge.textContent = "Test OK ✓";
+        badge.textContent = 'Carga Óptima ✓';
         badge.className = "font-mono px-4 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 self-start";
     }
 }
