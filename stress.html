@@ -32,6 +32,16 @@
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
         .animate-shimmer { background-size: 200% 100%; animation: shimmer 2s infinite linear; }
+
+        /* Scroll infinito sobre la captura del sitio */
+        @keyframes scroll-site {
+            0%   { transform: translateY(0); }
+            100% { transform: translateY(-60%); }
+        }
+        .scroll-infinite {
+            animation: scroll-site 18s linear infinite alternate;
+            will-change: transform;
+        }
     </style>
 </head>
 <body class="min-h-screen flex">
@@ -88,10 +98,9 @@
         </div>
 
         <!-- Screenshot placeholder animado -->
-        <div class="relative rounded-xl overflow-hidden border border-[#1a1a1a]" style="height:220px;">
+        <div class="relative rounded-xl overflow-hidden border border-[#1a1a1a]" style="height:280px;">
             <!-- Skeleton shimmer mientras no hay screenshot -->
             <div id="screenshot-skeleton" class="absolute inset-0 bg-gradient-to-r from-[#0d0d0d] via-[#1a1a1a] to-[#0d0d0d] animate-shimmer">
-                <!-- Simula elementos de UI -->
                 <div class="p-4 space-y-3">
                     <div class="h-6 bg-[#222] rounded w-1/3 animate-pulse"></div>
                     <div class="h-3 bg-[#1a1a1a] rounded w-2/3 animate-pulse"></div>
@@ -105,11 +114,12 @@
                     <div class="h-3 bg-[#1a1a1a] rounded w-1/2 animate-pulse"></div>
                 </div>
             </div>
-            <!-- Screenshot real (oculto hasta que llegue) -->
+            <!-- Screenshot real con scroll infinito animado -->
             <img id="live-screenshot" src="" alt="Captura del sitio"
-                class="hidden absolute inset-0 w-full h-full object-cover object-top">
-            <!-- Overlay con info del test encima de la captura -->
-            <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none"></div>
+                class="hidden w-full"
+                style="position:absolute; top:0; left:0; object-fit:cover; object-position:top;">
+            <!-- Overlay degradado arriba y abajo para suavizar el scroll -->
+            <div class="absolute inset-0 pointer-events-none" style="background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 15%, transparent 80%, rgba(0,0,0,0.8) 100%);"></div>
             <div class="absolute bottom-0 left-0 right-0 p-3 flex items-center justify-between">
                 <span id="live-url-label" class="font-mono text-[10px] text-white/70 truncate max-w-[60%]"></span>
                 <div class="flex items-center gap-1.5">
@@ -153,19 +163,19 @@
             </div>
         </div>
 
-        <!-- Screenshot del sitio testeado -->
+        <!-- Screenshot del sitio testeado — scrolleable -->
         <div id="screenshot-panel" class="hidden bg-tech rounded-2xl overflow-hidden border border-[#1a1a1a]">
-            <div class="relative" style="height:260px;">
-                <img id="result-screenshot" src="" alt="Captura del sitio testeado"
-                    class="w-full h-full object-cover object-top">
-                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none"></div>
-                <div class="absolute bottom-0 left-0 right-0 p-4 flex items-center justify-between">
-                    <div>
-                        <span class="font-mono text-[9px] text-white/50 uppercase tracking-widest block">Captura del sitio al momento del test</span>
-                        <span id="screenshot-url-label" class="font-mono text-[11px] text-white/80 truncate block max-w-lg"></span>
-                    </div>
-                    <span class="font-mono text-[9px] text-[#10b981] bg-[#10b981]/10 border border-[#10b981]/20 px-2 py-1 rounded uppercase">Viewport</span>
+            <!-- Header fijo con info -->
+            <div class="px-4 py-3 border-b border-[#1a1a1a] flex items-center justify-between">
+                <div>
+                    <span class="font-mono text-[9px] text-[#505050] uppercase tracking-widest block">Captura del sitio al momento del test</span>
+                    <span id="screenshot-url-label" class="font-mono text-[11px] text-white/80 truncate block max-w-lg"></span>
                 </div>
+                <span class="font-mono text-[9px] text-[#10b981] bg-[#10b981]/10 border border-[#10b981]/20 px-2 py-1 rounded uppercase shrink-0">Viewport</span>
+            </div>
+            <!-- Imagen scrolleable manualmente -->
+            <div class="overflow-y-auto custom-scroll" style="height:400px;">
+                <img id="result-screenshot" src="" alt="Captura del sitio testeado" class="w-full">
             </div>
         </div>
 
@@ -361,12 +371,14 @@ async function init() {
 
 // ---- UI states ----
 function mostrarScreenshotEnVivo(url, siteUrl) {
-    const img = document.getElementById('live-screenshot');
+    const img      = document.getElementById('live-screenshot');
     const skeleton = document.getElementById('screenshot-skeleton');
     if (!img || !url) return;
     img.onload = function() {
         skeleton.classList.add('hidden');
         img.classList.remove('hidden');
+        // Aplicar scroll infinito una vez que la imagen cargó y sabemos su alto
+        img.classList.add('scroll-infinite');
     };
     img.src = url;
 }
