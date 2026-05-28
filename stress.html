@@ -374,34 +374,49 @@ function mostrarScreenshotEnVivo(url, siteUrl) {
         skeleton.classList.add('hidden');
         img.classList.remove('hidden');
 
-        // Calcular cuánto hay que desplazar: alto de la imagen - alto del contenedor
-        const containerH = img.parentElement.offsetHeight;
-        const imgH       = img.naturalHeight * (img.offsetWidth / img.naturalWidth);
-        const travel     = Math.max(0, imgH - containerH);
+        // Usar requestAnimationFrame para asegurar que el layout ya se calculó
+        requestAnimationFrame(function() {
+            const container  = img.parentElement;
+            const containerH = container.offsetHeight;
+            const containerW = container.offsetWidth;
 
-        if (travel <= 0) return; // imagen más corta que el contenedor, no scrollear
+            // Alto real de la imagen escalada al ancho del contenedor
+            const imgH = img.naturalHeight * (containerW / img.naturalWidth);
 
-        // Velocidad: ~120px por segundo — ajustable
-        const speed    = 120;
-        const duration = Math.round(travel / speed);
+            // Desplazamiento total = todo lo que no se ve
+            const travel = Math.max(0, imgH - containerH);
 
-        // Inyectar keyframes dinámicos con el valor exacto de desplazamiento
-        const styleId = 'scroll-keyframes-dynamic';
-        let styleEl = document.getElementById(styleId);
-        if (!styleEl) {
-            styleEl = document.createElement('style');
-            styleEl.id = styleId;
-            document.head.appendChild(styleEl);
-        }
-        styleEl.textContent = `
-            @keyframes scroll-site-dynamic {
-                0%   { transform: translateY(0px); }
-                100% { transform: translateY(-${travel}px); }
+            console.log('[SCROLL] containerH:', containerH, 'imgH:', imgH, 'travel:', travel);
+
+            if (travel <= 0) return;
+
+            // Fijar el alto de la imagen para que el translateY funcione correctamente
+            img.style.width  = containerW + 'px';
+            img.style.height = imgH + 'px';
+            img.style.position = 'absolute';
+            img.style.top = '0';
+            img.style.left = '0';
+
+            // Velocidad: 80px/segundo — llega al final sin apuros
+            const speed    = 80;
+            const duration = Math.round(travel / speed);
+
+            const styleId = 'scroll-keyframes-dynamic';
+            let styleEl = document.getElementById(styleId);
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = styleId;
+                document.head.appendChild(styleEl);
             }
-        `;
+            styleEl.textContent = `
+                @keyframes scroll-site-dynamic {
+                    0%   { transform: translateY(0px); }
+                    100% { transform: translateY(-${travel}px); }
+                }
+            `;
 
-        img.style.animation = `scroll-site-dynamic ${duration}s linear infinite alternate`;
-        img.classList.add('scroll-infinite');
+            img.style.animation = `scroll-site-dynamic ${duration}s ease-in-out infinite alternate`;
+        });
     };
 
     img.src = url;
