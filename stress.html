@@ -33,13 +33,8 @@
         @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
         .animate-shimmer { background-size: 200% 100%; animation: shimmer 2s infinite linear; }
 
-        /* Scroll infinito sobre la captura del sitio */
-        @keyframes scroll-site {
-            0%   { transform: translateY(0); }
-            100% { transform: translateY(-60%); }
-        }
+        /* Scroll infinito — se aplica dinámicamente desde JS con el alto real */
         .scroll-infinite {
-            animation: scroll-site 18s linear infinite alternate;
             will-change: transform;
         }
     </style>
@@ -374,12 +369,41 @@ function mostrarScreenshotEnVivo(url, siteUrl) {
     const img      = document.getElementById('live-screenshot');
     const skeleton = document.getElementById('screenshot-skeleton');
     if (!img || !url) return;
+
     img.onload = function() {
         skeleton.classList.add('hidden');
         img.classList.remove('hidden');
-        // Aplicar scroll infinito una vez que la imagen cargó y sabemos su alto
+
+        // Calcular cuánto hay que desplazar: alto de la imagen - alto del contenedor
+        const containerH = img.parentElement.offsetHeight;
+        const imgH       = img.naturalHeight * (img.offsetWidth / img.naturalWidth);
+        const travel     = Math.max(0, imgH - containerH);
+
+        if (travel <= 0) return; // imagen más corta que el contenedor, no scrollear
+
+        // Velocidad: ~120px por segundo — ajustable
+        const speed    = 120;
+        const duration = Math.round(travel / speed);
+
+        // Inyectar keyframes dinámicos con el valor exacto de desplazamiento
+        const styleId = 'scroll-keyframes-dynamic';
+        let styleEl = document.getElementById(styleId);
+        if (!styleEl) {
+            styleEl = document.createElement('style');
+            styleEl.id = styleId;
+            document.head.appendChild(styleEl);
+        }
+        styleEl.textContent = `
+            @keyframes scroll-site-dynamic {
+                0%   { transform: translateY(0px); }
+                100% { transform: translateY(-${travel}px); }
+            }
+        `;
+
+        img.style.animation = `scroll-site-dynamic ${duration}s linear infinite alternate`;
         img.classList.add('scroll-infinite');
     };
+
     img.src = url;
 }
 
