@@ -78,6 +78,11 @@
         .nav-item.active { color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.15); }
 
         .main-scroll { overflow-y: auto; height: 100vh; }
+
+        /* Screenshot animations */
+        @keyframes shimmer-bg { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+        .animate-shimmer { background-size: 200% 100%; animation: shimmer-bg 2s infinite linear; }
+        .scroll-infinite { will-change: transform; }
         .main-scroll::-webkit-scrollbar { width: 5px; }
         .main-scroll::-webkit-scrollbar-track { background: transparent; }
         .main-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
@@ -179,6 +184,45 @@
                 </div>
             </header>
 
+            <!-- SCREENSHOT DEL SITIO -->
+            <div id="screenshot-wrapper" class="hidden bg-[#0d0d0d] border border-[#1a1a1a] rounded-2xl overflow-hidden">
+                <div id="ss-skeleton" class="animate-shimmer bg-gradient-to-r from-[#0d0d0d] via-[#1a1a1a] to-[#0d0d0d]" style="height:280px;">
+                    <div class="p-4 space-y-3">
+                        <div class="h-6 bg-[#222] rounded w-1/3 animate-pulse"></div>
+                        <div class="h-3 bg-[#1a1a1a] rounded w-2/3 animate-pulse"></div>
+                        <div class="h-3 bg-[#1a1a1a] rounded w-1/2 animate-pulse"></div>
+                        <div class="mt-4 grid grid-cols-3 gap-2">
+                            <div class="h-16 bg-[#222] rounded animate-pulse"></div>
+                            <div class="h-16 bg-[#222] rounded animate-pulse"></div>
+                            <div class="h-16 bg-[#222] rounded animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="ss-live-container" class="hidden relative overflow-hidden" style="height:280px;">
+                    <img id="ss-live-img" src="" alt="Captura del sitio"
+                        style="width:100%; position:absolute; top:0; left:0;">
+                    <div class="absolute inset-0 pointer-events-none"
+                        style="background:linear-gradient(to bottom,rgba(0,0,0,0.25) 0%,transparent 12%,transparent 82%,rgba(0,0,0,0.75) 100%);">
+                    </div>
+                    <div class="absolute bottom-0 left-0 right-0 p-3 flex items-center justify-between">
+                        <span id="ss-url-label" class="font-mono text-[10px] text-white/70 truncate max-w-[70%]"></span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#10b981]" style="animation:pulse 1.5s ease-in-out infinite;"></span>
+                            <span class="font-mono text-[9px] text-[#10b981] uppercase">Analizando</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="ss-result-container" class="hidden">
+                    <div class="px-4 py-3 border-b border-[#1a1a1a] flex items-center justify-between">
+                        <span class="font-mono text-[9px] text-[#505050] uppercase tracking-widest">Captura del sitio analizado</span>
+                        <span class="font-mono text-[9px] text-[#10b981] bg-[#10b981]/10 border border-[#10b981]/20 px-2 py-1 rounded uppercase">Full Page</span>
+                    </div>
+                    <div class="overflow-y-auto custom-scroll" style="height:400px;">
+                        <img id="ss-result-img" src="" alt="Captura completa" class="w-full">
+                    </div>
+                </div>
+            </div>
+
             <!-- KPI CARDS -->
             <div class="grid grid-cols-3 gap-4">
                 <div class="bg-tech p-5 rounded-2xl text-center">
@@ -233,7 +277,47 @@
     const SB_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
     const qaClient = supabase.createClient(SB_URL, SB_KEY);
 
-    async function init() {
+
+        function iniciarScrollScreenshot(imgUrl) {
+            const wrapper  = document.getElementById('screenshot-wrapper');
+            const skeleton = document.getElementById('ss-skeleton');
+            const liveC    = document.getElementById('ss-live-container');
+            const img      = document.getElementById('ss-live-img');
+            if (!wrapper || !img) return;
+
+            wrapper.classList.remove('hidden');
+            img.onload = function() {
+                skeleton.classList.add('hidden');
+                liveC.classList.remove('hidden');
+                requestAnimationFrame(function() {
+                    const containerH = liveC.offsetHeight;
+                    const containerW = liveC.offsetWidth;
+                    const imgH = img.naturalHeight * (containerW / img.naturalWidth);
+                    const travel = Math.max(0, imgH - containerH);
+                    console.log('[LINKS SCROLL] containerH:', containerH, 'imgH:', imgH, 'travel:', travel);
+                    if (travel <= 0) return;
+                    img.style.height = imgH + 'px';
+                    const duration = Math.round(travel / 80);
+                    const styleId = 'links-scroll-keyframes';
+                    let styleEl = document.getElementById(styleId);
+                    if (!styleEl) {
+                        styleEl = document.createElement('style');
+                        styleEl.id = styleId;
+                        document.head.appendChild(styleEl);
+                    }
+                    styleEl.textContent = [
+                        '@keyframes links-scroll {',
+                        '  0%   { transform: translateY(0px); }',
+                        '  100% { transform: translateY(-' + travel + 'px); }',
+                        '}'
+                    ].join('\n');
+                    img.style.animation = 'links-scroll ' + duration + 's ease-in-out infinite alternate';
+                });
+            };
+            img.src = imgUrl;
+        }
+
+        async function init() {
         const { data: { user } } = await qaClient.auth.getUser();
         if (!user) { window.location.href = 'login.html'; return; }
 
@@ -243,6 +327,10 @@
             document.getElementById('url-auditada').textContent = '⏳ Ejecutando análisis de links...';
             const url        = sessionStorage.getItem('qavision_last_prod');
             const credId     = sessionStorage.getItem('qavision_selected_cred_id') || null;
+
+            // Mostrar skeleton del screenshot
+            document.getElementById('screenshot-wrapper').classList.remove('hidden');
+            document.getElementById('ss-url-label').textContent = url || '';
             const maxElem    = parseInt(sessionStorage.getItem('qavision_links_max') || '50');
             const tiposRaw   = sessionStorage.getItem('qavision_links_tipos');
             const tipos      = tiposRaw ? JSON.parse(tiposRaw) : ["a","button","role_button","role_link","input_submit","onclick"];
@@ -262,6 +350,15 @@
                     body: JSON.stringify({ url, user_id: user.id, cred_id: credId, max_elementos: maxElem, tipos })
                 });
                 if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
+
+                // Leer screenshot_url de la respuesta si el engine lo devuelve
+                try {
+                    const data = await response.clone().json();
+                    if (data.screenshot_url) {
+                        iniciarScrollScreenshot(data.screenshot_url);
+                    }
+                } catch(_) {}
+
                 await new Promise(resolve => setTimeout(resolve, 2000));
             } catch (error) {
                 document.getElementById('url-auditada').textContent = `❌ Error: ${error.message}`;
@@ -285,6 +382,22 @@
         }
 
         const registro = data[0];
+
+        // Screenshot en modo resultado (scrolleable)
+        if (registro.screenshot_url) {
+            const wrapper = document.getElementById('screenshot-wrapper');
+            const skeleton = document.getElementById('ss-skeleton');
+            const liveC = document.getElementById('ss-live-container');
+            const resultC = document.getElementById('ss-result-container');
+            const resultImg = document.getElementById('ss-result-img');
+            if (wrapper && resultC && resultImg) {
+                wrapper.classList.remove('hidden');
+                if (skeleton) skeleton.classList.add('hidden');
+                if (liveC) liveC.classList.add('hidden');
+                resultImg.src = registro.screenshot_url;
+                resultC.classList.remove('hidden');
+            }
+        }
         const reporte  = registro.reporte || [];
 
         document.getElementById('url-auditada').textContent = registro.url_auditada || '';
