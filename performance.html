@@ -340,6 +340,7 @@
         if (!user) { window.location.href = 'login.html'; return; }
 
         const shouldTrigger = sessionStorage.getItem('qavision_trigger_test') === 'true';
+        let runOk = true;
 
         if (shouldTrigger) {
             document.getElementById('url-auditada').textContent = '⏳ Ejecutando análisis de performance...';
@@ -361,11 +362,18 @@
                 if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
                 await new Promise(resolve => setTimeout(resolve, 2000));
             } catch (error) {
-                document.getElementById('url-auditada').textContent = `❌ Error: ${error.message}`;
+                runOk = false;
+                document.getElementById('url-auditada').textContent = `❌ Falló la auditoría de: ${url || '(sin URL)'} — ${error.message}`;
+                const badge = document.getElementById('status-badge');
+                if (badge) badge.textContent = 'ERROR';
             }
         }
 
-        await cargarReporte(user.id);
+        // Sólo cargamos el último registro de la BD si NO fue una corrida
+        // disparada, o si esa corrida salió bien (evita mostrar data vieja).
+        if (!shouldTrigger || runOk) {
+            await cargarReporte(user.id);
+        }
     }
 
     async function cargarReporte(userId) {
