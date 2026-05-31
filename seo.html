@@ -297,7 +297,7 @@
             if (document.getElementById('ss-scan-style')) return;
             const st = document.createElement('style');
             st.id = 'ss-scan-style';
-            st.textContent = '#screenshot-wrapper .ss-scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#10b981 20%,#34d399 50%,#10b981 80%,transparent);box-shadow:0 0 14px 3px rgba(16,185,129,.6);z-index:6;pointer-events:none;top:0;opacity:0;}#screenshot-wrapper.scanning .ss-scanline{animation:ss-scan 1.8s linear infinite;}@keyframes ss-scan{0%{top:0;opacity:0}8%{opacity:1}92%{opacity:1}100%{top:100%;opacity:0}}';
+            st.textContent = '#screenshot-wrapper .ss-scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#10b981 20%,#34d399 50%,#10b981 80%,transparent);box-shadow:0 0 14px 3px rgba(16,185,129,.6);z-index:6;pointer-events:none;top:0;opacity:0;}#screenshot-wrapper.scanning .ss-scanline{animation:ss-scan 1.8s linear infinite;}@keyframes ss-scan{0%{top:0;opacity:0}8%{opacity:1}92%{opacity:1}100%{top:100%;opacity:0}}.ss-scrollable{overflow-y:auto !important;scrollbar-width:thin;scrollbar-color:#10b981 #0d0d0d;}.ss-scrollable::-webkit-scrollbar{width:10px;}.ss-scrollable::-webkit-scrollbar-thumb{background:#10b981;border-radius:5px;}.ss-scrollable::-webkit-scrollbar-thumb:hover{background:#34d399;}.ss-scrollable::-webkit-scrollbar-track{background:#0d0d0d;}';
             document.head.appendChild(st);
         }
         function iniciarScan() {
@@ -315,6 +315,8 @@
         function detenerScan() {
             const wrapper = document.getElementById('screenshot-wrapper');
             if (wrapper) wrapper.classList.remove('scanning');
+            const img = document.getElementById('ss-live-img');
+            if (img) img.style.animation = 'none';   // frena el auto-scroll al terminar
         }
 
         async function mostrarPreview(url, credId) {
@@ -361,7 +363,7 @@
                 const travel = Math.max(0, imgH - containerH);
                 if (travel <= 0) return;
                 img.style.height = imgH + 'px';
-                const duration = Math.max(2, Math.round(travel / 160));
+                const duration = Math.max(2, Math.round(travel / 120));
                 const styleId = 'ss-scroll-keyframes';
                 let styleEl = document.getElementById(styleId);
                 if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = styleId; document.head.appendChild(styleEl); }
@@ -371,6 +373,25 @@
         };
         img.src = imgUrl;
     }
+
+        function finalizarPreview(resultUrl) {
+            detenerScan();
+            const liveC = document.getElementById('ss-live-container');
+            const skeleton = document.getElementById('ss-skeleton');
+            const img = document.getElementById('ss-live-img');
+            if (!liveC || !img) return;
+            if (skeleton) skeleton.classList.add('hidden');
+            liveC.classList.remove('hidden');
+            // Imagen del resultado (página completa) en scroll MANUAL con barra verde:
+            img.style.animation = 'none';
+            img.style.transform = 'none';
+            img.style.position = 'static';
+            img.style.height = 'auto';
+            img.style.width = '100%';
+            if (resultUrl) img.src = resultUrl;
+            liveC.style.height = '480px';   // resultado completo, más alto que la preview
+            liveC.classList.add('ss-scrollable');
+        }
 
     async function init() {
         const { data: { user } } = await qaClient.auth.getUser();
@@ -391,8 +412,8 @@
             sessionStorage.removeItem('qavision_selected_cred_id');
             sessionStorage.removeItem('qavision_seo_detalle'); // limpiar detalle anterior
 
-            // PREVIEW PRIMERO: mostramos la captura antes de correr el test.
-            await mostrarPreview(url, credId);
+            // PREVIEW EN PARALELO: no bloquea el test; la imagen aparece cuando esté lista.
+            mostrarPreview(url, credId);
 
             try {
                 const response = await fetch('https://qavision-qavision-engine.hf.space/api/seo', {
@@ -412,6 +433,7 @@
                         botones_sin_etiqueta_detalle: r.botones_sin_etiqueta_detalle || [],
                     };
                     sessionStorage.setItem('qavision_seo_detalle', JSON.stringify(detalle));
+                    if (engineData.screenshot_url) finalizarPreview(engineData.screenshot_url);
                 } catch(_) {}
                 await new Promise(resolve => setTimeout(resolve, 2000));
             } catch (error) {
