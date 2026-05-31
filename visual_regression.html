@@ -258,6 +258,7 @@
             if (!user) { window.location.href = 'login.html'; return; }
 
             const shouldTrigger = sessionStorage.getItem('qavision_trigger_test') === 'true';
+            let runOk = true;
 
             if (shouldTrigger) {
                 document.getElementById('sub-header').textContent = '⏳ Ejecutando análisis en el backend...';
@@ -289,7 +290,7 @@
                 } catch (error) {
                     const sh = document.getElementById('sub-header');
                     sh.textContent = `❌ Error de conexión: ${error.message}`;
-                    sh.className = "font-mono text-xs text-red-500";
+                    sh.className = "font-mono text-xs text-red-500"; runOk = false;
                 }
             } else {
                 document.getElementById('sub-header').textContent = 'Consultando historial de auditorías...';
@@ -301,7 +302,7 @@
                 .eq('user_id', user.id)
                 .order('creado_el', { ascending: false });
 
-            if (!error && data) {
+            if ((!shouldTrigger || runOk) && !error && data) {
                 allData = data;
                 // Asociar css_diffs de sessionStorage a la auditoría más reciente (índice 0)
                 try {
