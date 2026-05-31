@@ -186,7 +186,7 @@
 
             <!-- SCREENSHOT DEL SITIO -->
             <div id="screenshot-wrapper" class="hidden bg-[#0d0d0d] border border-[#1a1a1a] rounded-2xl overflow-hidden">
-                <div id="ss-skeleton" class="animate-shimmer bg-gradient-to-r from-[#0d0d0d] via-[#1a1a1a] to-[#0d0d0d]" style="height:280px;">
+                <div id="ss-skeleton" class="animate-shimmer bg-gradient-to-r from-[#0d0d0d] via-[#1a1a1a] to-[#0d0d0d]" style="height:210px;">
                     <div class="p-4 space-y-3">
                         <div class="h-6 bg-[#222] rounded w-1/3 animate-pulse"></div>
                         <div class="h-3 bg-[#1a1a1a] rounded w-2/3 animate-pulse"></div>
@@ -198,7 +198,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="ss-live-container" class="hidden relative overflow-hidden" style="height:280px;">
+                <div id="ss-live-container" class="hidden relative overflow-hidden" style="height:210px;">
                     <img id="ss-live-img" src="" alt="Captura del sitio"
                         style="width:100%; position:absolute; top:0; left:0;">
                     <div class="absolute inset-0 pointer-events-none"
@@ -217,7 +217,7 @@
                         <span class="font-mono text-[9px] text-[#505050] uppercase tracking-widest">Captura del sitio analizado</span>
                         <span class="font-mono text-[9px] text-[#10b981] bg-[#10b981]/10 border border-[#10b981]/20 px-2 py-1 rounded uppercase">Full Page</span>
                     </div>
-                    <div class="overflow-y-auto custom-scroll" style="height:400px;">
+                    <div class="overflow-y-auto custom-scroll" style="height:300px;">
                         <img id="ss-result-img" src="" alt="Captura completa" class="w-full">
                     </div>
                 </div>
@@ -278,6 +278,31 @@
     const qaClient = supabase.createClient(SB_URL, SB_KEY);
 
 
+        // Llama a /api/preview para capturar y mostrar la imagen ANTES del test.
+        // Devuelve la screenshot_url (o null) para reusarla en el test real.
+        async function mostrarPreview(url, credId) {
+            const wrapper  = document.getElementById('screenshot-wrapper');
+            const skeleton = document.getElementById('ss-skeleton');
+            const liveC    = document.getElementById('ss-live-container');
+            if (wrapper)  wrapper.classList.remove('hidden');
+            if (skeleton) skeleton.classList.remove('hidden');
+            if (liveC)    liveC.classList.add('hidden');
+            const lbl = document.getElementById('ss-url-label');
+            if (lbl) lbl.textContent = url || '';
+            try {
+                const resp = await fetch('https://qavision-qavision-engine.hf.space/api/preview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, cred_id: credId })
+                });
+                if (resp.ok) {
+                    const d = await resp.json();
+                    if (d.screenshot_url) { iniciarScrollScreenshot(d.screenshot_url); return d.screenshot_url; }
+                }
+            } catch (_) {}
+            return null;
+        }
+
         function iniciarScrollScreenshot(imgUrl) {
             const wrapper  = document.getElementById('screenshot-wrapper');
             const skeleton = document.getElementById('ss-skeleton');
@@ -297,7 +322,7 @@
                     console.log('[LINKS SCROLL] containerH:', containerH, 'imgH:', imgH, 'travel:', travel);
                     if (travel <= 0) return;
                     img.style.height = imgH + 'px';
-                    const duration = Math.round(travel / 80);
+                    const duration = Math.max(2, Math.round(travel / 160));
                     const styleId = 'links-scroll-keyframes';
                     let styleEl = document.getElementById(styleId);
                     if (!styleEl) {
@@ -344,23 +369,18 @@
             sessionStorage.removeItem('qavision_links_max');
             sessionStorage.removeItem('qavision_links_tipos');
 
+            // PREVIEW PRIMERO: capturamos y mostramos la imagen antes del test.
+            const previewUrl = await mostrarPreview(url, credId);
+
             try {
                 const response = await fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url, user_id: user.id, cred_id: credId, max_elementos: maxElem, tipos })
+                    body: JSON.stringify({ url, user_id: user.id, cred_id: credId, max_elementos: maxElem, tipos, screenshot_url: previewUrl })
                 });
                 if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
 
-                // Leer screenshot_url de la respuesta si el engine lo devuelve
-                try {
-                    const data = await response.clone().json();
-                    if (data.screenshot_url) {
-                        iniciarScrollScreenshot(data.screenshot_url);
-                    }
-                } catch(_) {}
-
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                await new Promise(resolve => setTimeout(resolve, 1500));
             } catch (error) {
                 runOk = false;
                 document.getElementById('url-auditada').textContent = `❌ Falló la auditoría de: ${url || '(sin URL)'} — ${error.message}`;
