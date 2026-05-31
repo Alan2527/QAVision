@@ -6,6 +6,7 @@
     <title>QAVision — SEO Audit</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="qa-preview.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -160,6 +161,10 @@
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
                 <span class="hidden md:inline">Mass Execution</span>
             </a>
+            <a href="stress.html" class="nav-item">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12a8 8 0 01-8 8m8-8a8 8 0 00-8-8m8 8H4"/></svg>
+                <span class="hidden md:inline">Stress Test</span>
+            </a>
         </nav>
 
         <div class="mt-6 pt-4 border-t border-[#1a1a1a]">
@@ -186,15 +191,8 @@
             </header>
 
             <!-- SCREENSHOT DEL SITIO (preview antes del test) -->
-            <div id="screenshot-wrapper" class="hidden bg-[#0d0d0d] border border-[#1a1a1a] rounded-2xl overflow-hidden">
-                <div class="px-4 py-2 border-b border-[#1a1a1a] flex items-center justify-between">
-                    <span class="font-mono text-[9px] text-[#505050] uppercase tracking-widest">Captura del sitio analizado</span>
-                    <span id="ss-url-label" class="font-mono text-[9px] text-white/60 truncate max-w-[60%]"></span>
-                </div>
-                <div id="ss-skeleton" class="animate-pulse bg-gradient-to-r from-[#0d0d0d] via-[#1a1a1a] to-[#0d0d0d]" style="height:210px;"></div>
-                <div id="ss-live-container" class="hidden relative overflow-hidden" style="height:210px;">
-                    <img id="ss-live-img" src="" alt="Captura del sitio" style="width:100%; position:absolute; top:0; left:0;">
-                </div>
+            <div id="screenshot-wrapper" class="hidden">
+                <div id="qa-preview" style="height:420px;"></div>
             </div>
 
             <!-- KPI CARDS -->
@@ -292,106 +290,17 @@
     }
 
     
-        // --- Línea de escaneo verde sobre la preview ---
-        function asegurarScanStyle() {
-            if (document.getElementById('ss-scan-style')) return;
-            const st = document.createElement('style');
-            st.id = 'ss-scan-style';
-            st.textContent = '#screenshot-wrapper .ss-scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#10b981 20%,#34d399 50%,#10b981 80%,transparent);box-shadow:0 0 14px 3px rgba(16,185,129,.6);z-index:6;pointer-events:none;top:0;opacity:0;}#screenshot-wrapper.scanning .ss-scanline{animation:ss-scan 1.8s linear infinite;}@keyframes ss-scan{0%{top:0;opacity:0}8%{opacity:1}92%{opacity:1}100%{top:100%;opacity:0}}.ss-scrollable{overflow-y:auto !important;scrollbar-width:thin;scrollbar-color:#10b981 #0d0d0d;}.ss-scrollable::-webkit-scrollbar{width:10px;}.ss-scrollable::-webkit-scrollbar-thumb{background:#10b981;border-radius:5px;}.ss-scrollable::-webkit-scrollbar-thumb:hover{background:#34d399;}.ss-scrollable::-webkit-scrollbar-track{background:#0d0d0d;}';
-            document.head.appendChild(st);
+        // --- Preview de escaneo (delega en el componente cliente qa-preview.js) ---
+        function asegurarScanStyle() {}
+        function iniciarScan() {}
+        function detenerScan() {}
+        function iniciarScrollScreenshot(imgUrl) { if (window.QAPreview) QAPreview.finish('qa-preview', imgUrl); }
+        function mostrarPreview(url, credId) {
+            const w = document.getElementById('screenshot-wrapper');
+            if (w) w.classList.remove('hidden');
+            if (window.QAPreview) QAPreview.start('qa-preview', url);
         }
-        function iniciarScan() {
-            asegurarScanStyle();
-            const wrapper = document.getElementById('screenshot-wrapper');
-            const liveC = document.getElementById('ss-live-container');
-            if (!wrapper || !liveC) return;
-            if (!liveC.querySelector('.ss-scanline')) {
-                const line = document.createElement('div');
-                line.className = 'ss-scanline';
-                liveC.appendChild(line);
-            }
-            wrapper.classList.add('scanning');
-        }
-        function detenerScan() {
-            const wrapper = document.getElementById('screenshot-wrapper');
-            if (wrapper) wrapper.classList.remove('scanning');
-            const img = document.getElementById('ss-live-img');
-            if (img) img.style.animation = 'none';   // frena el auto-scroll al terminar
-        }
-
-        async function mostrarPreview(url, credId) {
-        const wrapper  = document.getElementById('screenshot-wrapper');
-        const skeleton = document.getElementById('ss-skeleton');
-        const liveC    = document.getElementById('ss-live-container');
-        if (wrapper)  wrapper.classList.remove('hidden');
-        if (skeleton) skeleton.classList.remove('hidden');
-        if (liveC)    liveC.classList.add('hidden');
-        const lbl = document.getElementById('ss-url-label');
-        if (lbl) lbl.textContent = url || '';
-        try {
-            const ctrl = new AbortController();
-            const to = setTimeout(() => ctrl.abort(), 40000);  // tope: no colgar el test
-            const resp = await fetch('https://qavision-qavision-engine.hf.space/api/preview', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, cred_id: credId }),
-                signal: ctrl.signal
-            });
-            clearTimeout(to);
-            if (resp.ok) {
-                const d = await resp.json();
-                if (d.screenshot_url) { iniciarScrollScreenshot(d.screenshot_url); return d.screenshot_url; }
-            }
-        } catch (_) {}
-        return null;
-    }
-
-    function iniciarScrollScreenshot(imgUrl) {
-        const wrapper  = document.getElementById('screenshot-wrapper');
-        const skeleton = document.getElementById('ss-skeleton');
-        const liveC    = document.getElementById('ss-live-container');
-        const img      = document.getElementById('ss-live-img');
-        if (!wrapper || !img) return;
-        wrapper.classList.remove('hidden');
-        img.onload = function() {
-            if (skeleton) skeleton.classList.add('hidden');
-            if (liveC) liveC.classList.remove('hidden'); iniciarScan();
-            requestAnimationFrame(function() {
-                const containerH = liveC.offsetHeight;
-                const containerW = liveC.offsetWidth;
-                const imgH = img.naturalHeight * (containerW / img.naturalWidth);
-                const travel = Math.max(0, imgH - containerH);
-                if (travel <= 0) return;
-                img.style.height = imgH + 'px';
-                const duration = Math.max(2, Math.round(travel / 120));
-                const styleId = 'ss-scroll-keyframes';
-                let styleEl = document.getElementById(styleId);
-                if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = styleId; document.head.appendChild(styleEl); }
-                styleEl.textContent = '@keyframes ss-scroll { 0% { transform: translateY(0px);} 100% { transform: translateY(-' + travel + 'px);} }';
-                img.style.animation = 'ss-scroll ' + duration + 's ease-in-out infinite alternate';
-            });
-        };
-        img.src = imgUrl;
-    }
-
-        function finalizarPreview(resultUrl) {
-            detenerScan();
-            const liveC = document.getElementById('ss-live-container');
-            const skeleton = document.getElementById('ss-skeleton');
-            const img = document.getElementById('ss-live-img');
-            if (!liveC || !img) return;
-            if (skeleton) skeleton.classList.add('hidden');
-            liveC.classList.remove('hidden');
-            // Imagen del resultado (página completa) en scroll MANUAL con barra verde:
-            img.style.animation = 'none';
-            img.style.transform = 'none';
-            img.style.position = 'static';
-            img.style.height = 'auto';
-            img.style.width = '100%';
-            if (resultUrl) img.src = resultUrl;
-            liveC.style.height = '480px';   // resultado completo, más alto que la preview
-            liveC.classList.add('ss-scrollable');
-        }
+        function finalizarPreview(resultUrl) { if (window.QAPreview) QAPreview.finish('qa-preview', resultUrl); }
 
     async function init() {
         const { data: { user } } = await qaClient.auth.getUser();
