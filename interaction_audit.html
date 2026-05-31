@@ -322,6 +322,7 @@
         if (!user) { window.location.href = 'login.html'; return; }
 
         const shouldTrigger = sessionStorage.getItem('qavision_trigger_test') === 'true';
+        let runOk = true;
 
         if (shouldTrigger) {
             document.getElementById('url-auditada').textContent = '⏳ Ejecutando análisis de links...';
@@ -361,11 +362,26 @@
 
                 await new Promise(resolve => setTimeout(resolve, 2000));
             } catch (error) {
-                document.getElementById('url-auditada').textContent = `❌ Error: ${error.message}`;
+                runOk = false;
+                document.getElementById('url-auditada').textContent = `❌ Falló la auditoría de: ${url || '(sin URL)'} — ${error.message}`;
+                const badge = document.getElementById('status-badge');
+                if (badge) badge.textContent = 'ERROR';
+                const tabla = document.getElementById('lista-elementos');
+                if (tabla) tabla.innerHTML = '';
+                ['stat-total','stat-obstruidos','stat-ok'].forEach(id => {
+                    const el = document.getElementById(id); if (el) el.textContent = '-';
+                });
+                document.getElementById('screenshot-wrapper')?.classList.add('hidden');
+                document.getElementById('empty-state')?.classList.add('hidden');
             }
         }
 
-        await cargarReporte(user.id);
+        // Sólo cargamos el último registro de la BD si NO fue una corrida
+        // disparada, o si esa corrida salió bien. Así un fallo (401, timeout,
+        // 500, etc.) nunca muestra el resultado anterior como si fuera nuevo.
+        if (!shouldTrigger || runOk) {
+            await cargarReporte(user.id);
+        }
     }
 
     async function cargarReporte(userId) {
