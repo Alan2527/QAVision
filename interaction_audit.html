@@ -280,6 +280,32 @@
 
         // Llama a /api/preview para capturar y mostrar la imagen ANTES del test.
         // Devuelve la screenshot_url (o null) para reusarla en el test real.
+        
+        // --- Línea de escaneo verde sobre la preview ---
+        function asegurarScanStyle() {
+            if (document.getElementById('ss-scan-style')) return;
+            const st = document.createElement('style');
+            st.id = 'ss-scan-style';
+            st.textContent = '#screenshot-wrapper .ss-scanline{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#10b981 20%,#34d399 50%,#10b981 80%,transparent);box-shadow:0 0 14px 3px rgba(16,185,129,.6);z-index:6;pointer-events:none;top:0;opacity:0;}#screenshot-wrapper.scanning .ss-scanline{animation:ss-scan 1.8s linear infinite;}@keyframes ss-scan{0%{top:0;opacity:0}8%{opacity:1}92%{opacity:1}100%{top:100%;opacity:0}}';
+            document.head.appendChild(st);
+        }
+        function iniciarScan() {
+            asegurarScanStyle();
+            const wrapper = document.getElementById('screenshot-wrapper');
+            const liveC = document.getElementById('ss-live-container');
+            if (!wrapper || !liveC) return;
+            if (!liveC.querySelector('.ss-scanline')) {
+                const line = document.createElement('div');
+                line.className = 'ss-scanline';
+                liveC.appendChild(line);
+            }
+            wrapper.classList.add('scanning');
+        }
+        function detenerScan() {
+            const wrapper = document.getElementById('screenshot-wrapper');
+            if (wrapper) wrapper.classList.remove('scanning');
+        }
+
         async function mostrarPreview(url, credId) {
             const wrapper  = document.getElementById('screenshot-wrapper');
             const skeleton = document.getElementById('ss-skeleton');
@@ -290,11 +316,15 @@
             const lbl = document.getElementById('ss-url-label');
             if (lbl) lbl.textContent = url || '';
             try {
+                const ctrl = new AbortController();
+                const to = setTimeout(() => ctrl.abort(), 40000);  // tope: no colgar el test
                 const resp = await fetch('https://qavision-qavision-engine.hf.space/api/preview', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url, cred_id: credId })
+                    body: JSON.stringify({ url, cred_id: credId }),
+                    signal: ctrl.signal
                 });
+                clearTimeout(to);
                 if (resp.ok) {
                     const d = await resp.json();
                     if (d.screenshot_url) { iniciarScrollScreenshot(d.screenshot_url); return d.screenshot_url; }
@@ -313,7 +343,7 @@
             wrapper.classList.remove('hidden');
             img.onload = function() {
                 skeleton.classList.add('hidden');
-                liveC.classList.remove('hidden');
+                liveC.classList.remove('hidden'); iniciarScan();
                 requestAnimationFrame(function() {
                     const containerH = liveC.offsetHeight;
                     const containerW = liveC.offsetWidth;
@@ -402,6 +432,7 @@
         if (!shouldTrigger || runOk) {
             await cargarReporte(user.id);
         }
+        detenerScan();
     }
 
     async function cargarReporte(userId) {
