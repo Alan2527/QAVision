@@ -6,6 +6,7 @@
     <title>QAVision — Visual Regression</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="qa-preview.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -171,6 +172,11 @@
                 </div>
             </header>
 
+            <!-- SKELETON DE ESCANEO (durante el test) -->
+            <div id="qa-preview-wrap" class="hidden mb-6">
+                <div id="qa-preview" style="height:440px;"></div>
+            </div>
+
             <!-- ROW 1: Diff image + CSS Diffs side by side -->
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
@@ -276,6 +282,9 @@
                 sessionStorage.removeItem('qavision_trigger_test');
                 sessionStorage.removeItem('qavision_selected_cred_id');
 
+                document.getElementById('qa-preview-wrap')?.classList.remove('hidden');
+                if (window.QAPreview) QAPreview.start('qa-preview', urlProd || urlStage);
+
                 try {
                     const response = await fetch('https://qavision-qavision-engine.hf.space/api/comparar', {
                         method: 'POST',
@@ -295,6 +304,7 @@
                     const sh = document.getElementById('sub-header');
                     sh.textContent = `❌ Error de conexión: ${error.message}`;
                     sh.className = "font-mono text-xs text-red-500"; runOk = false;
+                    if (window.QAPreview) QAPreview.fail('qa-preview', error.message);
                 }
             } else {
                 document.getElementById('sub-header').textContent = 'Consultando historial de auditorías...';
@@ -318,6 +328,7 @@
         }
 
         function renderizarResultados(data) {
+            document.getElementById('qa-preview-wrap')?.classList.add('hidden');
             if (!data || data.length === 0) {
                 document.getElementById('sub-header').innerText = "Sin auditorías registradas.";
                 document.getElementById('badge').style.display = "none";
