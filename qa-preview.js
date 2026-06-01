@@ -35,7 +35,7 @@
       ".qap-body{position:relative;width:100%;height:calc(100% - 35px);overflow:hidden;}",
       // Skeleton shimmer
       ".qap-sk{position:absolute;inset:0;padding:18px;display:flex;flex-direction:column;gap:14px;}",
-      ".qap-block{border-radius:8px;background:linear-gradient(100deg,#141414 30%,#1f1f1f 50%,#141414 70%);background-size:200% 100%;animation:qap-shimmer 1.6s linear infinite;}",
+      ".qap-block{border-radius:8px;background:linear-gradient(100deg,#1c1c1c 30%,#2e2e2e 50%,#1c1c1c 70%);background-size:200% 100%;animation:qap-shimmer 1.6s linear infinite;}",
       "@keyframes qap-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}",
       // Línea de escaneo
       ".qap-scan{position:absolute;left:0;right:0;height:2px;top:0;z-index:6;pointer-events:none;background:linear-gradient(90deg,transparent,"+VERDE+" 20%,"+VERDE2+" 50%,"+VERDE+" 80%,transparent);box-shadow:0 0 16px 3px rgba(16,185,129,.55);animation:qap-scan 2.6s ease-in-out infinite;}",
