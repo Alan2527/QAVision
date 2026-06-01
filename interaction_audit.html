@@ -427,6 +427,11 @@
         document.getElementById('stat-ok').innerText         = reporte.length - obs;
 
         // Marcado amarillo sobre la captura + click en fila para enfocar.
+        const totalObstruidos = reporte.filter(r => r.obstruido).length;
+        console.log(`[LINKS] obstruidos=${totalObstruidos} | con coords (marcables)=${markerItems.length}`);
+        if (totalObstruidos > 0 && markerItems.length === 0) {
+            console.warn('[LINKS] Hay obstruidos pero SIN coordenadas → este reporte es de una corrida vieja (sin x/y/w/h). Re-corré el Link Scanner con el app.py nuevo en el Space.');
+        }
         if (registro.screenshot_url && window.QAPreview && markerItems.length) {
             // markers() llena 'mapa' cuando la imagen termina de cargar (async),
             // así que la caja se resuelve al CLICK, no acá.
