@@ -428,12 +428,15 @@
 
         // Marcado amarillo sobre la captura + click en fila para enfocar.
         if (registro.screenshot_url && window.QAPreview && markerItems.length) {
+            // markers() llena 'mapa' cuando la imagen termina de cargar (async),
+            // así que la caja se resuelve al CLICK, no acá.
             const mapa = QAPreview.markers('qa-preview', markerItems);
             Object.keys(filasPorId).forEach(id => {
                 const fila = filasPorId[id];
-                const caja = mapa[id];
-                if (!fila || !caja) return;
+                if (!fila) return;
                 fila.addEventListener('click', () => {
+                    const caja = mapa[id];
+                    if (!caja) return;
                     QAPreview.focusMarker('qa-preview', caja);
                     document.getElementById('screenshot-wrapper')
                         ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
