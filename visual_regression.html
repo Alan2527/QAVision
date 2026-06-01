@@ -292,13 +292,17 @@
                         body: JSON.stringify({ url_a: urlStage, url_b: urlProd, user_id: user.id, cred_id: credId })
                     });
                     if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
-                    // Capturar css_diffs de la respuesta del engine
+                    // Capturar css_diffs de la respuesta del engine.
+                    // Guardamos SIEMPRE (aunque sea []), así un run sin diferencias
+                    // no deja colgadas las diferencias de un test anterior.
                     try {
                         const engineData = await response.clone().json();
-                        if (engineData.css_diffs && engineData.css_diffs.length > 0) {
-                            sessionStorage.setItem('qavision_vrt_css_diffs', JSON.stringify(engineData.css_diffs));
-                        }
-                    } catch(_) {}
+                        const cssNuevos = (engineData && Array.isArray(engineData.css_diffs))
+                            ? engineData.css_diffs : [];
+                        sessionStorage.setItem('qavision_vrt_css_diffs', JSON.stringify(cssNuevos));
+                    } catch(_) {
+                        sessionStorage.setItem('qavision_vrt_css_diffs', '[]');
+                    }
                     await new Promise(resolve => setTimeout(resolve, 2000));
                 } catch (error) {
                     const sh = document.getElementById('sub-header');
@@ -318,11 +322,18 @@
 
             if ((!shouldTrigger || runOk) && !error && data) {
                 allData = data;
-                // Asociar css_diffs de sessionStorage a la auditoría más reciente (índice 0)
-                try {
-                    const raw = sessionStorage.getItem('qavision_vrt_css_diffs');
-                    if (raw) { cssDiffsCache[0] = JSON.parse(raw); }
-                } catch(_) {}
+                // Sólo asociamos css_diffs al ítem recién corrido (índice 0) si en
+                // ESTA carga se ejecutó un test. Si sólo estamos viendo historial,
+                // no hay css_diffs disponibles para ítems viejos (no se persisten).
+                cssDiffsCache = {};
+                if (shouldTrigger && runOk) {
+                    try {
+                        const raw = sessionStorage.getItem('qavision_vrt_css_diffs');
+                        cssDiffsCache[0] = raw ? JSON.parse(raw) : [];
+                    } catch(_) { cssDiffsCache[0] = []; }
+                }
+                // Consumimos la clave para que un reload posterior no la reaproveche.
+                sessionStorage.removeItem('qavision_vrt_css_diffs');
                 renderizarResultados(data);
             }
         }
