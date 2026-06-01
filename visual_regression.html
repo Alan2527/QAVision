@@ -284,6 +284,16 @@
                 sessionStorage.removeItem('qavision_trigger_test');
                 sessionStorage.removeItem('qavision_selected_cred_id');
 
+                console.log('[VRT] disparo →', { urlStage, urlProd, credId });
+
+                // Si faltan las URLs no disparamos: evita el 422 y avisamos claro.
+                if (!urlStage || !urlProd) {
+                    const sh = document.getElementById('sub-header');
+                    sh.textContent = '❌ Faltan las URLs de Staging/Producción. Volvé al panel y reconfigurá el test.';
+                    sh.className = "font-mono text-xs text-red-500"; runOk = false;
+                    if (window.QAPreview) QAPreview.fail('qa-preview', 'Faltan las URLs del test');
+                } else {
+
                 document.getElementById('qa-preview-wrap')?.classList.remove('hidden');
                 if (window.QAPreview) QAPreview.start('qa-preview', urlProd || urlStage);
 
@@ -312,6 +322,7 @@
                     sh.className = "font-mono text-xs text-red-500"; runOk = false;
                     if (window.QAPreview) QAPreview.fail('qa-preview', error.message);
                 }
+                } // cierre del guard de URLs presentes
             } else {
                 document.getElementById('sub-header').textContent = 'Consultando historial de auditorías...';
             }
