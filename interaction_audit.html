@@ -351,9 +351,11 @@
 
         const tabla = document.getElementById('lista-elementos');
         let obs = 0;
+        const markerItems = [];   // {id,x,y,w,h} de cada obstruido con coords
+        const filasPorId  = {};   // id -> fila <tr> para resaltar al dibujar
 
         tabla.innerHTML = '';
-        reporte.forEach(item => {
+        reporte.forEach((item, idx) => {
             if (item.obstruido) obs++;
 
             const esSinEtiqueta = !item.texto || item.texto.startsWith('[');
@@ -391,6 +393,18 @@
 
             const tr = document.createElement('tr');
             tr.className = "link-row";
+
+            // Si está obstruido y tiene coordenadas, lo registramos como marcador
+            // amarillo sobre la captura y hacemos la fila clickeable para enfocarlo.
+            const tieneCoords = item.obstruido &&
+                item.x != null && item.y != null && item.w && item.h;
+            if (tieneCoords) {
+                markerItems.push({ id: idx, x: item.x, y: item.y, w: item.w, h: item.h });
+                filasPorId[idx] = tr;
+                tr.classList.add('cursor-pointer');
+                tr.title = 'Ver en la captura ↗';
+            }
+
             tr.innerHTML = `
                 <td class="p-4">${textoHTML}</td>
                 <td class="p-4 text-center">
@@ -411,6 +425,21 @@
         document.getElementById('stat-total').innerText      = reporte.length;
         document.getElementById('stat-obstruidos').innerText = obs;
         document.getElementById('stat-ok').innerText         = reporte.length - obs;
+
+        // Marcado amarillo sobre la captura + click en fila para enfocar.
+        if (registro.screenshot_url && window.QAPreview && markerItems.length) {
+            const mapa = QAPreview.markers('qa-preview', markerItems);
+            Object.keys(filasPorId).forEach(id => {
+                const fila = filasPorId[id];
+                const caja = mapa[id];
+                if (!fila || !caja) return;
+                fila.addEventListener('click', () => {
+                    QAPreview.focusMarker('qa-preview', caja);
+                    document.getElementById('screenshot-wrapper')
+                        ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            });
+        }
 
         const badge = document.getElementById('status-badge');
         if (obs > 0) {
