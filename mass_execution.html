@@ -184,6 +184,12 @@ async function init() {
             sb.from('stress_tests').select('*').eq('user_id', user.id).not('batch_id', 'is', null)
         ]);
 
+        // DIAGNÓSTICO: ver qué trae cada tabla y si alguna query falló en silencio.
+        [['vrt',vrt],['seo',seo],['perf',perf],['links',links],['stress',stress]].forEach(([n,r]) => {
+            if (r && r.error) console.warn(`[MASS] query ${n} ERROR:`, r.error.message);
+            else console.log(`[MASS] ${n}: ${ (r && r.data ? r.data.length : 0) } filas`);
+        });
+
         globalData = [
             ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.creado_el || i.created_at, errores: i.diferencias || 0 })),
             ...(seo.data || []).map(i => ({ ...i, modulo: 'seo', url_m: i.url, fecha: i.created_at, errores: contarErroresSEO(i) })),
@@ -193,6 +199,8 @@ async function init() {
         ];
 
         agruparBatches();
+        console.log(`[MASS] batches agrupados: ${batches.length}`,
+            batches.map(b => ({ fecha: fmtFecha(b.fecha), urls: b.total, modulos: b.desglose })));
         batchSeleccionado = batches.length ? batches[0].batchId : null;
         renderTodo();
 
