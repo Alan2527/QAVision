@@ -523,12 +523,24 @@ function aplicarEstadoSelector(valor, stagingContainer, labelProd, inputProd, li
 
 // ---- MASS EXECUTION ----
 async function lanzarMassExecution() {
-    const totalTests = suiteStorage.vrt.length + suiteStorage.seo.length + suiteStorage.perf.length + suiteStorage.links.length;
+    const totalTests = suiteStorage.vrt.length + suiteStorage.seo.length
+        + suiteStorage.perf.length + suiteStorage.links.length + suiteStorage.stress.length;
     if (totalTests === 0) { alert("El Suite Manager está vacío."); return; }
     const btn = document.getElementById('btn-trigger-mass-run');
     btn.disabled = true;
     btn.className = "w-full bg-zinc-800 text-zinc-500 font-black py-3.5 rounded-xl font-mono text-xs tracking-wider uppercase cursor-not-allowed mt-4 animate-pulse";
-    btn.innerText = `Procesando ${totalTests} análisis en batch...`;
+
+    let done = 0;
+    const refrescarBtn = () => { btn.innerText = `Procesando ${done}/${totalTests} análisis...`; };
+    refrescarBtn();
+
+    // fetch con timeout: si una request se cuelga (Space dormido, k6 lento),
+    // se aborta y cuenta como terminada, así el batch nunca queda congelado.
+    const fetchT = (url, opts, ms = 180000) => {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), ms);
+        return fetch(url, { ...opts, signal: ctrl.signal }).finally(() => clearTimeout(t));
+    };
 
     const suiteCred = document.querySelector('#suite-auth-checkboxes-grid .qa-vault-checkbox:checked');
     const credId = suiteCred ? suiteCred.value : null;
@@ -537,15 +549,22 @@ async function lanzarMassExecution() {
         const { data: { session } } = await dashClient.auth.getSession();
         const userId  = session?.user?.id || null;
         const batchId = generateSafeID();
-        // FIX: todos los módulos ahora pasan cred_id
+
+        // Helper: dispara una request y al terminar (ok o error) suma al contador.
+        const mk = (url, body) =>
+            fetchT(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
+                .finally(() => { done++; refrescarBtn(); });
+
+        // FIX: todos los módulos pasan cred_id; stress incluido en el conteo.
         const llamadas = [
-            ...suiteStorage.vrt.map(r   => fetch('https://qavision-qavision-engine.hf.space/api/comparar',      { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url_a: r.stage, url_b: r.prod, user_id: userId, batch_id: batchId, cred_id: credId }) })),
-            ...suiteStorage.seo.map(r   => fetch('https://qavision-qavision-engine.hf.space/api/seo',           { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, cred_id: credId }) })),
-            ...suiteStorage.perf.map(r  => fetch('https://qavision-qavision-engine.hf.space/api/performance',   { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, cred_id: credId }) })),
-            ...suiteStorage.links.map(r => fetch('https://qavision-qavision-engine.hf.space/api/auditar-links', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ url: r.url, user_id: userId, batch_id: batchId, max_elementos: r.maxElementos || 50, tipos: r.tipos || ["a","button","role_button","role_link","input_submit","onclick"], cred_id: credId }) })),
-            ...suiteStorage.stress.map(r => fetch('https://qavision-qavision-engine.hf.space/api/stress', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ urls: r.urls || [], vus: r.vus || 50, duracion: r.duracion || '60s', flujo: r.flujo || 'get', user_id: userId, batch_id: batchId, cred_id: credId }) })),
+            ...suiteStorage.vrt.map(r   => mk('https://qavision-qavision-engine.hf.space/api/comparar',      { url_a: r.stage, url_b: r.prod, user_id: userId, batch_id: batchId, cred_id: credId })),
+            ...suiteStorage.seo.map(r   => mk('https://qavision-qavision-engine.hf.space/api/seo',           { url: r.url, user_id: userId, batch_id: batchId, cred_id: credId })),
+            ...suiteStorage.perf.map(r  => mk('https://qavision-qavision-engine.hf.space/api/performance',   { url: r.url, user_id: userId, batch_id: batchId, cred_id: credId })),
+            ...suiteStorage.links.map(r => mk('https://qavision-qavision-engine.hf.space/api/auditar-links', { url: r.url, user_id: userId, batch_id: batchId, max_elementos: r.maxElementos || 50, tipos: r.tipos || ["a","button","role_button","role_link","input_submit","onclick"], cred_id: credId })),
+            ...suiteStorage.stress.map(r => mk('https://qavision-qavision-engine.hf.space/api/stress', { urls: r.urls || [], vus: r.vus || 50, duracion: r.duracion || '60s', flujo: r.flujo || 'get', user_id: userId, batch_id: batchId, cred_id: credId })),
         ];
         await Promise.allSettled(llamadas);
+        btn.innerText = 'Completado ✓ Redirigiendo...';
         window.location.href = 'mass_execution.html';
     } catch (error) {
         console.error("Error disparando el batch:", error);
