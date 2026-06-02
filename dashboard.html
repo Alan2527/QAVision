@@ -550,20 +550,35 @@ async function lanzarMassExecution() {
         const userId  = session?.user?.id || null;
         const batchId = generateSafeID();
 
-        // Helper: dispara una request y al terminar (ok o error) suma al contador.
+        // Helper: dispara una request, loguea su resultado y suma al contador.
         const mk = (url, body) =>
             fetchT(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) })
+                .then(r => { console.log(`[BATCH] ${url.split('/api/')[1]} → ${r.status}`); return r; })
+                .catch(e => { console.warn(`[BATCH] ${url.split('/api/')[1]} → ERROR ${e && e.name ? e.name : e}`); throw e; })
                 .finally(() => { done++; refrescarBtn(); });
 
-        // FIX: todos los módulos pasan cred_id; stress incluido en el conteo.
-        const llamadas = [
-            ...suiteStorage.vrt.map(r   => mk('https://qavision-qavision-engine.hf.space/api/comparar',      { url_a: r.stage, url_b: r.prod, user_id: userId, batch_id: batchId, cred_id: credId })),
-            ...suiteStorage.seo.map(r   => mk('https://qavision-qavision-engine.hf.space/api/seo',           { url: r.url, user_id: userId, batch_id: batchId, cred_id: credId })),
-            ...suiteStorage.perf.map(r  => mk('https://qavision-qavision-engine.hf.space/api/performance',   { url: r.url, user_id: userId, batch_id: batchId, cred_id: credId })),
-            ...suiteStorage.links.map(r => mk('https://qavision-qavision-engine.hf.space/api/auditar-links', { url: r.url, user_id: userId, batch_id: batchId, max_elementos: r.maxElementos || 50, tipos: r.tipos || ["a","button","role_button","role_link","input_submit","onclick"], cred_id: credId })),
-            ...suiteStorage.stress.map(r => mk('https://qavision-qavision-engine.hf.space/api/stress', { urls: r.urls || [], vus: r.vus || 50, duracion: r.duracion || '60s', flujo: r.flujo || 'get', user_id: userId, batch_id: batchId, cred_id: credId })),
+        // Cada test es una FUNCIÓN que recién dispara el fetch cuando se la invoca.
+        // Así los corremos de a pocos (ver más abajo) y no saturamos el Space.
+        const tareas = [
+            ...suiteStorage.vrt.map(r   => () => mk('https://qavision-qavision-engine.hf.space/api/comparar',      { url_a: r.stage, url_b: r.prod, user_id: userId, batch_id: batchId, cred_id: credId })),
+            ...suiteStorage.seo.map(r   => () => mk('https://qavision-qavision-engine.hf.space/api/seo',           { url: r.url, user_id: userId, batch_id: batchId, cred_id: credId })),
+            ...suiteStorage.perf.map(r  => () => mk('https://qavision-qavision-engine.hf.space/api/performance',   { url: r.url, user_id: userId, batch_id: batchId, cred_id: credId })),
+            ...suiteStorage.links.map(r => () => mk('https://qavision-qavision-engine.hf.space/api/auditar-links', { url: r.url, user_id: userId, batch_id: batchId, max_elementos: r.maxElementos || 50, tipos: r.tipos || ["a","button","role_button","role_link","input_submit","onclick"], cred_id: credId })),
+            ...suiteStorage.stress.map(r => () => mk('https://qavision-qavision-engine.hf.space/api/stress', { urls: r.urls || [], vus: r.vus || 50, duracion: r.duracion || '60s', flujo: r.flujo || 'get', user_id: userId, batch_id: batchId, cred_id: credId })),
         ];
-        await Promise.allSettled(llamadas);
+
+        // Corremos de a CONCURRENCIA por vez. Disparar los 8 a la vez tumbaba el
+        // Space (8 navegadores Playwright = sin RAM → crasheaba y se perdían tests).
+        const CONCURRENCIA = 2;
+        let idx = 0;
+        async function worker(){
+            while (idx < tareas.length){
+                const actual = idx++;
+                try { await tareas[actual](); } catch (_) { /* ya quedó logueado en mk */ }
+            }
+        }
+        await Promise.all(Array.from({ length: Math.min(CONCURRENCIA, tareas.length) }, worker));
+
         btn.innerText = 'Completado ✓ Redirigiendo...';
         window.location.href = 'mass_execution.html';
     } catch (error) {
