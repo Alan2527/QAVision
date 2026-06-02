@@ -55,10 +55,11 @@
             backdrop-filter: blur(10px);
         }
 
-        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll { scrollbar-width: thin; scrollbar-color: #10b981 transparent; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: var(--green); }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #34d399; }
 
         .nav-item {
             display: flex;
@@ -127,7 +128,7 @@
         </div>
     </aside>
 
-    <main class="flex-1 p-6 md:p-12 relative z-10 overflow-y-auto">
+    <main class="flex-1 p-6 md:p-12 relative z-10 overflow-y-auto custom-scroll">
         <header class="mb-10">
             <span class="font-mono text-[10px] text-[#10b981] uppercase tracking-[0.3em] font-bold">Omni-Suite Manager</span>
             <h2 class="font-title text-4xl mt-2 font-extrabold tracking-tight">Mass Execution <span class="text-gray-600">Explorer</span></h2>
@@ -191,10 +192,11 @@ const SUPABASE_KEY = "sb_publishable_TwPa9nFgtPTtYogbMcEckQ_36ZeSBpf";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const M_STYLES = {
-    vrt:   { color: 'text-purple-400', bg: 'bg-purple-500/10' },
-    seo:   { color: 'text-blue-400', bg: 'bg-blue-500/10' },
-    perf:  { color: 'text-orange-400', bg: 'bg-orange-500/10' },
-    links: { color: 'text-pink-400', bg: 'bg-pink-500/10' }
+    vrt:    { color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    seo:    { color: 'text-blue-400', bg: 'bg-blue-500/10' },
+    perf:   { color: 'text-orange-400', bg: 'bg-orange-500/10' },
+    links:  { color: 'text-pink-400', bg: 'bg-pink-500/10' },
+    stress: { color: 'text-cyan-400', bg: 'bg-cyan-500/10' }
 };
 
 let globalData = [];
@@ -205,23 +207,31 @@ async function init() {
         const { data: { user } } = await sb.auth.getUser();
         if (!user) { window.location.href = 'login.html'; return; }
 
-        const [vrt, seo, perf, links] = await Promise.all([
+        const [vrt, seo, perf, links, stress] = await Promise.all([
             sb.from('pruebas_qa').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
             sb.from('seo_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
             sb.from('performance_audits').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
-            sb.from('auditoria_links').select('*').eq('user_id', user.id).not('batch_id', 'is', null)
+            sb.from('auditoria_links').select('*').eq('user_id', user.id).not('batch_id', 'is', null),
+            sb.from('stress_tests').select('*').eq('user_id', user.id).not('batch_id', 'is', null)
         ]);
 
         globalData = [
-            ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.creado_el, errores: i.diferencias || 0 })),
-            ...(seo.data || []).map(i => ({ ...i, modulo: 'seo', url_m: i.url, fecha: i.created_at, errores: 0 })),
-            ...(perf.data || []).map(i => ({ ...i, modulo: 'perf', url_m: i.url, fecha: i.created_at, errores: i.fcp_ms > 3000 ? 1 : 0 })),
+            ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.created_at, errores: i.diferencias || 0 })),
+            ...(seo.data || []).map(i => ({ ...i, modulo: 'seo', url_m: i.url, fecha: i.created_at, errores: contarErroresSEO(i) })),
+            ...(perf.data || []).map(i => ({ ...i, modulo: 'perf', url_m: i.url, fecha: i.created_at, errores: contarErroresPERF(i) })),
             ...(links.data || []).map(i => ({
                 ...i,
                 modulo: 'links',
                 url_m: i.url_auditada,
                 fecha: i.created_at,
                 errores: (Array.isArray(i.reporte) ? i.reporte.filter(r=>r.obstruido).length : 0)
+            })),
+            ...(stress.data || []).map(i => ({
+                ...i,
+                modulo: 'stress',
+                url_m: (Array.isArray(i.urls) ? i.urls[0] : i.urls) || '—',
+                fecha: i.created_at,
+                errores: contarErroresSTRESS(i)
             }))
         ].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
 
@@ -231,6 +241,29 @@ async function init() {
     } catch (e) {
         console.error(e);
     }
+}
+
+/* ===== Conteo de errores REALES por módulo (para KPIs y estado) ===== */
+function contarErroresSEO(i){
+    let e = 0;
+    if (i.h1_count !== 1) e++;                 // 0 o múltiples H1
+    if ((i.imgs_sin_alt || 0) > 0) e++;        // imágenes sin alt
+    if ((i.inputs_sin_label || 0) > 0) e++;    // inputs sin label
+    if ((i.botones_sin_etiqueta || 0) > 0) e++; // botones sin etiqueta
+    return e;
+}
+function contarErroresPERF(i){
+    let e = 0;
+    if (i.lcp_ms != null && i.lcp_ms > 4000) e++;
+    if (i.fcp_ms != null && i.fcp_ms > 3000) e++;
+    if (i.cls    != null && i.cls    > 0.25) e++;
+    if (i.tti_ms != null && i.tti_ms > 7300) e++;
+    if (i.tiempo_carga_ms != null && i.tiempo_carga_ms > 6000) e++;
+    return e;
+}
+function contarErroresSTRESS(i){
+    const errPct = i.error_rate != null ? i.error_rate * 100 : 0;
+    return (errPct >= 5 || (i.p95 != null && i.p95 >= 3000)) ? 1 : 0;
 }
 
 /* ================= KPIs ================= */
@@ -286,6 +319,7 @@ function verDetalle(id, modulo) {
     if (modulo === 'perf') html = renderPERF(item);
     if (modulo === 'links') html = renderLINKS(item);
     if (modulo === 'vrt') html = renderVRT(item);
+    if (modulo === 'stress') html = renderSTRESS(item);
 
     document.getElementById('drawer-dynamic-content').innerHTML = html;
     document.getElementById('detail-drawer').classList.remove('translate-x-full');
@@ -312,14 +346,22 @@ function renderSEO(item) {
     let html="";
     html+=`<div class="text-xs text-gray-500 mt-4">Title & Meta</div>`;
     html+=check((item.title_len>=30&&item.title_len<=60)?'ok':'warn',"Title",`${item.title_len||0} caracteres`);
-    html+=check((item.meta_desc_len>=70&&item.meta_desc_len<=160)?'ok':'warn',"Meta Description",`${item.meta_desc_len||0} caracteres`);
+    html+=check((item.desc_len>=70&&item.desc_len<=160)?'ok':'warn',"Meta Description",`${item.desc_len||0} caracteres`);
 
     html+=`<div class="text-xs text-gray-500 mt-6">Estructura</div>`;
     html+=check(item.h1_count===1?'ok':'error',"H1",item.h1_count?`${item.h1_count} encontrados`:"No encontrado");
 
     html+=`<div class="text-xs text-gray-500 mt-6">Indexación</div>`;
     html+=check(item.canonical?'ok':'warn',"Canonical",item.canonical||"No definido");
-    html+=check(item.meta_robots?'ok':'warn',"Meta Robots",item.meta_robots||"No definido");
+    html+=check(item.robots?'ok':'warn',"Meta Robots",item.robots||"No definido");
+
+    html+=`<div class="text-xs text-gray-500 mt-6">Accesibilidad</div>`;
+    html+=check((item.imgs_sin_alt||0)===0?'ok':'error',"Imágenes con alt",
+        `${item.imgs_sin_alt||0} sin alt de ${item.total_imgs||0}`);
+    html+=check((item.inputs_sin_label||0)===0?'ok':'error',"Inputs con label",
+        `${item.inputs_sin_label||0} sin label`);
+    html+=check((item.botones_sin_etiqueta||0)===0?'ok':'error',"Botones con etiqueta",
+        `${item.botones_sin_etiqueta||0} sin etiqueta`);
 
     return `
     <div>
@@ -458,35 +500,85 @@ function renderVRT(item){
         </details>
 
         <!-- DIFF -->
-        <div>
+        ${item.img_diff_url ? `<div>
             <div class="font-mono text-[10px] text-red-400 mb-1 uppercase tracking-widest">Diff</div>
-            <img src="${item.img_diff_url || ''}" 
-                 onclick="openImageModal('${item.img_diff_url}')"
+            <img src="${item.img_diff_url}" 
+                 onclick="openImageModal(this.src)"
                  class="rounded border border-red-500/40 w-full cursor-zoom-in">
-        </div>
+        </div>` : ''}
 
         <!-- ORIGINALES -->
         <div class="grid grid-cols-2 gap-3">
             <div>
                 <div class="font-mono text-[10px] text-gray-400 mb-1 uppercase tracking-widest">Baseline</div>
                 <img src="${item.img_a_url || ''}" 
-                     onclick="openImageModal('${item.img_a_url}')"
+                     onclick="openImageModal(this.src)"
                      class="rounded border border-zinc-800 cursor-zoom-in w-full">
             </div>
             <div>
                 <div class="font-mono text-[10px] text-gray-400 mb-1 uppercase tracking-widest">Actual</div>
                 <img src="${item.img_b_url || ''}" 
-                     onclick="openImageModal('${item.img_b_url}')"
+                     onclick="openImageModal(this.src)"
                      class="rounded border border-zinc-800 cursor-zoom-in w-full">
             </div>
         </div>
 
     </div>`;
 }
+/* ================= STRESS ================= */
+function renderSTRESS(item){
+    const p50 = item.p50 != null ? Math.round(item.p50) : null;
+    const p95 = item.p95 != null ? Math.round(item.p95) : null;
+    const p99 = item.p99 != null ? Math.round(item.p99) : null;
+    const errPct = item.error_rate != null ? item.error_rate * 100 : 0;
+
+    const p95Col = p95==null?'gray':p95<1000?'green':p95<3000?'yellow':'red';
+    const errCol = errPct<1?'green':errPct<5?'yellow':'red';
+
+    const flujoMap = { get:'Solo navegación (GET)', login_get:'Con login + GET', login_nav:'Con login + navegación' };
+    const rampMap  = { instant:'Todos a la vez', gradual:'Gradual (30s)', steps:'Escalonado' };
+
+    function metric(label, val, col){
+        return `<div class="bg-tech p-4 rounded-xl text-center">
+            <p class="font-mono text-[10px] text-gray-500 mb-1">${label}</p>
+            <p class="text-2xl font-black text-${col}-400">${val}</p>
+        </div>`;
+    }
+
+    const shot = item.screenshot_url ? `
+        <div>
+            <div class="font-mono text-[10px] text-gray-400 mb-1 uppercase tracking-widest">Captura del sitio</div>
+            <div class="overflow-y-auto max-h-[360px] custom-scroll rounded border border-zinc-800">
+                <img src="${item.screenshot_url}" onclick="openImageModal(this.src)" class="w-full block cursor-zoom-in">
+            </div>
+        </div>` : '';
+
+    return `
+    <div class="space-y-5">
+        <div class="grid grid-cols-3 gap-3">
+            ${metric('p50 ms', p50!=null?p50:'—', p50==null?'gray':p50<500?'green':p50<1500?'yellow':'red')}
+            ${metric('p95 ms', p95!=null?p95:'—', p95Col)}
+            ${metric('Errores %', errPct.toFixed(1), errCol)}
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+            ${metric('p99 ms', p99!=null?p99:'—', 'gray')}
+            ${metric('Reqs', item.total_reqs ?? '—', 'gray')}
+            ${metric('VUs', item.vus ?? '—', 'gray')}
+        </div>
+        <div class="bg-tech p-4 rounded-xl space-y-2 font-mono text-[11px]">
+            <div class="flex justify-between"><span class="text-gray-500">Duración</span><span class="text-gray-300">${item.duracion||'—'}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Flujo</span><span class="text-gray-300">${flujoMap[item.flujo]||item.flujo||'—'}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Rampa</span><span class="text-gray-300">${rampMap[item.ramp]||item.ramp||'—'}</span></div>
+        </div>
+        ${shot}
+    </div>`;
+}
+
 function openImageModal(src){
+    if (!src || src === 'null' || src === 'undefined') return;  // guard: no abrir vacío
     const modal = document.getElementById('img-modal');
     const img = document.getElementById('img-modal-src');
-
+    if (!modal || !img) return;
     img.src = src;
     modal.classList.remove('hidden');
     modal.classList.add('flex');
