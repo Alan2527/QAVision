@@ -21,11 +21,16 @@
         .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; font-size: 11px; font-weight: 700; color: #505050; transition: all 0.15s; text-decoration: none; font-family: 'DM Mono', monospace; border: 1px solid transparent; }
         .nav-item:hover { color: #10b981; background: rgba(16,185,129,0.07); }
         .nav-item.active { color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.15); }
-        .main-scroll { overflow-y: auto; height: 100vh; }
-        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .main-scroll { overflow-y: auto; height: 100vh; scrollbar-width: thin; scrollbar-color: #10b981 transparent; }
+        .main-scroll::-webkit-scrollbar { width: 5px; }
+        .main-scroll::-webkit-scrollbar-track { background: transparent; }
+        .main-scroll::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
+        .main-scroll::-webkit-scrollbar-thumb:hover { background: #34d399; }
+        .custom-scroll { scrollbar-width: thin; scrollbar-color: #10b981 transparent; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
         .custom-scroll::-webkit-scrollbar-track { background: transparent; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: #1a1a1a; border-radius: 10px; }
-        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #10b981; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #34d399; }
         .metric-card { background: #050505; border: 1px solid #1a1a1a; border-radius: 12px; padding: 20px; }
         .metric-val { font-family: 'Syne', sans-serif; font-size: 2.2rem; font-weight: 800; }
         .metric-label { font-family: 'DM Mono', monospace; font-size: 9px; color: #505050; text-transform: uppercase; letter-spacing: 0.15em; margin-top: 4px; }
@@ -262,6 +267,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let pollInterval  = null;
 let testStartTime = null;
 let totalDurSecs  = 60;
+let ultimaCapturaUrl = null;   // captura del engine; se muestra al terminar
 let histChart     = null;
 
 async function init() {
@@ -319,9 +325,10 @@ async function init() {
             const data = await resp.json();
             const { test_id } = data;
 
-            // Si el engine devolvió screenshot_url, mostrarlo sobre el placeholder
+            // Guardamos la captura para mostrarla AL FINAL. No cortamos el escáner
+            // acá: queremos que la animación corra durante toda la prueba de carga.
             if (data.screenshot_url) {
-                mostrarScreenshotEnVivo(data.screenshot_url, urls[0]);
+                ultimaCapturaUrl = data.screenshot_url;
             }
 
             testStartTime = Date.now();
@@ -441,12 +448,13 @@ function setUIResult(r) {
     document.getElementById('summary-icon').textContent  = summaryIcon;
 
     // --- Screenshot en resultado ---
-    if (r.screenshot_url) {
+    const shotUrl = r.screenshot_url || ultimaCapturaUrl;
+    if (shotUrl) {
         const panel = document.getElementById('screenshot-panel');
         const img   = document.getElementById('result-screenshot');
         const label = document.getElementById('screenshot-url-label');
         if (panel && img) {
-            img.src = r.screenshot_url;
+            img.src = shotUrl;
             if (label) label.textContent = (r.urls || [])[0] || '';
             panel.classList.remove('hidden');
         }
