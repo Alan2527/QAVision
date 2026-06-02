@@ -365,13 +365,16 @@
 
             let estadoHTML;
             if (item.nota) {
+                const esCarrusel = item.en_carrusel;
+                const label  = esCarrusel ? 'EN CARRUSEL ⓘ' : 'NO EVALUADO ⓘ';
+                const titulo = esCarrusel ? 'Dentro de un carrusel' : 'No evaluado';
                 estadoHTML = `
                     <div class="motivo-wrap">
-                        <span class="font-mono text-[10px] font-black px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 cursor-help">
-                            N/A ⓘ
+                        <span class="font-mono text-[10px] font-black px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 cursor-help">
+                            ${label}
                         </span>
                         <div class="motivo-tooltip">
-                            <span class="text-yellow-400 font-black block mb-1">Nota:</span>
+                            <span class="text-amber-400 font-black block mb-1">${titulo}:</span>
                             ${item.nota}
                         </div>
                     </div>`;
