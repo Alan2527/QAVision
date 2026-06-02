@@ -15,45 +15,23 @@
             --border: #1a1a1a;
             --text: #e8e8e8;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: #000;
-            color: var(--text);
-            overflow-x: hidden;
-        }
-
+        body { font-family: 'DM Sans', sans-serif; background: #000; color: var(--text); overflow-x: hidden; }
         body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
+            content: ''; position: fixed; inset: 0;
             background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
-            pointer-events: none;
-            z-index: 50;
-            opacity: 0.4;
+            pointer-events: none; z-index: 50; opacity: 0.4;
         }
-
         .hero-grid {
-            position: fixed;
-            inset: 0;
-            background-image:
-                linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px);
+            position: fixed; inset: 0;
+            background-image: linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px);
             background-size: 40px 40px;
             mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 20%, transparent 100%);
             z-index: 0;
         }
-
         .font-title { font-family: 'Syne', sans-serif; }
         .font-mono { font-family: 'DM Mono', monospace; }
-
-        .bg-tech { 
-            background-color: var(--surface-2); 
-            border: 1px solid var(--border); 
-            backdrop-filter: blur(10px);
-        }
+        .bg-tech { background-color: var(--surface-2); border: 1px solid var(--border); backdrop-filter: blur(10px); }
 
         .custom-scroll { scrollbar-width: thin; scrollbar-color: #10b981 transparent; }
         .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
@@ -62,21 +40,21 @@
         .custom-scroll::-webkit-scrollbar-thumb:hover { background: #34d399; }
 
         .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 10px 12px;
-            border-radius: 10px;
-            font-size: 11px;
-            font-weight: 700;
-            color: #505050;
-            transition: all 0.15s ease;
-            text-decoration: none;
-            font-family: 'DM Mono', monospace;
-            border: 1px solid transparent;
+            display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px;
+            font-size: 11px; font-weight: 700; color: #505050; transition: all 0.15s ease;
+            text-decoration: none; font-family: 'DM Mono', monospace; border: 1px solid transparent;
         }
         .nav-item:hover { color: #10b981; background: rgba(16,185,129,0.07); }
         .nav-item.active { color: #10b981; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.15); }
+
+        /* Acordeón inline de resultados */
+        summary { list-style: none; }
+        summary::-webkit-details-marker { display: none; }
+        .acc-chevron { transition: transform .2s ease; }
+        details[open] .acc-chevron { transform: rotate(180deg); }
+        .acc-detail { font-size: 12px; }
+        .acc-detail .vrt-slider { max-width: 460px; }
+        .acc-detail .zoom-img { max-height: 300px; width: auto; max-width: 100%; cursor: zoom-in; }
     </style>
 </head>
 <body class="min-h-screen flex">
@@ -149,42 +127,31 @@
             </div>
         </div>
 
-        <div class="bg-tech rounded-2xl p-6">
+        <!-- BATCH SELECCIONADO -->
+        <div class="bg-tech rounded-2xl p-6 mb-10">
             <div class="flex justify-between items-center mb-6 border-b border-[#1a1a1a] pb-4">
-                <h3 class="font-mono text-xs text-gray-400 uppercase tracking-widest font-bold">Lotes Recientes (Multi-Módulo)</h3>
+                <div>
+                    <h3 class="font-mono text-xs text-gray-400 uppercase tracking-widest font-bold">Batch Seleccionado</h3>
+                    <p id="batch-actual-label" class="font-mono text-[10px] text-[#10b981] mt-1">—</p>
+                </div>
                 <span class="w-2 h-2 rounded-full bg-[#10b981] animate-pulse"></span>
             </div>
             <div id="lista-masiva" class="space-y-3">
                 <p class="text-xs text-gray-500 font-mono text-center py-10">Cargando reportes del motor QA...</p>
             </div>
         </div>
+
+        <!-- HISTORIAL DE BATCHES -->
+        <div class="bg-tech rounded-2xl p-6">
+            <div class="flex justify-between items-center mb-6 border-b border-[#1a1a1a] pb-4">
+                <h3 class="font-mono text-xs text-gray-400 uppercase tracking-widest font-bold">Historial de Batches</h3>
+                <span class="font-mono text-[9px] text-[#505050] uppercase">Click para inspeccionar</span>
+            </div>
+            <div id="historial-batches" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <p class="text-xs text-gray-500 font-mono text-center py-6 md:col-span-2">—</p>
+            </div>
+        </div>
     </main>
-
-    <div id="detail-drawer" class="fixed inset-y-0 right-0 w-full md:w-[600px] bg-[#070707]/95 border-l border-[#1a1a1a] backdrop-blur-xl z-50 shadow-2xl transform translate-x-full transition-transform duration-300 flex flex-col">
-        <div class="p-6 border-b border-[#1a1a1a] flex justify-between items-start bg-black/50">
-            <div class="flex-1 pr-4 overflow-hidden">
-                <span id="drawer-module-badge" class="font-mono text-[9px] text-[#505050] block uppercase tracking-widest mb-1">INSPECTOR //</span>
-                <h4 id="drawer-url" class="font-mono text-xs font-bold text-white truncate w-full">Cargando...</h4>
-            </div>
-            <button onclick="cerrarDrawer()" class="text-gray-500 hover:text-white font-mono text-xs p-2 bg-[#1a1a1a] rounded-lg border border-zinc-800 transition">✕ CLOSE</button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scroll">
-            <div class="flex items-center justify-between bg-[#0d0d0d] border border-[#1a1a1a] p-4 rounded-xl">
-                <div>
-                    <span class="font-mono text-[9px] text-[#505050] block mb-1">RESULTADO GLOBAL</span>
-                    <span id="drawer-status" class="font-mono text-sm font-black">---</span>
-                </div>
-                <div class="text-right">
-                    <span class="font-mono text-[9px] text-[#505050] block mb-1">TIMESTAMP</span>
-                    <span id="drawer-time" class="font-mono text-[11px] text-gray-400">--:--:--</span>
-                </div>
-            </div>
-
-            <div id="drawer-dynamic-content" class="space-y-6">
-                </div>
-        </div>
-    </div>
 
 <script>
 const SUPABASE_URL = "https://xdufdcwvaxvcdcjgdvvt.supabase.co";
@@ -200,6 +167,8 @@ const M_STYLES = {
 };
 
 let globalData = [];
+let batches = [];
+let batchSeleccionado = null;
 
 /* ================= INIT ================= */
 async function init() {
@@ -219,38 +188,68 @@ async function init() {
             ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.creado_el || i.created_at, errores: i.diferencias || 0 })),
             ...(seo.data || []).map(i => ({ ...i, modulo: 'seo', url_m: i.url, fecha: i.created_at, errores: contarErroresSEO(i) })),
             ...(perf.data || []).map(i => ({ ...i, modulo: 'perf', url_m: i.url, fecha: i.created_at, errores: contarErroresPERF(i) })),
-            ...(links.data || []).map(i => ({
-                ...i,
-                modulo: 'links',
-                url_m: i.url_auditada,
-                fecha: i.created_at,
-                errores: (Array.isArray(i.reporte) ? i.reporte.filter(r=>r.obstruido).length : 0)
-            })),
-            ...(stress.data || []).map(i => ({
-                ...i,
-                modulo: 'stress',
-                url_m: (Array.isArray(i.urls) ? i.urls[0] : i.urls) || '—',
-                fecha: i.created_at,
-                errores: contarErroresSTRESS(i)
-            }))
-        ].sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+            ...(links.data || []).map(i => ({ ...i, modulo: 'links', url_m: i.url_auditada, fecha: i.created_at, errores: (Array.isArray(i.reporte) ? i.reporte.filter(r=>r.obstruido).length : 0) })),
+            ...(stress.data || []).map(i => ({ ...i, modulo: 'stress', url_m: (Array.isArray(i.urls) ? i.urls[0] : i.urls) || '—', fecha: i.created_at, errores: contarErroresSTRESS(i) }))
+        ];
 
-        renderizarLista();
-        actualizarKPIs();
+        agruparBatches();
+        batchSeleccionado = batches.length ? batches[0].batchId : null;
+        renderTodo();
 
     } catch (e) {
         console.error(e);
+        document.getElementById('lista-masiva').innerHTML =
+            `<p class="text-xs text-red-500 font-mono text-center py-10">Error cargando reportes. Reintentá.</p>`;
     }
 }
 
-/* ===== Conteo de errores REALES por módulo (para KPIs y estado) ===== */
+/* ===== Agrupar por batch_id ===== */
+function agruparBatches() {
+    const map = new Map();
+    for (const t of globalData) {
+        const bid = t.batch_id;
+        if (!bid) continue;
+        if (!map.has(bid)) map.set(bid, []);
+        map.get(bid).push(t);
+    }
+    batches = [...map.entries()].map(([batchId, tests]) => {
+        const ts = tests.map(t => new Date(t.fecha).getTime()).filter(n => !isNaN(n));
+        const fecha = ts.length ? new Date(Math.max(...ts)) : null;
+        const total = tests.length;
+        const defectos = tests.reduce((a, t) => a + (t.errores || 0), 0);
+        const fallidos = tests.filter(t => (t.errores || 0) > 0).length;
+        const desglose = {};
+        tests.forEach(t => { desglose[t.modulo] = (desglose[t.modulo] || 0) + 1; });
+        return { batchId, fecha, tests, total, defectos, fallidos, desglose };
+    }).sort((a, b) => (b.fecha ? b.fecha.getTime() : 0) - (a.fecha ? a.fecha.getTime() : 0));
+}
+
+function fmtFecha(d) {
+    return d ? d.toLocaleString('es-AR', { day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—';
+}
+
+/* ===== Conteo de errores REALES por módulo ===== */
 function contarErroresSEO(i){
     let e = 0;
-    if (i.h1_count !== 1) e++;                 // 0 o múltiples H1
-    if ((i.imgs_sin_alt || 0) > 0) e++;        // imágenes sin alt
-    if ((i.inputs_sin_label || 0) > 0) e++;    // inputs sin label
-    if ((i.botones_sin_etiqueta || 0) > 0) e++; // botones sin etiqueta
+    if (i.h1_count !== 1) e++;
+    if ((i.imgs_sin_alt || 0) > 0) e++;
+    if ((i.inputs_sin_label || 0) > 0) e++;
+    if ((i.botones_sin_etiqueta || 0) > 0) e++;
     return e;
+}
+function perfClase(t,v){
+    if(t==='lcp') return v<=2500?'good':v<=4000?'warn':'poor';
+    if(t==='fcp') return v<=1800?'good':v<=3000?'warn':'poor';
+    if(t==='cls') return v<=0.1?'good':v<=0.25?'warn':'poor';
+    if(t==='tti') return v<=3800?'good':v<=7300?'warn':'poor';
+    if(t==='carga') return v<=3000?'good':v<=6000?'warn':'poor';
+    if(t==='peso') return v<=1?'good':v<=3?'warn':'poor';
+}
+function perfScore(i){
+    const s=[];
+    const push=(t,v)=>{ if(v!=null){ const cl=perfClase(t,v); s.push(cl==='good'?100:cl==='warn'?50:0);} };
+    push('fcp',i.fcp_ms); push('lcp',i.lcp_ms); push('cls',i.cls); push('tti',i.tti_ms); push('carga',i.tiempo_carga_ms);
+    return s.length ? Math.round(s.reduce((a,b)=>a+b,0)/s.length) : null;
 }
 function contarErroresPERF(i){
     let e = 0;
@@ -266,158 +265,171 @@ function contarErroresSTRESS(i){
     return (errPct >= 5 || (i.p95 != null && i.p95 >= 3000)) ? 1 : 0;
 }
 
-/* ================= KPIs ================= */
-function actualizarKPIs() {
-    const total = globalData.length;
-    const fails = globalData.filter(i => i.errores > 0).length;
-    const success = total - fails;
+/* ===== Resumen de una línea según el módulo ===== */
+function resumenLinea(item){
+    const m = item.modulo;
+    if (m==='vrt'){ const d=item.diferencias||0; return { label: d>0?`${d} diferencias`:'Sin cambios', fail: d>0 }; }
+    if (m==='seo'){ const e=item.errores||0; return { label: e>0?`${e} problema(s) SEO`:'SEO OK', fail: e>0 }; }
+    if (m==='perf'){ const s=perfScore(item); const lcp=item.lcp_ms!=null?` · LCP ${(item.lcp_ms/1000).toFixed(1)}s`:''; return { label: (s!=null?`Score ${s}`:'Sin datos')+lcp, fail:(item.errores||0)>0 }; }
+    if (m==='links'){ const rep=item.reporte||[]; const obs=rep.filter(r=>r.obstruido).length; return { label: obs>0?`${obs}/${rep.length} obstruidos`:`Sin obstrucciones (${rep.length})`, fail: obs>0 }; }
+    if (m==='stress'){ const p95=item.p95!=null?Math.round(item.p95)+'ms':'—'; const err=item.error_rate!=null?(item.error_rate*100).toFixed(1):'0.0'; return { label:`p95 ${p95} · ${err}% err`, fail:(item.errores||0)>0 }; }
+    return { label:'', fail:false };
+}
 
+/* ===== Render principal ===== */
+function renderTodo(){
+    const batch = batches.find(b => b.batchId === batchSeleccionado) || null;
+    renderKPIs(batch);
+    renderLista(batch);
+    renderHistorial();
+}
+
+function renderKPIs(batch){
+    const total = batch ? batch.total : 0;
+    const fails = batch ? batch.fallidos : 0;
     document.getElementById('kpi-total').innerText = total;
-    document.getElementById('kpi-success').innerText = success;
+    document.getElementById('kpi-success').innerText = total - fails;
     document.getElementById('kpi-fails').innerText = fails;
 }
 
-/* ================= LISTA ================= */
-function renderizarLista() {
+function renderLista(batch){
     const cont = document.getElementById('lista-masiva');
-
-    cont.innerHTML = globalData.map(item => {
-        const s = M_STYLES[item.modulo];
+    const lbl = document.getElementById('batch-actual-label');
+    if (!batch){
+        lbl.innerText = '—';
+        cont.innerHTML = `<p class="text-xs text-gray-500 font-mono text-center py-10">No hay batches registrados. Lanzá una ejecución masiva desde el Panel Principal.</p>`;
+        return;
+    }
+    lbl.innerText = `Batch · ${fmtFecha(batch.fecha)} · ${batch.total} URLs`;
+    cont.innerHTML = batch.tests.map(item => {
+        const s = M_STYLES[item.modulo] || { color:'text-gray-400', bg:'bg-zinc-500/10' };
+        const r = resumenLinea(item);
         return `
-            <div class="flex items-center justify-between p-4 bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl">
-                <div class="flex items-center gap-4">
-                    <div class="w-1.5 h-10 rounded-full ${s.bg.replace('/10','/50')}"></div>
-                    <div>
-                        <p class="font-mono text-xs text-gray-300">${item.url_m}</p>
+        <details class="acc-row bg-[#0d0d0d] border border-[#1a1a1a] rounded-xl overflow-hidden">
+            <summary class="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-900/40 transition gap-3">
+                <div class="flex items-center gap-4 min-w-0">
+                    <div class="w-1.5 h-10 rounded-full ${(s.bg||'').replace('/10','/50')} shrink-0"></div>
+                    <div class="min-w-0">
+                        <p class="font-mono text-xs text-gray-300 truncate">${item.url_m}</p>
                         <span class="text-[9px] font-bold ${s.color} uppercase">${item.modulo}</span>
                     </div>
                 </div>
-                <button onclick="verDetalle('${item.id}', '${item.modulo}')" 
-                    class="text-xs px-3 py-1 bg-zinc-800 rounded">
-                    INSPECT
-                </button>
-            </div>
-        `;
+                <div class="flex items-center gap-3 shrink-0">
+                    <span class="font-mono text-[11px] ${r.fail?'text-red-400':'text-gray-400'} hidden sm:inline">${r.label}</span>
+                    <span class="font-mono font-black text-[10px] px-2 py-1 rounded ${r.fail?'text-red-400 bg-red-500/10 border border-red-500/20':'text-green-400 bg-green-500/10 border border-green-500/20'}">${r.fail?'FAIL':'PASS'}</span>
+                    <svg class="acc-chevron w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </div>
+            </summary>
+            <div class="acc-detail p-4 border-t border-[#1a1a1a] bg-black/30">${detalleCompacto(item)}</div>
+        </details>`;
     }).join('');
 }
 
-/* ================= DETALLE ================= */
-function verDetalle(id, modulo) {
-    const item = globalData.find(i => i.id == id && i.modulo === modulo);
-    if (!item) return;
+function detalleCompacto(item){
+    if (item.modulo === 'seo')    return renderSEO(item);
+    if (item.modulo === 'perf')   return renderPERF(item);
+    if (item.modulo === 'links')  return renderLINKS(item);
+    if (item.modulo === 'vrt')    return renderVRT(item);
+    if (item.modulo === 'stress') return renderSTRESS(item);
+    return '<p class="text-xs text-gray-500 font-mono">Sin detalle.</p>';
+}
 
-    document.getElementById('drawer-url').innerText = item.url_m;
-    document.getElementById('drawer-time').innerText = new Date(item.fecha).toLocaleString();
+function renderHistorial(){
+    const cont = document.getElementById('historial-batches');
+    if (!batches.length){
+        cont.innerHTML = `<p class="text-xs text-gray-500 font-mono text-center py-6 md:col-span-2">Sin batches registrados.</p>`;
+        return;
+    }
+    cont.innerHTML = batches.map(b => {
+        const activo = b.batchId === batchSeleccionado;
+        const desg = Object.entries(b.desglose).map(([m,n]) => `${n} ${m.toUpperCase()}`).join(' · ');
+        return `
+        <button onclick="seleccionarBatch('${b.batchId}')"
+            class="text-left p-4 rounded-xl border transition ${activo?'border-[#10b981] bg-[#10b981]/5':'border-[#1a1a1a] bg-[#0d0d0d] hover:border-zinc-700'}">
+            <div class="flex justify-between items-start mb-2">
+                <span class="font-mono text-xs font-bold ${activo?'text-[#10b981]':'text-gray-300'}">Batch · ${fmtFecha(b.fecha)}</span>
+                ${activo?'<span class="font-mono text-[9px] text-[#10b981] uppercase">● activo</span>':'<span class="font-mono text-[9px] text-[#505050] uppercase">ver ↗</span>'}
+            </div>
+            <div class="flex gap-4 mb-2">
+                <span class="font-mono text-[11px] text-gray-400">${b.total} URLs</span>
+                <span class="font-mono text-[11px] ${b.defectos>0?'text-red-400':'text-green-400'}">${b.defectos} defecto(s)</span>
+            </div>
+            <p class="font-mono text-[9px] text-[#505050] uppercase tracking-wide truncate">${desg}</p>
+        </button>`;
+    }).join('');
+}
 
-    const statusEl = document.getElementById('drawer-status');
-    statusEl.innerText = item.errores > 0 ? "ERROR" : "OK";
-    statusEl.className = item.errores > 0 ? "text-red-500" : "text-green-500";
-
-    let html = "";
-
-    if (modulo === 'seo') html = renderSEO(item);
-    if (modulo === 'perf') html = renderPERF(item);
-    if (modulo === 'links') html = renderLINKS(item);
-    if (modulo === 'vrt') html = renderVRT(item);
-    if (modulo === 'stress') html = renderSTRESS(item);
-
-    document.getElementById('drawer-dynamic-content').innerHTML = html;
-    document.getElementById('detail-drawer').classList.remove('translate-x-full');
+function seleccionarBatch(bid){
+    batchSeleccionado = bid;
+    renderTodo();
+    const m = document.querySelector('main');
+    if (m) m.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /* ================= SEO ================= */
 function renderSEO(item) {
     let ok=0,warn=0,error=0;
-
     function b(t){return t==='ok'?'text-green-400 bg-green-500/10':t==='warn'?'text-yellow-400 bg-yellow-500/10':'text-red-400 bg-red-500/10'}
     function l(t){return t==='ok'?'OK':t==='warn'?'ADVERTENCIA':'ERROR'}
-
     function check(t,title,detail){
         if(t==='ok')ok++; else if(t==='warn')warn++; else error++;
-        return `<div class="py-4 border-b border-zinc-800">
-            <div class="flex gap-3 mb-1">
+        return `<div class="py-3 border-b border-zinc-800">
+            <div class="flex gap-3 mb-1 items-center">
                 <span class="text-[10px] font-black px-2 py-1 rounded ${b(t)}">${l(t)}</span>
                 <span class="font-bold">${title}</span>
             </div>
             <div class="text-xs text-gray-500 font-mono ml-1">${detail}</div>
         </div>`;
     }
-
     let html="";
-    html+=`<div class="text-xs text-gray-500 mt-4">Title & Meta</div>`;
+    html+=`<div class="text-xs text-gray-500 mt-1">Title & Meta</div>`;
     html+=check((item.title_len>=30&&item.title_len<=60)?'ok':'warn',"Title",`${item.title_len||0} caracteres`);
     html+=check((item.desc_len>=70&&item.desc_len<=160)?'ok':'warn',"Meta Description",`${item.desc_len||0} caracteres`);
-
-    html+=`<div class="text-xs text-gray-500 mt-6">Estructura</div>`;
+    html+=`<div class="text-xs text-gray-500 mt-4">Estructura</div>`;
     html+=check(item.h1_count===1?'ok':'error',"H1",item.h1_count?`${item.h1_count} encontrados`:"No encontrado");
-
-    html+=`<div class="text-xs text-gray-500 mt-6">Indexación</div>`;
+    html+=`<div class="text-xs text-gray-500 mt-4">Indexación</div>`;
     html+=check(item.canonical?'ok':'warn',"Canonical",item.canonical||"No definido");
     html+=check(item.robots?'ok':'warn',"Meta Robots",item.robots||"No definido");
-
-    html+=`<div class="text-xs text-gray-500 mt-6">Accesibilidad</div>`;
-    html+=check((item.imgs_sin_alt||0)===0?'ok':'error',"Imágenes con alt",
-        `${item.imgs_sin_alt||0} sin alt de ${item.total_imgs||0}`);
-    html+=check((item.inputs_sin_label||0)===0?'ok':'error',"Inputs con label",
-        `${item.inputs_sin_label||0} sin label`);
-    html+=check((item.botones_sin_etiqueta||0)===0?'ok':'error',"Botones con etiqueta",
-        `${item.botones_sin_etiqueta||0} sin etiqueta`);
-
+    html+=`<div class="text-xs text-gray-500 mt-4">Accesibilidad</div>`;
+    html+=check((item.imgs_sin_alt||0)===0?'ok':'error',"Imágenes con alt",`${item.imgs_sin_alt||0} sin alt de ${item.total_imgs||0}`);
+    html+=check((item.inputs_sin_label||0)===0?'ok':'error',"Inputs con label",`${item.inputs_sin_label||0} sin label`);
+    html+=check((item.botones_sin_etiqueta||0)===0?'ok':'error',"Botones con etiqueta",`${item.botones_sin_etiqueta||0} sin etiqueta`);
     return `
     <div>
-        <div class="grid grid-cols-3 gap-4 mb-6 text-center">
-            <div class="bg-tech p-4 rounded-xl"><h2 class="text-green-400 text-2xl">${ok}</h2></div>
-            <div class="bg-tech p-4 rounded-xl"><h2 class="text-yellow-400 text-2xl">${warn}</h2></div>
-            <div class="bg-tech p-4 rounded-xl"><h2 class="text-red-400 text-2xl">${error}</h2></div>
+        <div class="grid grid-cols-3 gap-3 mb-4 text-center">
+            <div class="bg-tech p-3 rounded-xl"><h2 class="text-green-400 text-xl font-black">${ok}</h2><p class="text-[9px] text-gray-500 font-mono">OK</p></div>
+            <div class="bg-tech p-3 rounded-xl"><h2 class="text-yellow-400 text-xl font-black">${warn}</h2><p class="text-[9px] text-gray-500 font-mono">WARN</p></div>
+            <div class="bg-tech p-3 rounded-xl"><h2 class="text-red-400 text-xl font-black">${error}</h2><p class="text-[9px] text-gray-500 font-mono">ERROR</p></div>
         </div>
-        <div class="bg-tech p-6 rounded-2xl">${html}</div>
+        <div class="bg-tech p-4 rounded-2xl">${html}</div>
     </div>`;
 }
 
 /* ================= PERF ================= */
 function renderPERF(item) {
-
-    function c(t,v){
-        if(t==='lcp') return v<=2500?'good':v<=4000?'warn':'poor';
-        if(t==='fcp') return v<=1800?'good':v<=3000?'warn':'poor';
-        if(t==='cls') return v<=0.1?'good':v<=0.25?'warn':'poor';
-        if(t==='tti') return v<=3800?'good':v<=7300?'warn':'poor';
-        if(t==='carga') return v<=3000?'good':v<=6000?'warn':'poor';
-        if(t==='peso') return v<=1?'good':v<=3?'warn':'poor';
-    }
-
     function card(n,v,t,s){
-        if(v==null)return `<div class="bg-tech p-4 rounded-xl text-xs text-gray-500 font-mono">N/D</div>`;
-        const cl=c(t,v);
+        if(v==null)return `<div class="bg-tech p-3 rounded-xl text-xs text-gray-500 font-mono">N/D</div>`;
+        const cl=perfClase(t,v);
         const pct=cl==='good'?100:cl==='warn'?60:30;
         const col=cl==='good'?'green':cl==='warn'?'yellow':'red';
-        return `<div class="p-4 rounded-xl border border-${col}-500/30">
+        return `<div class="p-3 rounded-xl border border-${col}-500/30">
             <p class="text-xs text-gray-500">${n}</p>
-            <p class="text-2xl font-black">${s==='ms'?(v/1000).toFixed(2)+'s':v+s}</p>
+            <p class="text-xl font-black">${s==='ms'?(v/1000).toFixed(2)+'s':v+s}</p>
             <div class="h-1 bg-zinc-800 mt-2"><div style="width:${pct}%" class="h-1 bg-${col}-400"></div></div>
         </div>`;
     }
-
-    // Score dinámico: promedio ponderado de las métricas disponibles
-    const scores = [];
-    if(item.fcp_ms != null){ const cl=c('fcp',item.fcp_ms); scores.push(cl==='good'?100:cl==='warn'?50:0); }
-    if(item.lcp_ms != null){ const cl=c('lcp',item.lcp_ms); scores.push(cl==='good'?100:cl==='warn'?50:0); }
-    if(item.cls    != null){ const cl=c('cls',item.cls);    scores.push(cl==='good'?100:cl==='warn'?50:0); }
-    if(item.tti_ms != null){ const cl=c('tti',item.tti_ms); scores.push(cl==='good'?100:cl==='warn'?50:0); }
-    if(item.tiempo_carga_ms != null){ const cl=c('carga',item.tiempo_carga_ms); scores.push(cl==='good'?100:cl==='warn'?50:0); }
-    const score = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : null;
+    const score = perfScore(item);
     const scoreCol = score==null?'gray':score>=90?'green':score>=50?'yellow':'red';
     const scoreDisplay = score!=null ? score : '—';
-
     return `
     <div>
-        <div class="text-center mb-6">
-            <div class="w-24 h-24 border-4 border-${scoreCol}-500 rounded-full flex items-center justify-center mx-auto">
-                <span class="text-3xl font-black text-${scoreCol}-400">${scoreDisplay}</span>
+        <div class="text-center mb-4">
+            <div class="w-20 h-20 border-4 border-${scoreCol}-500 rounded-full flex items-center justify-center mx-auto">
+                <span class="text-2xl font-black text-${scoreCol}-400">${scoreDisplay}</span>
             </div>
             <p class="text-[10px] font-mono text-[#505050] mt-2 uppercase tracking-widest">Performance Score</p>
         </div>
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-3 gap-3">
             ${card('LCP',item.lcp_ms,'lcp','ms')}
             ${card('FCP',item.fcp_ms,'fcp','ms')}
             ${card('CLS',item.cls,'cls','')}
@@ -431,26 +443,26 @@ function renderPERF(item) {
 /* ================= LINKS ================= */
 function renderLINKS(item){
     const reporte = item.reporte || [];
-    if(!reporte.length) return `<p class="text-xs text-gray-500 font-mono text-center py-6">Sin datos de links.</p>`;
+    if(!reporte.length) return `<p class="text-xs text-gray-500 font-mono text-center py-4">Sin datos de links.</p>`;
     const total = reporte.length;
     const obstruidos = reporte.filter(r=>r.obstruido).length;
     const ok = total - obstruidos;
     return `
-    <div class="space-y-4">
+    <div class="space-y-3">
         <div class="grid grid-cols-3 gap-3 text-center">
-            <div class="bg-tech p-3 rounded-xl"><p class="font-mono text-[10px] text-gray-500 mb-1">TOTAL</p><p class="text-xl font-black text-white">${total}</p></div>
-            <div class="bg-tech p-3 rounded-xl"><p class="font-mono text-[10px] text-gray-500 mb-1">OK</p><p class="text-xl font-black text-green-400">${ok}</p></div>
-            <div class="bg-tech p-3 rounded-xl"><p class="font-mono text-[10px] text-gray-500 mb-1">OBSTRUIDOS</p><p class="text-xl font-black text-red-400">${obstruidos}</p></div>
+            <div class="bg-tech p-3 rounded-xl"><p class="font-mono text-[10px] text-gray-500 mb-1">TOTAL</p><p class="text-lg font-black text-white">${total}</p></div>
+            <div class="bg-tech p-3 rounded-xl"><p class="font-mono text-[10px] text-gray-500 mb-1">OK</p><p class="text-lg font-black text-green-400">${ok}</p></div>
+            <div class="bg-tech p-3 rounded-xl"><p class="font-mono text-[10px] text-gray-500 mb-1">OBSTRUIDOS</p><p class="text-lg font-black text-red-400">${obstruidos}</p></div>
         </div>
-        <div class="overflow-y-auto max-h-[420px] custom-scroll space-y-1 pr-1">
+        <div class="overflow-y-auto max-h-[300px] custom-scroll space-y-1 pr-1">
             ${reporte.map(r=>`
-            <div class="flex justify-between items-center border-b border-zinc-800/60 py-2.5 text-xs gap-3">
+            <div class="flex justify-between items-center border-b border-zinc-800/60 py-2 text-xs gap-3">
                 <div class="min-w-0 flex-1">
                     <div class="font-bold text-white truncate">${r.tipo||'elemento'}</div>
                     <div class="text-gray-500 font-mono truncate text-[10px]">${r.href||r.url||'-'}</div>
                 </div>
-                <span class="shrink-0 font-mono font-black text-[10px] px-2 py-1 rounded ${r.obstruido?'text-red-400 bg-red-500/10 border border-red-500/20':'text-green-400 bg-green-500/10 border border-green-500/20'}">
-                    ${r.obstruido?'OBSTRUIDO':'OK'}
+                <span class="shrink-0 font-mono font-black text-[10px] px-2 py-1 rounded ${r.obstruido?'text-red-400 bg-red-500/10 border border-red-500/20':(r.nota?'text-amber-400 bg-amber-500/10 border border-amber-500/20':'text-green-400 bg-green-500/10 border border-green-500/20')}">
+                    ${r.obstruido?'OBSTRUIDO':(r.nota?(r.en_carrusel?'EN CARRUSEL':'N/A'):'OK')}
                 </span>
             </div>`).join('')}
         </div>
@@ -461,100 +473,74 @@ function renderLINKS(item){
 function renderVRT(item){
     const errores = item.diferencias || 0;
     const id = "vrt-" + Math.random().toString(36).substring(2,7);
-
     return `
-    <div class="space-y-4 overflow-y-auto max-h-[600px] custom-scroll pr-1">
-
-        <!-- RESUMEN -->
+    <div class="space-y-3">
         <div class="flex justify-between items-center p-3 border border-zinc-800 rounded-xl">
             <div>
                 <div class="text-sm text-gray-400">Diferencias detectadas</div>
-                <div class="text-xs ${errores>0?'text-red-400':'text-green-400'} font-bold mt-0.5">
-                    ${errores>0?'ERROR':'OK'}
-                </div>
+                <div class="text-xs ${errores>0?'text-red-400':'text-green-400'} font-bold mt-0.5">${errores>0?'ERROR':'OK'}</div>
             </div>
-            <div class="text-lg font-black ${errores>0?'text-red-400':'text-green-400'}">
-                ${errores}
-            </div>
+            <div class="text-lg font-black ${errores>0?'text-red-400':'text-green-400'}">${errores}</div>
         </div>
-
-        <!-- SLIDER COMPARACIÓN: desplegable -->
         <details class="group border border-zinc-800 rounded-xl overflow-hidden">
-            <summary class="flex items-center justify-between p-3 cursor-pointer select-none bg-[#0d0d0d] hover:bg-zinc-900 transition">
+            <summary class="flex items-center justify-between p-3 cursor-pointer bg-[#0d0d0d] hover:bg-zinc-900 transition">
                 <span class="font-mono text-xs font-bold text-gray-400 uppercase tracking-widest">Comparación Interactiva</span>
                 <svg class="w-4 h-4 text-gray-500 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </summary>
             <div class="p-3 border-t border-zinc-800 bg-black/30">
-                <div class="relative w-full overflow-hidden rounded-xl border border-zinc-800">
+                <div class="vrt-slider relative w-full overflow-hidden rounded-xl border border-zinc-800">
                     <img src="${item.img_a_url || ''}" class="w-full block">
                     <div id="${id}-overlay" class="absolute top-0 left-0 h-full overflow-hidden" style="width:50%">
                         <img src="${item.img_b_url || ''}" class="w-full block">
                     </div>
-                    <input type="range" min="0" max="100" value="50"
-                        class="absolute bottom-2 left-1/2 -translate-x-1/2 w-2/3"
-                        oninput="document.getElementById('${id}-overlay').style.width = this.value + '%'"
-                    >
+                    <input type="range" min="0" max="100" value="50" class="absolute bottom-2 left-1/2 -translate-x-1/2 w-2/3"
+                        oninput="document.getElementById('${id}-overlay').style.width = this.value + '%'">
                 </div>
                 <p class="font-mono text-[9px] text-[#505050] text-center mt-2">Deslizá para comparar Baseline vs Actual</p>
             </div>
         </details>
-
-        <!-- DIFF -->
         ${item.img_diff_url ? `<div>
             <div class="font-mono text-[10px] text-red-400 mb-1 uppercase tracking-widest">Diff</div>
-            <img src="${item.img_diff_url}" 
-                 onclick="openImageModal(this.src)"
-                 class="rounded border border-red-500/40 w-full cursor-zoom-in">
+            <img src="${item.img_diff_url}" onclick="openImageModal(this.src)" class="zoom-img rounded border border-red-500/40">
         </div>` : ''}
-
-        <!-- ORIGINALES -->
         <div class="grid grid-cols-2 gap-3">
             <div>
                 <div class="font-mono text-[10px] text-gray-400 mb-1 uppercase tracking-widest">Baseline</div>
-                <img src="${item.img_a_url || ''}" 
-                     onclick="openImageModal(this.src)"
-                     class="rounded border border-zinc-800 cursor-zoom-in w-full">
+                <img src="${item.img_a_url || ''}" onclick="openImageModal(this.src)" class="zoom-img rounded border border-zinc-800">
             </div>
             <div>
                 <div class="font-mono text-[10px] text-gray-400 mb-1 uppercase tracking-widest">Actual</div>
-                <img src="${item.img_b_url || ''}" 
-                     onclick="openImageModal(this.src)"
-                     class="rounded border border-zinc-800 cursor-zoom-in w-full">
+                <img src="${item.img_b_url || ''}" onclick="openImageModal(this.src)" class="zoom-img rounded border border-zinc-800">
             </div>
         </div>
-
     </div>`;
 }
+
 /* ================= STRESS ================= */
 function renderSTRESS(item){
     const p50 = item.p50 != null ? Math.round(item.p50) : null;
     const p95 = item.p95 != null ? Math.round(item.p95) : null;
     const p99 = item.p99 != null ? Math.round(item.p99) : null;
     const errPct = item.error_rate != null ? item.error_rate * 100 : 0;
-
     const p95Col = p95==null?'gray':p95<1000?'green':p95<3000?'yellow':'red';
     const errCol = errPct<1?'green':errPct<5?'yellow':'red';
-
     const flujoMap = { get:'Solo navegación (GET)', login_get:'Con login + GET', login_nav:'Con login + navegación' };
     const rampMap  = { instant:'Todos a la vez', gradual:'Gradual (30s)', steps:'Escalonado' };
-
     function metric(label, val, col){
-        return `<div class="bg-tech p-4 rounded-xl text-center">
+        return `<div class="bg-tech p-3 rounded-xl text-center">
             <p class="font-mono text-[10px] text-gray-500 mb-1">${label}</p>
-            <p class="text-2xl font-black text-${col}-400">${val}</p>
+            <p class="text-xl font-black text-${col}-400">${val}</p>
         </div>`;
     }
-
     const shot = item.screenshot_url ? `
         <div>
             <div class="font-mono text-[10px] text-gray-400 mb-1 uppercase tracking-widest">Captura del sitio</div>
-            <div class="overflow-y-auto max-h-[360px] custom-scroll rounded border border-zinc-800">
+            <div class="overflow-y-auto max-h-[300px] custom-scroll rounded border border-zinc-800">
                 <img src="${item.screenshot_url}" onclick="openImageModal(this.src)" class="w-full block cursor-zoom-in">
             </div>
         </div>` : '';
-
     return `
-    <div class="space-y-5">
+    <div class="space-y-4">
         <div class="grid grid-cols-3 gap-3">
             ${metric('p50 ms', p50!=null?p50:'—', p50==null?'gray':p50<500?'green':p50<1500?'yellow':'red')}
             ${metric('p95 ms', p95!=null?p95:'—', p95Col)}
@@ -565,7 +551,7 @@ function renderSTRESS(item){
             ${metric('Reqs', item.total_reqs ?? '—', 'gray')}
             ${metric('VUs', item.vus ?? '—', 'gray')}
         </div>
-        <div class="bg-tech p-4 rounded-xl space-y-2 font-mono text-[11px]">
+        <div class="bg-tech p-3 rounded-xl space-y-2 font-mono text-[11px]">
             <div class="flex justify-between"><span class="text-gray-500">Duración</span><span class="text-gray-300">${item.duracion||'—'}</span></div>
             <div class="flex justify-between"><span class="text-gray-500">Flujo</span><span class="text-gray-300">${flujoMap[item.flujo]||item.flujo||'—'}</span></div>
             <div class="flex justify-between"><span class="text-gray-500">Rampa</span><span class="text-gray-300">${rampMap[item.ramp]||item.ramp||'—'}</span></div>
@@ -575,17 +561,13 @@ function renderSTRESS(item){
 }
 
 function openImageModal(src){
-    if (!src || src === 'null' || src === 'undefined') return;  // guard: no abrir vacío
+    if (!src || src === 'null' || src === 'undefined') return;
     const modal = document.getElementById('img-modal');
     const img = document.getElementById('img-modal-src');
     if (!modal || !img) return;
     img.src = src;
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-}
-
-function cerrarDrawer(){
-    document.getElementById('detail-drawer').classList.add('translate-x-full');
 }
 
 document.addEventListener('DOMContentLoaded', function(){
@@ -599,8 +581,8 @@ document.addEventListener('DOMContentLoaded', function(){
     init();
 });
 </script>
-<div id="img-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-50">
+<div id="img-modal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-50 p-6">
     <img id="img-modal-src" class="max-w-[90%] max-h-[90%] rounded">
-</div>    
+</div>
 </body>
 </html>
