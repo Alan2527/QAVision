@@ -216,7 +216,7 @@ async function init() {
         ]);
 
         globalData = [
-            ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.created_at, errores: i.diferencias || 0 })),
+            ...(vrt.data || []).map(i => ({ ...i, modulo: 'vrt', url_m: i.url_a, fecha: i.creado_el || i.created_at, errores: i.diferencias || 0 })),
             ...(seo.data || []).map(i => ({ ...i, modulo: 'seo', url_m: i.url, fecha: i.created_at, errores: contarErroresSEO(i) })),
             ...(perf.data || []).map(i => ({ ...i, modulo: 'perf', url_m: i.url, fecha: i.created_at, errores: contarErroresPERF(i) })),
             ...(links.data || []).map(i => ({
